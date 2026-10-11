@@ -94,6 +94,10 @@ class TfIdfService
         $termFrequency = [];
 
         foreach ($counts as $term => $count) {
+            if ($term === '') {
+                continue;
+            }
+
             $termFrequency[$term] = $count / $totalTerms;
         }
 
@@ -180,6 +184,11 @@ class TfIdfService
         array $tokensA,
         array $tokensB
     ): float {
+        // Return zero when either document has no tokens.
+        if (empty($tokensA) || empty($tokensB)) {
+            return 0.0;
+        }
+
         $vectors = $this->calculateVectors([
             $tokensA,
             $tokensB,
@@ -230,6 +239,6 @@ class TfIdfService
          */
         sort($shared);
 
-        return array_slice($shared, 0, $limit);
+        return array_slice($shared, 0, max(0, $limit));
     }
 }

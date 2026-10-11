@@ -6,7 +6,12 @@ use App\Models\CapstoneProject;
 use App\Models\Classroom;
 use App\Models\GroupRoom;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\ConnectionResolverInterface;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Facade;
+
 use Tests\TestCase;
 
 class SimilarityCheckerEndpointTest extends TestCase
@@ -19,20 +24,42 @@ class SimilarityCheckerEndpointTest extends TestCase
 
     protected GroupRoom $secondaryGroupRoom;
 
+    protected string $originalDefaultConnection;
+
+    protected ?ConnectionResolverInterface $originalConnectionResolver = null;
+
+    protected ?Dispatcher $originalEventDispatcher = null;
+
+    protected function ensureEloquentIsConnected(): void
+    {
+        // Restore Laravel's facade application after other tests run.
+        Facade::setFacadeApplication($this->app);
+        Facade::clearResolvedInstance('db');
+
+        // Explicitly restore the database manager and Eloquent state.
+        config(['database.default' => 'mysql']);
+
+        $databaseManager = $this->app->make('db');
+        $databaseManager->setDefaultConnection('mysql');
+
+        Model::setConnectionResolver($databaseManager);
+        Model::setEventDispatcher($this->app->make('events'));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        /*
-         * phpunit.xml defaults to SQLite :memory:.
-         * This project does not have the SQLite PHP driver installed.
-         *
-         * The endpoint test therefore explicitly uses the existing
-         * MySQL database without running migrations or resetting it.
-         */
+        $this->originalDefaultConnection = config(
+            'database.default',
+            'sqlite'
+        );
+
+        $this->originalConnectionResolver = Model::getConnectionResolver();
+        $this->originalEventDispatcher = Model::getEventDispatcher();
+
         config([
             'database.default' => 'mysql',
-
             'database.connections.mysql.driver' => 'mysql',
             'database.connections.mysql.host' => '127.0.0.1',
             'database.connections.mysql.port' => 3306,
@@ -42,7 +69,11 @@ class SimilarityCheckerEndpointTest extends TestCase
         ]);
 
         DB::purge('mysql');
+        DB::setDefaultConnection('mysql');
         DB::reconnect('mysql');
+
+        Model::setConnectionResolver($this->app['db']);
+        Model::setEventDispatcher($this->app['events']);
 
         $this->testUser = User::create([
             'first_name' => 'Similarity',
@@ -71,76 +102,64 @@ class SimilarityCheckerEndpointTest extends TestCase
             'group_name' => 'Similarity HTTP Draft Group',
         ]);
 
-        /*
-         * The similarity checker routes require authentication.
-         */
         $this->actingAs($this->testUser);
     }
 
     protected function tearDown(): void
     {
-        /*
-         * Delete only records created by this test.
-         * Existing project data is not touched.
-         */
+        try {
+            if (isset($this->testGroupRoom)) {
+                DB::connection('mysql')
+                    ->table('capstone_projects')
+                    ->where('group_room_id', $this->testGroupRoom->id)
+                    ->delete();
 
-        if (isset($this->testGroupRoom)) {
-            CapstoneProject::query()
-                ->where(
-                    'group_room_id',
-                    $this->testGroupRoom->id
-                )
-                ->delete();
+                $this->testGroupRoom->delete();
+            }
 
-            $this->testGroupRoom->delete();
+            if (isset($this->secondaryGroupRoom)) {
+                DB::connection('mysql')
+                    ->table('capstone_projects')
+                    ->where('group_room_id', $this->secondaryGroupRoom->id)
+                    ->delete();
+
+                $this->secondaryGroupRoom->delete();
+            }
+
+            if (isset($this->testClassroom)) {
+                $this->testClassroom->delete();
+            }
+
+            if (isset($this->testUser)) {
+                $this->testUser->delete();
+            }
+        } finally {
+            DB::setDefaultConnection($this->originalDefaultConnection);
+            DB::purge('mysql');
+
+            Model::setConnectionResolver($this->originalConnectionResolver);
+            Model::setEventDispatcher($this->originalEventDispatcher);
+
+            parent::tearDown();
         }
-
-        if (isset($this->secondaryGroupRoom)) {
-            CapstoneProject::query()
-                ->where(
-                    'group_room_id',
-                    $this->secondaryGroupRoom->id
-                )
-                ->delete();
-
-            $this->secondaryGroupRoom->delete();
-        }
-
-        if (isset($this->testClassroom)) {
-            $this->testClassroom->delete();
-        }
-
-        if (isset($this->testUser)) {
-            $this->testUser->delete();
-        }
-
-        DB::purge('mysql');
-
-        parent::tearDown();
     }
 
     public function test_similarity_checker_page_is_accessible(): void
     {
-        $response = $this->get(
-            route('similarity.index')
-        );
+        $response = $this->get(route('similarity.index'));
 
         $response->assertSuccessful();
-
-        $response->assertViewIs(
-            'similarity.index'
-        );
+        $response->assertViewIs('similarity.index');
     }
 
     public function test_similarity_checker_accepts_valid_proposed_study(): void
     {
+        $this->ensureEloquentIsConnected();
+
         $studyBeforeRequest = CapstoneProject::query()
             ->where(
                 'status',
-                config(
-                    'similarity.repository_status',
-                    'admin_approved'
-                )
+                config('similarity.repository_status', 'admin_approved')
             )
             ->count();
 
@@ -150,7 +169,6 @@ class SimilarityCheckerEndpointTest extends TestCase
             route('similarity.check'),
             [
                 'title' => 'Student Attendance Monitoring System',
-
                 'abstract' =>
                     'This study proposes a digital system for '
                     . 'monitoring student attendance and generating '
@@ -159,29 +177,16 @@ class SimilarityCheckerEndpointTest extends TestCase
         );
 
         $response->assertSuccessful();
-
-        $response->assertViewIs(
-            'similarity.results'
-        );
+        $response->assertViewIs('similarity.results');
 
         $response->assertViewHas(
             'proposedTitle',
             'Student Attendance Monitoring System'
         );
 
-        $response->assertViewHas(
-            'proposedAbstract'
-        );
+        $response->assertViewHas('proposedAbstract');
+        $response->assertViewHas('results');
 
-        $response->assertViewHas(
-            'results'
-        );
-
-        /*
-         * The controller should include the existing approved
-         * repository studies plus the approved study created
-         * specifically for this test.
-         */
         $response->assertViewHas(
             'studyCount',
             $studyBeforeRequest + 1
@@ -189,14 +194,9 @@ class SimilarityCheckerEndpointTest extends TestCase
 
         $results = $response->viewData('results');
 
-        $this->assertNotEmpty(
-            $results
-        );
+        $this->assertNotEmpty($results);
 
-        $titles = array_column(
-            $results,
-            'title'
-        );
+        $titles = array_column($results, 'title');
 
         $this->assertContains(
             'Digital Classroom Attendance Tracking System',
@@ -206,22 +206,17 @@ class SimilarityCheckerEndpointTest extends TestCase
 
     public function test_similarity_checker_uses_approved_repository_studies_only(): void
     {
+        $this->ensureEloquentIsConnected();
+
         $studyBeforeRequest = CapstoneProject::query()
             ->where(
                 'status',
-                config(
-                    'similarity.repository_status',
-                    'admin_approved'
-                )
+                config('similarity.repository_status', 'admin_approved')
             )
             ->count();
 
         $this->createApprovedStudy();
 
-        /*
-         * capstone_projects.group_room_id is unique.
-         * Therefore the draft project uses a different group room.
-         */
         CapstoneProject::create([
             'group_room_id' => $this->secondaryGroupRoom->id,
             'submitted_by' => $this->testUser->id,
@@ -237,7 +232,6 @@ class SimilarityCheckerEndpointTest extends TestCase
             route('similarity.check'),
             [
                 'title' => 'Student Attendance Monitoring System',
-
                 'abstract' =>
                     'This study proposes a digital system for '
                     . 'monitoring student attendance and generating '
@@ -247,12 +241,6 @@ class SimilarityCheckerEndpointTest extends TestCase
 
         $response->assertSuccessful();
 
-        /*
-         * The draft must not be included.
-         *
-         * Only the approved study created by this test should
-         * increase the approved repository count.
-         */
         $response->assertViewHas(
             'studyCount',
             $studyBeforeRequest + 1
@@ -260,14 +248,9 @@ class SimilarityCheckerEndpointTest extends TestCase
 
         $results = $response->viewData('results');
 
-        $this->assertNotEmpty(
-            $results
-        );
+        $this->assertNotEmpty($results);
 
-        $titles = array_column(
-            $results,
-            'title'
-        );
+        $titles = array_column($results, 'title');
 
         $this->assertContains(
             'Digital Classroom Attendance Tracking System',
@@ -290,9 +273,7 @@ class SimilarityCheckerEndpointTest extends TestCase
             ]
         );
 
-        $response->assertSessionHasErrors(
-            'title'
-        );
+        $response->assertSessionHasErrors('title');
     }
 
     public function test_similarity_checker_rejects_short_abstract(): void
@@ -305,21 +286,19 @@ class SimilarityCheckerEndpointTest extends TestCase
             ]
         );
 
-        $response->assertSessionHasErrors(
-            'abstract'
-        );
+        $response->assertSessionHasErrors('abstract');
     }
 
     protected function createApprovedStudy(): CapstoneProject
     {
+        $this->ensureEloquentIsConnected();
+
         return CapstoneProject::create([
             'group_room_id' => $this->testGroupRoom->id,
             'submitted_by' => $this->testUser->id,
             'approved_by' => $this->testUser->id,
-
             'title' =>
                 'Digital Classroom Attendance Tracking System',
-
             'abstract' =>
                 'This project develops a digital attendance '
                 . 'tracking system for schools that enables '
@@ -327,7 +306,6 @@ class SimilarityCheckerEndpointTest extends TestCase
                 . 'electronically. The system maintains attendance '
                 . 'records, generates reports, and helps teachers '
                 . 'monitor students with frequent absences.',
-
             'program' => 'Information Technology',
             'year_section' => 'Test',
             'status' => 'admin_approved',

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CapstoneProject;
+use App\Services\CapstoneRecommendationService;
 use App\Services\SimilarityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -11,7 +12,8 @@ use Illuminate\View\View;
 class SimilarityController extends Controller
 {
     public function __construct(
-        protected SimilarityService $similarityService
+        protected SimilarityService $similarityService,
+        protected CapstoneRecommendationService $recommendationService
     ) {
     }
 
@@ -25,7 +27,7 @@ class SimilarityController extends Controller
 
     /**
      * Analyze the proposed study against approved studies
-     * in the repository.
+     * in the repository and generate alternative project ideas.
      */
     public function check(Request $request): View|RedirectResponse
     {
@@ -50,23 +52,14 @@ class SimilarityController extends Controller
         ]);
 
         /*
-         * Combine the title and abstract.
-         *
-         * The title is included because important research
-         * terms are often present there.
+         * Combine the title and abstract for analysis.
          */
         $proposedText = trim(
-            $validated['title'] .
-            ' ' .
-            $validated['abstract']
+            $validated['title'] . ' ' . $validated['abstract']
         );
 
         /*
-         * Retrieve existing approved studies.
-         *
-         * The Similarity Checker should compare the proposed
-         * study against studies that are already approved
-         * for the repository.
+         * Retrieve existing approved repository studies.
          */
         $studies = CapstoneProject::query()
             ->where(
@@ -79,42 +72,22 @@ class SimilarityController extends Controller
             ->get();
 
         /*
-         * Prepare repository studies for the similarity engine.
+         * Prepare repository studies for similarity analysis.
          */
-        $existingStudies = [];
-
-        foreach ($studies as $study) {
-            /*
-             * Build the existing study's searchable text.
-             *
-             * We intentionally check multiple possible field
-             * names so this controller can work with the current
-             * project structure without changing the database.
-             */
-
-            $title = $study->title
-                ?? $study->project_title
-                ?? $study->name
-                ?? '';
-
-            $abstract = $study->abstract
-                ?? $study->description
-                ?? '';
-
-            $existingStudies[] = [
-                'id' => $study->id,
-
-                'title' => $title,
-
-                'abstract' => $abstract,
-
-                'study' => $study,
-            ];
-        }
+        $existingStudies = $studies
+            ->map(function (CapstoneProject $study): array {
+                return [
+                    'id' => $study->id,
+                    'title' => $study->title ?? '',
+                    'abstract' => $study->abstract ?? '',
+                    'study' => $study,
+                ];
+            })
+            ->values()
+            ->all();
 
         /*
-         * Rank the existing studies from highest similarity
-         * to lowest similarity.
+         * Rank existing studies by hybrid similarity.
          */
         $results = $this->similarityService->rank(
             $proposedText,
@@ -122,7 +95,24 @@ class SimilarityController extends Controller
         );
 
         /*
-         * Display the results page.
+         * Extract DSS review areas from the highest-ranked result.
+         */
+        $topResult = $results[0]['similarity'] ?? [];
+
+        $reviewAreas = $topResult['dss']['areas_to_review'] ?? [];
+
+        /*
+         * Generate three alternative capstone recommendations.
+         */
+        $recommendations = $this->recommendationService->recommend(
+            $validated['title'],
+            $validated['abstract'],
+            $existingStudies,
+            $reviewAreas
+        );
+
+        /*
+         * Display the similarity results and recommendations.
          */
         return view(
             'similarity.results',
@@ -135,6 +125,8 @@ class SimilarityController extends Controller
 
                 'results' => $results,
                 'studyCount' => count($existingStudies),
+
+                'recommendations' => $recommendations,
             ]
         );
     }

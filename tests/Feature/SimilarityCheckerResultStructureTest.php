@@ -6,9 +6,11 @@ use App\Models\CapstoneProject;
 use App\Models\Classroom;
 use App\Models\GroupRoom;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Facade;
 use Tests\TestCase;
-
+    
 class SimilarityCheckerResultStructureTest extends TestCase
 {
     protected User $testUser;
@@ -17,17 +19,35 @@ class SimilarityCheckerResultStructureTest extends TestCase
 
     protected GroupRoom $testGroupRoom;
 
+    protected string $originalDefaultConnection;
+
+    protected function ensureEloquentIsConnected(): void
+    {
+        // Restore Laravel's facade application after other tests run.
+        Facade::setFacadeApplication($this->app);
+        Facade::clearResolvedInstance('db');
+
+        // Explicitly restore the database manager and Eloquent state.
+        config(['database.default' => 'mysql']);
+
+        $databaseManager = $this->app->make('db');
+        $databaseManager->setDefaultConnection('mysql');
+
+        Model::setConnectionResolver($databaseManager);
+        Model::setEventDispatcher($this->app->make('events'));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        /*
-         * This project does not have the SQLite PHP driver installed.
-         * Use the existing MySQL database without resetting it.
-         */
+        $this->originalDefaultConnection = config(
+            'database.default',
+            'sqlite'
+        );
+
         config([
             'database.default' => 'mysql',
-
             'database.connections.mysql.driver' => 'mysql',
             'database.connections.mysql.host' => '127.0.0.1',
             'database.connections.mysql.port' => 3306,
@@ -37,7 +57,11 @@ class SimilarityCheckerResultStructureTest extends TestCase
         ]);
 
         DB::purge('mysql');
+        DB::setDefaultConnection('mysql');
         DB::reconnect('mysql');
+
+        Model::setConnectionResolver($this->app['db']);
+        Model::setEventDispatcher($this->app['events']);
 
         $this->testUser = User::create([
             'first_name' => 'Similarity',
@@ -62,35 +86,39 @@ class SimilarityCheckerResultStructureTest extends TestCase
         ]);
 
         $this->actingAs($this->testUser);
+
+        Model::setConnectionResolver($this->app['db']);
+        Model::setEventDispatcher($this->app['events']);
     }
 
     protected function tearDown(): void
     {
-        /*
-         * Remove only records created by this test.
-         */
-        if (isset($this->testGroupRoom)) {
-            CapstoneProject::query()
-                ->where(
-                    'group_room_id',
-                    $this->testGroupRoom->id
-                )
-                ->delete();
+        try {
+            if (isset($this->testGroupRoom)) {
+                DB::connection('mysql')
+                    ->table('capstone_projects')
+                    ->where('group_room_id', $this->testGroupRoom->id)
+                    ->delete();
 
-            $this->testGroupRoom->delete();
+                $this->testGroupRoom->delete();
+            }
+
+            if (isset($this->testClassroom)) {
+                $this->testClassroom->delete();
+            }
+
+            if (isset($this->testUser)) {
+                $this->testUser->delete();
+            }
+        } finally {
+            DB::setDefaultConnection(
+                $this->originalDefaultConnection
+            );
+
+            DB::purge('mysql');
+
+            parent::tearDown();
         }
-
-        if (isset($this->testClassroom)) {
-            $this->testClassroom->delete();
-        }
-
-        if (isset($this->testUser)) {
-            $this->testUser->delete();
-        }
-
-        DB::purge('mysql');
-
-        parent::tearDown();
     }
 
     public function test_similarity_checker_returns_complete_similarity_result_structure(): void
@@ -101,7 +129,6 @@ class SimilarityCheckerResultStructureTest extends TestCase
             route('similarity.check'),
             [
                 'title' => 'Student Attendance Monitoring System',
-
                 'abstract' =>
                     'This study proposes the development of a '
                     . 'student attendance monitoring system for '
@@ -115,150 +142,48 @@ class SimilarityCheckerResultStructureTest extends TestCase
         );
 
         $response->assertSuccessful();
-
-        $response->assertViewIs(
-            'similarity.results'
-        );
+        $response->assertViewIs('similarity.results');
 
         $response->assertViewHas(
             'proposedTitle',
             'Student Attendance Monitoring System'
         );
 
-        $response->assertViewHas(
-            'proposedAbstract'
-        );
-
-        $response->assertViewHas(
-            'results'
-        );
+        $response->assertViewHas('proposedAbstract');
+        $response->assertViewHas('results');
 
         $results = $response->viewData('results');
 
-        $this->assertNotEmpty(
-            $results
-        );
+        $this->assertNotEmpty($results);
 
-        /*
-         * Inspect every ranked repository result.
-         */
         foreach ($results as $result) {
             $this->assertIsArray($result);
 
-            /*
-             * Repository study information.
-             */
-            $this->assertArrayHasKey(
-                'id',
-                $result
-            );
-
-            $this->assertArrayHasKey(
-                'title',
-                $result
-            );
-
-            $this->assertArrayHasKey(
-                'abstract',
-                $result
-            );
-
-            /*
-             * SimilarityService::rank() stores the comparison
-             * result under the "similarity" key.
-             */
-            $this->assertArrayHasKey(
-                'similarity',
-                $result
-            );
+            $this->assertArrayHasKey('id', $result);
+            $this->assertArrayHasKey('title', $result);
+            $this->assertArrayHasKey('abstract', $result);
+            $this->assertArrayHasKey('similarity', $result);
 
             $similarity = $result['similarity'];
 
-            $this->assertIsArray(
-                $similarity
-            );
+            $this->assertIsArray($similarity);
 
-            /*
-             * Lexical similarity.
-             */
-            $this->assertArrayHasKey(
-                'lexical_similarity',
-                $similarity
-            );
+            $this->assertArrayHasKey('lexical_similarity', $similarity);
+            $this->assertArrayHasKey('lexical_percentage', $similarity);
+            $this->assertArrayHasKey('semantic_similarity', $similarity);
+            $this->assertArrayHasKey('semantic_percentage', $similarity);
+            $this->assertArrayHasKey('hybrid_similarity', $similarity);
+            $this->assertArrayHasKey('hybrid_percentage', $similarity);
+            $this->assertArrayHasKey('shared_terms', $similarity);
+            $this->assertIsArray($similarity['shared_terms']);
 
-            $this->assertArrayHasKey(
-                'lexical_percentage',
-                $similarity
-            );
+            $this->assertArrayHasKey('dss', $similarity);
 
-            /*
-             * Semantic similarity.
-             */
-            $this->assertArrayHasKey(
-                'semantic_similarity',
-                $similarity
-            );
+            $this->assertIsArray($similarity['dss']);
 
-            $this->assertArrayHasKey(
-                'semantic_percentage',
-                $similarity
-            );
-
-            /*
-             * Hybrid similarity.
-             */
-            $this->assertArrayHasKey(
-                'hybrid_similarity',
-                $similarity
-            );
-
-            $this->assertArrayHasKey(
-                'hybrid_percentage',
-                $similarity
-            );
-
-            /*
-             * Explainable lexical overlap.
-             */
-            $this->assertArrayHasKey(
-                'shared_terms',
-                $similarity
-            );
-
-            $this->assertIsArray(
-                $similarity['shared_terms']
-            );
-
-            /*
-             * DSS guidance.
-             *
-             * The locked SimilarityService uses
-             * "areas_to_review", not "areas".
-             */
-            $this->assertArrayHasKey(
-                'dss',
-                $similarity
-            );
-
-            $this->assertIsArray(
-                $similarity['dss']
-            );
-
-            $this->assertArrayHasKey(
-                'level',
-                $similarity['dss']
-            );
-
-            $this->assertArrayHasKey(
-                'title',
-                $similarity['dss']
-            );
-
-            $this->assertArrayHasKey(
-                'message',
-                $similarity['dss']
-            );
-
+            $this->assertArrayHasKey('level', $similarity['dss']);
+            $this->assertArrayHasKey('title', $similarity['dss']);
+            $this->assertArrayHasKey('message', $similarity['dss']);
             $this->assertArrayHasKey(
                 'areas_to_review',
                 $similarity['dss']
@@ -273,9 +198,6 @@ class SimilarityCheckerResultStructureTest extends TestCase
                 $similarity['dss']
             );
 
-            /*
-             * Embedding availability should be explicitly reported.
-             */
             $this->assertArrayHasKey(
                 'semantic_available',
                 $similarity
@@ -295,7 +217,6 @@ class SimilarityCheckerResultStructureTest extends TestCase
             route('similarity.check'),
             [
                 'title' => 'Student Attendance Monitoring System',
-
                 'abstract' =>
                     'This study proposes a digital system for '
                     . 'monitoring student attendance and generating '
@@ -307,9 +228,7 @@ class SimilarityCheckerResultStructureTest extends TestCase
 
         $results = $response->viewData('results');
 
-        $this->assertNotEmpty(
-            $results
-        );
+        $this->assertNotEmpty($results);
 
         foreach ($results as $result) {
             $similarity = $result['similarity'];
@@ -354,7 +273,6 @@ class SimilarityCheckerResultStructureTest extends TestCase
             route('similarity.check'),
             [
                 'title' => 'Student Attendance Monitoring System',
-
                 'abstract' =>
                     'This study proposes a digital system for '
                     . 'monitoring student attendance and generating '
@@ -366,9 +284,7 @@ class SimilarityCheckerResultStructureTest extends TestCase
 
         $results = $response->viewData('results');
 
-        $this->assertNotEmpty(
-            $results
-        );
+        $this->assertNotEmpty($results);
 
         $foundDssAreas = false;
 
@@ -399,7 +315,6 @@ class SimilarityCheckerResultStructureTest extends TestCase
             route('similarity.check'),
             [
                 'title' => 'Student Attendance Monitoring System',
-
                 'abstract' =>
                     'This study proposes a digital system for '
                     . 'monitoring student attendance and generating '
@@ -411,48 +326,29 @@ class SimilarityCheckerResultStructureTest extends TestCase
 
         $results = $response->viewData('results');
 
-        $this->assertNotEmpty(
-            $results
+        $this->assertNotEmpty($results);
+
+        $matchingResult = collect($results)->first(
+            fn (array $result): bool =>
+                $result['title']
+                === 'Digital Classroom Attendance Tracking System'
         );
 
-        $matchingResult = collect($results)
-            ->first(
-                fn (array $result): bool =>
-                    $result['title']
-                    === 'Digital Classroom Attendance Tracking System'
-            );
+        $this->assertNotNull($matchingResult);
 
-        $this->assertNotNull(
-            $matchingResult
-        );
-
-        $this->assertArrayHasKey(
-            'similarity',
-            $matchingResult
-        );
+        $this->assertArrayHasKey('similarity', $matchingResult);
 
         $similarity = $matchingResult['similarity'];
 
-        $this->assertArrayHasKey(
-            'hybrid_percentage',
-            $similarity
-        );
+        $this->assertArrayHasKey('hybrid_percentage', $similarity);
 
         $this->assertGreaterThan(
             0,
             $similarity['hybrid_percentage']
         );
 
-        $this->assertArrayHasKey(
-            'shared_terms',
-            $similarity
-        );
+        $this->assertArrayHasKey('shared_terms', $similarity);
 
-        /*
-         * The proposed and existing studies both concern
-         * attendance, so "attendance" should be among the
-         * shared terms produced by the lexical analysis.
-         */
         $this->assertContains(
             'attendance',
             $similarity['shared_terms']
@@ -461,14 +357,14 @@ class SimilarityCheckerResultStructureTest extends TestCase
 
     protected function createApprovedStudy(): CapstoneProject
     {
+        $this->ensureEloquentIsConnected();
+
         return CapstoneProject::create([
             'group_room_id' => $this->testGroupRoom->id,
             'submitted_by' => $this->testUser->id,
             'approved_by' => $this->testUser->id,
-
             'title' =>
                 'Digital Classroom Attendance Tracking System',
-
             'abstract' =>
                 'This project develops a digital attendance '
                 . 'tracking system for schools that enables '
@@ -476,7 +372,6 @@ class SimilarityCheckerResultStructureTest extends TestCase
                 . 'electronically. The system maintains attendance '
                 . 'records, generates reports, and helps teachers '
                 . 'monitor students with frequent absences.',
-
             'program' => 'Information Technology',
             'year_section' => 'Test',
             'status' => 'admin_approved',
