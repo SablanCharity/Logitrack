@@ -117,7 +117,7 @@
                             Result Limit
                         </p>
                         <p class="mt-2 text-lg font-bold text-slate-900">
-                            Top {{ count($results ?? []) }}
+                            {{ !empty($results) ? 'Top 1' : 'No results' }}
                         </p>
                         <p class="mt-1 text-xs text-slate-500">Ranked by hybrid similarity</p>
                     </div>
@@ -173,19 +173,21 @@
             </div>
         </section>
 
-        {{-- Ranked Repository Results --}}
+        {{-- Most Similar Repository Result --}}
         <section>
             <div class="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Ranked Repository Studies</h2>
-                    <p class="mt-1 text-sm text-slate-500">Most related studies appear first.</p>
+                    <h2 class="text-2xl font-bold text-slate-900">Most Similar Capstone Project</h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        The highest-ranked study from the approved repository is shown below.
+                    </p>
                 </div>
                 <div class="text-sm text-slate-500">
-                    {{ count($results ?? []) }} result(s)
+                    {{ !empty($results) ? '1 result' : '0 results' }}
                 </div>
             </div>
 
-            @if(empty($results))
+            @if(empty($results) || count($results) === 0)
                 <div class="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center shadow-sm">
                     <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-500">
                         <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,7 +206,7 @@
                 </div>
             @else
                 <div class="space-y-6">
-                    @foreach($results as $index => $result)
+                    @foreach(array_slice($results ?? [], 0, 1) as $index => $result)
                         @php
                             $similarity = $result['similarity'] ?? [];
                             $hybrid = (float) ($similarity['hybrid_percentage'] ?? 0);

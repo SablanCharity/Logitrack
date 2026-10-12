@@ -59,7 +59,7 @@ class SimilarityController extends Controller
         );
 
         /*
-         * Retrieve existing approved repository studies.
+         * Retrieve ALL approved repository studies.
          */
         $studies = CapstoneProject::query()
             ->where(
@@ -72,7 +72,7 @@ class SimilarityController extends Controller
             ->get();
 
         /*
-         * Prepare repository studies for similarity analysis.
+         * Prepare every repository study for similarity analysis.
          */
         $existingStudies = $studies
             ->map(function (CapstoneProject $study): array {
@@ -87,12 +87,19 @@ class SimilarityController extends Controller
             ->all();
 
         /*
-         * Rank existing studies by hybrid similarity.
+         * Compare the proposed study against all approved studies.
+         * The service ranks the results by hybrid similarity.
          */
         $results = $this->similarityService->rank(
             $proposedText,
             $existingStudies
         );
+
+        /*
+         * Keep the highest-ranked result for display.
+         * The full ranked results remain available for internal processing.
+         */
+       $displayResults = $results;
 
         /*
          * Extract DSS review areas from the highest-ranked result.
@@ -112,7 +119,8 @@ class SimilarityController extends Controller
         );
 
         /*
-         * Display the similarity results and recommendations.
+         * Display only the most similar capstone project.
+         * The study count still reflects ALL approved studies compared.
          */
         return view(
             'similarity.results',
