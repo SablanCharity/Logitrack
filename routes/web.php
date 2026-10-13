@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OldCapstoneController;
 use App\Http\Controllers\CapstoneProjectController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\GroupRoomController;
@@ -233,10 +234,6 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     | Similarity Checker
     |--------------------------------------------------------------------------
-    |
-    | GET  = display the Similarity Checker form
-    | POST = process the proposed study
-    |
     */
 
     Route::get(
@@ -249,30 +246,13 @@ Route::middleware(['auth'])->group(function () {
         [SimilarityController::class, 'check']
     )->name('similarity.check');
 
-    // Student: add a member to a group room (leader only)
-Route::post(
-    '/student/group-rooms/{groupRoomId}/members',
-    [GroupRoomController::class, 'addMember']
-)->name('student.group-room.add-member');
-
-// Instructor: approve a pending student
-Route::post(
-    '/instructor/students/{userId}/approve',
-    [InstructorController::class, 'approveStudent']
-)->name('instructor.students.approve');
-
 });
-
-
 
 
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes
 |--------------------------------------------------------------------------
-|
-| Login, registration, password reset, etc.
-|
 */
 
 require __DIR__ . '/auth.php';

@@ -390,9 +390,9 @@ class SimilarityService
      * Each existing study should contain:
      *
      * [
-     *     'id' => ...,
-     *     'title' => ...,
-     *     'abstract' => ...
+     *    'id' => ...,
+     *    'title' => ...,
+     *    'abstract' => ...
      * ]
      *
      * @param array<int, array<string, mixed>> $existingStudies

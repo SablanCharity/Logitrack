@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CapstoneProject;
+use App\Models\OldCapstone;
 use App\Services\CapstoneRecommendationService;
 use App\Services\SimilarityService;
 use Illuminate\Http\RedirectResponse;
@@ -59,9 +60,9 @@ class SimilarityController extends Controller
         );
 
         /*
-         * Retrieve ALL approved repository studies.
+         * Retrieve approved modern repository studies.
          */
-        $studies = CapstoneProject::query()
+        $modernStudies = CapstoneProject::query()
             ->where(
                 'status',
                 config(
@@ -69,22 +70,37 @@ class SimilarityController extends Controller
                     'admin_approved'
                 )
             )
-            ->get();
-
-        /*
-         * Prepare every repository study for similarity analysis.
-         */
-        $existingStudies = $studies
+            ->get()
             ->map(function (CapstoneProject $study): array {
                 return [
                     'id' => $study->id,
                     'title' => $study->title ?? '',
                     'abstract' => $study->abstract ?? '',
+                    'type' => 'modern',
                     'study' => $study,
                 ];
-            })
-            ->values()
-            ->all();
+            });
+
+        /*
+         * Retrieve approved OCR/old repository studies.
+         */
+        $oldStudies = OldCapstone::query()
+            ->where('status', 'admin_approved')
+            ->get()
+            ->map(function (OldCapstone $study): array {
+                return [
+                    'id' => $study->id,
+                    'title' => $study->title ?? '',
+                    'abstract' => $study->abstract ?? '',
+                    'type' => 'old',
+                    'study' => $study,
+                ];
+            });
+
+        /*
+         * Merge both modern and old studies into a single array.
+         */
+        $existingStudies = $modernStudies->concat($oldStudies)->values()->all();
 
         /*
          * Compare the proposed study against all approved studies.
@@ -99,7 +115,7 @@ class SimilarityController extends Controller
          * Keep the highest-ranked result for display.
          * The full ranked results remain available for internal processing.
          */
-       $displayResults = $results;
+        $displayResults = $results;
 
         /*
          * Extract DSS review areas from the highest-ranked result.

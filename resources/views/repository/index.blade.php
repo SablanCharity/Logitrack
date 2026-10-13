@@ -86,47 +86,72 @@
             <div class="lt-repo-list">
                 @foreach($capstones as $capstone)
 
+                    @php
+                        $isOld = isset($capstone->source_type) && $capstone->source_type === 'old';
+                        $showRoute = route('repository.show', ['capstoneId' => $capstone->id, 'type' => $isOld ? 'old' : 'modern']);
+                    @endphp
+
                     <article class="lt-card lt-repo-card">
 
                         <div class="lt-repo-card__head">
                             <h2 class="lt-repo-card__title">
-                                <a href="{{ route('repository.show', $capstone->id) }}">{{ $capstone->title }}</a>
+                                <a href="{{ $showRoute }}">{{ $capstone->title }}</a>
                             </h2>
-                            <span class="lt-badge lt-badge--approved" title="Repository Status">Approved</span>
+                            <div class="flex items-center gap-2">
+                                @if($isOld)
+                                    <span class="lt-badge lt-badge--secondary" title="Legacy Scanned Record">OCR Scanned</span>
+                                @endif
+                                <span class="lt-badge lt-badge--approved" title="Repository Status">Approved</span>
+                            </div>
                         </div>
 
                         <dl class="lt-repo-meta">
                             <div>
                                 <dt>Program</dt>
-                                <dd>{{ $capstone->program }}</dd>
-                            </div>
-                            <div>
-                                <dt>Year &amp; Section</dt>
-                                <dd>{{ $capstone->year_section ?? 'N/A' }}</dd>
+                                <dd>{{ $capstone->program ?? 'N/A' }}</dd>
                             </div>
                             <div>
                                 <dt>Instructor / Adviser</dt>
                                 <dd>
-                                    {{ $capstone->groupRoom->classroom->instructor->first_name }}
-                                    {{ $capstone->groupRoom->classroom->instructor->last_name }}
+                                    @if($isOld)
+                                        {{ $capstone->adviser ?? 'N/A' }}
+                                    @else
+                                        {{ optional($capstone->groupRoom?->classroom?->instructor)->first_name }}
+                                        {{ optional($capstone->groupRoom?->classroom?->instructor)->last_name }}
+                                    @endif
                                 </dd>
                             </div>
                             <div>
                                 <dt>Publication Date</dt>
-                                <dd>{{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}</dd>
+                                <dd>
+                                    @if($isOld)
+                                        {{ $capstone->publication_date ?? 'N/A' }}
+                                    @else
+                                        {{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}
+                                    @endif
+                                </dd>
                             </div>
                         </dl>
 
                         <div class="lt-repo-block">
                             <div class="lt-doc__label">Authors</div>
                             <ul class="lt-authors">
-                                @foreach($capstone->groupRoom->members as $member)
-                                    <li>
-                                        <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
-                                        {{ $member->user->first_name }}
-                                        {{ $member->user->last_name }}
-                                    </li>
-                                @endforeach
+                                @if($isOld)
+                                    @foreach($capstone->authors ?? [] as $authorName)
+                                        <li>
+                                            <span class="lt-avatar">{{ strtoupper(substr($authorName, 0, 1)) }}</span>
+                                            {{ $authorName }}
+                                        </li>
+                                    @endforeach
+                                @else
+                                    @foreach($capstone->groupRoom?->members ?? [] as $member)
+                                        <li>
+                                            <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
+                                            {{ $member->user->first_name }}
+                                            {{ $member->user->last_name }}
+                                        </li>
+                                    @endforeach
+                                @endif
                             </ul>
                         </div>
 
@@ -136,7 +161,7 @@
                         </div>
 
                         <div class="lt-repo-card__foot">
-                            <a href="{{ route('repository.show', $capstone->id) }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
+                            <a href="{{ $showRoute }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
                         </div>
 
                     </article>

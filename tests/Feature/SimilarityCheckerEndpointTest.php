@@ -63,7 +63,7 @@ class SimilarityCheckerEndpointTest extends TestCase
             'database.connections.mysql.driver' => 'mysql',
             'database.connections.mysql.host' => '127.0.0.1',
             'database.connections.mysql.port' => 3306,
-            'database.connections.mysql.database' => 'logitrack',
+            'database.connections.mysql.database' => 'logitrack_db',
             'database.connections.mysql.username' => 'root',
             'database.connections.mysql.password' => '',
         ]);
