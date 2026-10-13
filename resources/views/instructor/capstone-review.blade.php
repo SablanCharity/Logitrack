@@ -22,7 +22,7 @@
 
     <header class="lt-nav lt-nav--landing">
         <div class="lt-nav__inner">
-            <a href="{{ route('instructor.classrooms') }}" class="lt-brand">
+            <a href="{{ route('dashboard') }}" class="lt-brand">
                 <span class="lt-brand__mark">L</span>
                 LogiTrack
             </a>
@@ -33,11 +33,10 @@
 
             <div class="lt-nav__menu" id="nav-menu">
                 <nav class="lt-nav__links lt-nav__links--app" aria-label="Instructor">
-                    <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*') ? 'is-active' : '' }}">Classrooms</a>
-                    <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*') ? 'is-active' : '' }}">Capstone Submissions</a>
-                    @if(Route::has('instructor.students'))
-                        <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}">Pending Students</a>
-                    @endif
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                    <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*', 'instructor.classroom.*') ? 'is-active' : '' }}">Classroom</a>
+                    <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*', 'instructor.capstone.*') ? 'is-active' : '' }}">Capstone Submissions</a>
+                    <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}">Pending Students</a>
                 </nav>
 
                 <div class="lt-nav__actions">
@@ -65,7 +64,8 @@
             <div class="lt-page-head__row">
                 <div>
                     <span class="lt-eyebrow">Review</span>
-                    <h1>Review Capstone Metadata</h1>
+                    <h1>{{ $capstone->title }}</h1>
+                    <p class="lt-page-head__sub">Review the submitted study details, then verify the metadata or return it for correction.</p>
                 </div>
 
                 <span class="lt-badge {{ $badge }}">
@@ -189,12 +189,13 @@
                         </div>
 
                         <form method="POST"
-                            action="{{ route('instructor.capstones.verify', $capstone->id) }}"
+                            action="{{ route('instructor.capstone.verify', $capstone->id) }}"
                             data-confirm="This will mark the metadata as verified and send it on for admin approval."
                             data-confirm-title="Verify metadata?"
                             data-confirm-button="Verify"
                             data-submit-guard>
                             @csrf
+                            @method('PATCH')
 
                             <button type="submit" class="lt-btn lt-btn--green" style="width:100%;" data-loading-text="Verifying...">
                                 Verify Metadata
@@ -204,7 +205,7 @@
                         <hr class="lt-divider">
 
                         <form method="POST"
-                            action="{{ route('instructor.capstones.return', $capstone->id) }}"
+                            action="{{ route('instructor.capstone.return', $capstone->id) }}"
                             class="lt-form"
                             data-confirm="The student will see your reason and will need to correct and resubmit."
                             data-confirm-title="Return for correction?"
@@ -213,6 +214,7 @@
                             data-submit-guard>
 
                             @csrf
+                            @method('PATCH')
 
                             <h3 class="lt-card__title" style="margin:0;">Return for Correction</h3>
 

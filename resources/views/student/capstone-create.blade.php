@@ -9,13 +9,36 @@
 </head>
 <body class="lt-body">
 
-    <header class="lt-nav">
+    <header class="lt-nav lt-nav--landing">
         <div class="lt-nav__inner">
-            <a href="{{ route('student.group-room.show', $groupRoom->id) }}" class="lt-brand">
+            <a href="{{ route('dashboard') }}" class="lt-brand">
                 <span class="lt-brand__mark">L</span>
                 LogiTrack
             </a>
-            <span class="lt-nav__tag">Student</span>
+
+            <button type="button" class="lt-nav__toggle" data-nav-toggle="#nav-menu" aria-label="Toggle menu" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+
+            <div class="lt-nav__menu" id="nav-menu">
+                <nav class="lt-nav__links lt-nav__links--app" aria-label="Student">
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                    <a href="{{ route('student.group-rooms.index', $groupRoom->classroom_id) }}" class="lt-nav__link is-active" aria-current="page">Classroom</a>
+                    <a href="{{ route('similarity.index') }}" class="lt-nav__link {{ request()->routeIs('similarity.*') ? 'is-active' : '' }}">Similarity Checker</a>
+                </nav>
+
+                <div class="lt-nav__actions">
+                    <a href="{{ route('profile.edit') }}" class="lt-user-chip lt-user-chip--link" aria-label="Edit profile">
+                        <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
+                        {{ auth()->user()->first_name }}
+                    </a>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </header>
 

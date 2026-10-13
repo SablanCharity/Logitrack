@@ -12,7 +12,7 @@
 
     <header class="lt-nav lt-nav--landing">
         <div class="lt-nav__inner">
-            <a href="{{ route('instructor.classrooms') }}" class="lt-brand">
+            <a href="{{ route('dashboard') }}" class="lt-brand">
                 <span class="lt-brand__mark">L</span>
                 LogiTrack
             </a>
@@ -23,11 +23,10 @@
 
             <div class="lt-nav__menu" id="nav-menu">
                 <nav class="lt-nav__links lt-nav__links--app" aria-label="Instructor">
-                    <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*') ? 'is-active' : '' }}">Classrooms</a>
-                    <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*') ? 'is-active' : '' }}">Capstone Submissions</a>
-                    @if(Route::has('instructor.students'))
-                        <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}">Pending Students</a>
-                    @endif
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                    <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*', 'instructor.classroom.*') ? 'is-active' : '' }}">Classroom</a>
+                    <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*', 'instructor.capstone.*') ? 'is-active' : '' }}">Capstone Submissions</a>
+                    <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}">Pending Students</a>
                 </nav>
 
                 <div class="lt-nav__actions">
@@ -101,6 +100,7 @@
                             <th>Submitted By</th>
                             <th>Submitted At</th>
                             <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
 
@@ -118,7 +118,7 @@
 
                             <tr>
                                 <td style="min-width: 220px;">
-                                    <a href="{{ route('instructor.capstones.review', $capstone->id) }}" class="lt-table__title">
+                                    <a href="{{ route('instructor.capstone.review', $capstone->id) }}" class="lt-table__title">
                                         {{ $capstone->title }}
                                     </a>
                                 </td>
@@ -144,6 +144,12 @@
                                     <span class="lt-badge {{ $badge }}">
                                         {{ ucfirst(str_replace('_', ' ', $capstone->status)) }}
                                     </span>
+                                </td>
+
+                                <td>
+                                    <a href="{{ route('instructor.capstone.review', $capstone->id) }}" class="lt-btn lt-btn--primary lt-btn--sm">
+                                        Review Study
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach

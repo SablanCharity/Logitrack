@@ -628,6 +628,8 @@ body.lt-body {
         var(--bone);
 }
 
+.lt-center-wrap--nav { min-height: calc(100vh - 63px); }
+
 .lt-pending {
     width: 100%;
     max-width: 520px;
@@ -974,6 +976,9 @@ html { scroll-behavior: smooth; }
 }
 
 .lt-user-chip .lt-avatar { background: var(--gold); color: var(--navy); width: 32px; height: 32px; font-size: .85rem; }
+.lt-user-chip--link { color: var(--bone) !important; text-decoration: none; border-radius: 8px; padding: 5px 8px; transition: background .15s; }
+.lt-user-chip--link:hover,
+.lt-user-chip--link:focus-visible { background: rgba(255, 255, 255, .08); }
 
 .lt-welcome {
     background:
@@ -1009,6 +1014,7 @@ html { scroll-behavior: smooth; }
 .lt-pill--wait { background: #fdf0c7; color: #7a5a00; }
 
 .lt-dash-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; align-items: start; }
+.lt-dash-grid--single { grid-template-columns: minmax(0, 1fr); }
 .lt-dash-grid .lt-card + .lt-card { margin-top: 0; }
 
 .lt-details { margin: 0; display: grid; gap: 0; }
@@ -1041,7 +1047,7 @@ html { scroll-behavior: smooth; }
     .lt-section { padding: 60px 20px; }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 980px) {
     .lt-nav__toggle { display: grid; }
 
     .lt-nav__menu {

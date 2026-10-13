@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\CapstoneProjectController;
 use App\Http\Controllers\ClassroomController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupRoomController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\ProfileController;
@@ -43,9 +42,7 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [RepositoryController::class, 'index'])->name('dashboard');
 
 
     /*
@@ -252,7 +249,21 @@ Route::middleware(['auth'])->group(function () {
         [SimilarityController::class, 'check']
     )->name('similarity.check');
 
+    // Student: add a member to a group room (leader only)
+Route::post(
+    '/student/group-rooms/{groupRoomId}/members',
+    [GroupRoomController::class, 'addMember']
+)->name('student.group-room.add-member');
+
+// Instructor: approve a pending student
+Route::post(
+    '/instructor/students/{userId}/approve',
+    [InstructorController::class, 'approveStudent']
+)->name('instructor.students.approve');
+
 });
+
+
 
 
 /*

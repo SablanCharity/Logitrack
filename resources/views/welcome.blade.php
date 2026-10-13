@@ -33,8 +33,8 @@
                     @if (Route::has('login'))
                         <div class="lt-nav__actions">
                             @auth
-                                <a href="{{ url('/dashboard') }}" class="lt-btn lt-btn--gold lt-btn--sm">
-                                    Dashboard
+                                <a href="{{ route('login') }}" class="lt-btn lt-btn--gold lt-btn--sm">
+                                    Log in
                                 </a>
                             @else
                                 <a href="{{ route('login') }}" class="lt-btn lt-btn--outline-light lt-btn--sm">
@@ -73,8 +73,8 @@
                         <div class="lt-hero__cta">
                             @if (Route::has('login'))
                                 @auth
-                                    <a href="{{ url('/dashboard') }}" class="lt-btn lt-btn--gold lt-btn--lg">
-                                        Go to Dashboard
+                                    <a href="{{ route('login') }}" class="lt-btn lt-btn--gold lt-btn--lg">
+                                        Log in
                                     </a>
                                 @else
                                     @if (Route::has('register'))
