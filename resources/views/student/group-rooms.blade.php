@@ -1,67 +1,114 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{{ $classroom->classroom_name }} - Group Rooms</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $classroom->classroom_name }} - Group Rooms · LogiTrack</title>
+    @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
+    
 </head>
 
-<body>
+<body class="lt-body">
 
-    <h1>{{ $classroom->classroom_name }}</h1>
+    <header class="lt-nav">
+        <div class="lt-nav__inner">
+            <a href="{{ route('student.group-rooms', $classroom->id) }}" class="lt-brand">
+                <span class="lt-brand__mark">L</span>
+                LogiTrack
+            </a>
+            <span class="lt-nav__tag">Student</span>
+        </div>
+    </header>
 
-    <h2>Group Rooms</h2>
+    <main class="lt-container lt-animate">
 
-    @if(session('success'))
-        <p style="color: green;">
-            {{ session('success') }}
-        </p>
-    @endif
+        <div class="lt-page-head">
+            <div class="lt-page-head__row">
+                <div>
+                    <span class="lt-eyebrow">{{ $classroom->classroom_name }}</span>
+                    <h1>Group Rooms</h1>
+                    <p class="lt-page-head__sub">Open your group to manage members and submit your capstone.</p>
+                </div>
 
-    <p>
-        <a href="{{ route('student.group-rooms.create', $classroom->id) }}">
-            + Create Group Room
-        </a>
-    </p>
+                <a href="{{ route('student.group-rooms.create', $classroom->id) }}" class="lt-btn lt-btn--gold">
+                    + Create Group Room
+                </a>
+            </div>
+        </div>
 
-    @if($classroom->groupRooms->count() > 0)
+        @if(session('success'))
+            <div class="lt-alert lt-alert--success" role="status" data-autohide="6000">
+                <span class="lt-alert__icon">✓</span>
+                <div>{{ session('success') }}</div>
+            </div>
+        @endif
 
-        <table border="1" cellpadding="10">
+        @if($classroom->groupRooms->count() > 0)
 
-            <thead>
-                <tr>
-                    <th>Group Name</th>
-                    <th>Created</th>
-                </tr>
-            </thead>
+            <div class="lt-card__head">
+                <input
+                    type="search"
+                    class="lt-input"
+                    style="max-width: 320px;"
+                    placeholder="Search group name..."
+                    aria-label="Search group rooms"
+                    data-table-filter="#group-table"
+                    data-filter-empty="#group-filter-empty"
+                >
+            </div>
 
-            <tbody>
+            <div class="lt-table-wrap">
 
-                @foreach($classroom->groupRooms as $groupRoom)
+                <table class="lt-table" id="group-table">
 
-                    <tr>
-                        <td>
-                            <a href="{{ route('student.group-room.show', $groupRoom->id) }}">
-                                {{ $groupRoom->group_name }}
-                            </a>
-                        </td>
+                    <thead>
+                        <tr>
+                            <th>Group Name</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
 
-                        <td>
-                            {{ $groupRoom->created_at->format('M d, Y') }}
-                        </td>
-                    </tr>
+                    <tbody>
 
-                @endforeach
+                        @foreach($classroom->groupRooms as $groupRoom)
 
-            </tbody>
+                            <tr>
+                                <td>
+                                    <a href="{{ route('student.group-room.show', $groupRoom->id) }}" class="lt-table__link">
+                                        {{ $groupRoom->group_name }}
+                                        <span aria-hidden="true">→</span>
+                                    </a>
+                                </td>
 
-        </table>
+                                <td class="lt-muted">
+                                    {{ $groupRoom->created_at->format('M d, Y') }}
+                                </td>
+                            </tr>
 
-    @else
+                        @endforeach
 
-        <p>
-            No group rooms have been created yet.
-        </p>
+                    </tbody>
 
-    @endif
+                </table>
+
+            </div>
+
+            <div id="group-filter-empty" class="lt-empty lt-hidden lt-mt">
+                <div class="lt-empty__title">No matching group</div>
+                <p>Try a different name.</p>
+            </div>
+
+        @else
+
+            <div class="lt-empty">
+                <div class="lt-empty__icon">+</div>
+                <div class="lt-empty__title">No group rooms yet</div>
+                <p>No group rooms have been created yet.</p>
+            </div>
+
+        @endif
+
+    </main>
 
 </body>
 </html>

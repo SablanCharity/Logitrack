@@ -1,156 +1,214 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Edit Capstone</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit Capstone · LogiTrack</title>
+    @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
+    
 </head>
-<body>
+<body class="lt-body">
 
-    <h1>Edit Capstone</h1>
-
-    <p>
-        Classroom:
-        <strong>{{ $groupRoom->classroom->classroom_name }}</strong>
-    </p>
-
-    <p>
-        Group:
-        <strong>{{ $groupRoom->group_name }}</strong>
-    </p>
-
-    <hr>
-
-    @if($errors->any())
-        <div>
-            <strong>Please fix the following:</strong>
-
-            <ul>
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+    <header class="lt-nav">
+        <div class="lt-nav__inner">
+            <a href="{{ route('student.group-room.show', $groupRoom->id) }}" class="lt-brand">
+                <span class="lt-brand__mark">L</span>
+                LogiTrack
+            </a>
+            <span class="lt-nav__tag">Student</span>
         </div>
-    @endif
+    </header>
 
-    @if(session('error'))
-        <p style="color: red;">
-            {{ session('error') }}
-        </p>
-    @endif
+    <main class="lt-container lt-container--narrow lt-animate">
 
-    <h2>Correction Required</h2>
+        <a href="{{ route('student.group-room.show', $groupRoom->id) }}" class="lt-back">← Back to group room</a>
 
-    @if($groupRoom->capstoneProject->return_reason)
-        <p>
-            <strong>Reason for Return:</strong>
-        </p>
-
-        <p>
-            {{ $groupRoom->capstoneProject->return_reason }}
-        </p>
-    @endif
-
-    <hr>
-
-    <h2>Capstone Information</h2>
-
-    <form method="POST"
-          action="{{ route('student.capstone.update', $groupRoom->id) }}">
-
-        @csrf
-        @method('PUT')
-
-        <div>
-            <label for="title">Capstone Title</label><br>
-
-            <input
-                type="text"
-                id="title"
-                name="title"
-                value="{{ old('title', $groupRoom->capstoneProject->title) }}"
-                maxlength="255"
-                required
-            >
+        <div class="lt-page-head">
+            <span class="lt-eyebrow">Capstone Resubmission</span>
+            <h1>Edit Capstone</h1>
+            <p class="lt-page-head__sub">Update the details below based on the feedback you received, then resubmit for review.</p>
         </div>
 
-        <br>
-
-        <div>
-            <label for="abstract">Abstract</label><br>
-
-            <textarea
-                id="abstract"
-                name="abstract"
-                rows="10"
-                required
-            >{{ old('abstract', $groupRoom->capstoneProject->abstract) }}</textarea>
+        <div class="lt-chips">
+            <div class="lt-chip">
+                <span class="lt-chip__label">Classroom</span>
+                <span class="lt-chip__value">{{ $groupRoom->classroom->classroom_name }}</span>
+            </div>
+            <div class="lt-chip">
+                <span class="lt-chip__label">Group</span>
+                <span class="lt-chip__value">{{ $groupRoom->group_name }}</span>
+            </div>
         </div>
 
-        <br>
+        @if($errors->any())
+            <div class="lt-alert lt-alert--error" role="alert">
+                <span class="lt-alert__icon">!</span>
+                <div>
+                    <strong>Please fix the following:</strong>
 
-        <div>
-            <label for="publication_date">
-                Publication Date
-            </label>
-            <br>
+                    <ul>
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
 
-            <input
-                type="date"
-                id="publication_date"
-                name="publication_date"
-                value="{{ old(
-                    'publication_date',
-                    optional($groupRoom->capstoneProject->publication_date)->format('Y-m-d')
-                ) }}"
-                required
-            >
-        </div>
+        @if(session('error'))
+            <div class="lt-alert lt-alert--error" role="alert">
+                <span class="lt-alert__icon">!</span>
+                <div>{{ session('error') }}</div>
+            </div>
+        @endif
 
-        <br>
+        <section class="lt-card">
+            <div class="lt-card__head">
+                <h2 class="lt-card__title">Correction Required</h2>
+                <span class="lt-badge lt-badge--returned">Returned</span>
+            </div>
 
-        <h3>Automatically Retrieved Information</h3>
+            @if($groupRoom->capstoneProject->return_reason)
+                <div class="lt-callout">
+                    <div class="lt-callout__label">Reason for Return</div>
+                    <p class="lt-callout__text">{{ $groupRoom->capstoneProject->return_reason }}</p>
+                </div>
+            @else
+                <p class="lt-muted">Please review your capstone details and resubmit.</p>
+            @endif
+        </section>
 
-        <p><strong>Authors:</strong></p>
+        <form method="POST"
+              action="{{ route('student.capstone.update', $groupRoom->id) }}"
+              class="lt-form lt-mt-lg"
+              data-submit-guard
+              data-warn-unsaved>
 
-        <ul>
-            @foreach($groupRoom->members as $member)
-                <li>
-                    {{ $member->user->first_name }}
-                    {{ $member->user->last_name }}
+            @csrf
+            @method('PUT')
 
-                    @if($member->is_leader)
-                        <strong>(Leader)</strong>
-                    @endif
-                </li>
-            @endforeach
-        </ul>
+            <section class="lt-card">
+                <h2 class="lt-card__title">Capstone Information</h2>
+                <p class="lt-card__desc">Fix the items mentioned above and check the rest before resubmitting.</p>
 
-        <p>
-            <strong>Program:</strong>
-            {{ auth()->user()->program }}
-        </p>
+                <div class="lt-form">
 
-        <p>
-            <strong>Year & Section:</strong>
-            {{ auth()->user()->year_section }}
-        </p>
+                    <div class="lt-field">
+                        <label for="title" class="lt-label">Capstone Title</label>
 
-        <p>
-            <strong>Instructor / Adviser:</strong>
-            {{ $groupRoom->classroom->instructor->first_name }}
-            {{ $groupRoom->classroom->instructor->last_name }}
-        </p>
+                        <input
+                            type="text"
+                            id="title"
+                            name="title"
+                            class="lt-input"
+                            value="{{ old('title', $groupRoom->capstoneProject->title) }}"
+                            maxlength="255"
+                            data-counter="#title-count"
+                            required
+                        >
 
-        <br>
+                        <div class="lt-counter">
+                            <span class="lt-hint">Use the full official title.</span>
+                            <span id="title-count" class="lt-counter__num">0 / 255</span>
+                        </div>
+                    </div>
 
-        <button type="submit">
-            Resubmit Capstone
-        </button>
+                    <div class="lt-field">
+                        <label for="abstract" class="lt-label">Abstract</label>
 
-        <a href="{{ route('student.group-room.show', $groupRoom->id) }}">
-            Cancel
-        </a>
+                        <textarea
+                            id="abstract"
+                            name="abstract"
+                            class="lt-textarea"
+                            rows="10"
+                            data-counter="#abstract-count"
+                            required
+                        >{{ old('abstract', $groupRoom->capstoneProject->abstract) }}</textarea>
 
-    </form>
+                        <div class="lt-counter">
+                            <span class="lt-hint">Paste or type the abstract from your study.</span>
+                            <span id="abstract-count" class="lt-counter__num">0</span>
+                        </div>
+                    </div>
+
+                    <div class="lt-field">
+                        <label for="publication_date" class="lt-label">
+                            Publication Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="publication_date"
+                            name="publication_date"
+                            class="lt-input"
+                            value="{{ old(
+                                'publication_date',
+                                optional($groupRoom->capstoneProject->publication_date)->format('Y-m-d')
+                            ) }}"
+                            required
+                        >
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="lt-auto">
+                <div class="lt-auto__title">Automatically Retrieved Information</div>
+                <p class="lt-auto__desc">These details come from your account and classroom, so you don't need to enter them.</p>
+
+                <div class="lt-auto__grid">
+
+                    <div class="lt-auto__item lt-auto__item--full">
+                        <div class="lt-auto__key">Authors</div>
+                        <ul class="lt-authors">
+                            @foreach($groupRoom->members as $member)
+                                <li>
+                                    <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
+                                    {{ $member->user->first_name }}
+                                    {{ $member->user->last_name }}
+
+                                    @if($member->is_leader)
+                                        <strong>(Leader)</strong>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+
+                    <div class="lt-auto__item">
+                        <div class="lt-auto__key">Program</div>
+                        <div class="lt-auto__val">{{ auth()->user()->program }}</div>
+                    </div>
+
+                    <div class="lt-auto__item">
+                        <div class="lt-auto__key">Year &amp; Section</div>
+                        <div class="lt-auto__val">{{ auth()->user()->year_section }}</div>
+                    </div>
+
+                    <div class="lt-auto__item">
+                        <div class="lt-auto__key">Instructor / Adviser</div>
+                        <div class="lt-auto__val">
+                            {{ $groupRoom->classroom->instructor->first_name }}
+                            {{ $groupRoom->classroom->instructor->last_name }}
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <div class="lt-form__actions">
+                <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="Resubmitting...">
+                    Resubmit Capstone
+                </button>
+
+                <a href="{{ route('student.group-room.show', $groupRoom->id) }}" class="lt-btn lt-btn--ghost">
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </main>
 
 </body>
 </html>

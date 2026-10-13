@@ -1,135 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>LogiTrack Repository</title>
+    @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
 </head>
-<body>
 
-    <h1>LogiTrack Repository</h1>
+<body class="lt-body">
 
-    <p>
-        Browse approved capstone projects in the repository.
-    </p>
-
-    <hr>
-
-    <form method="GET" action="{{ route('repository.index') }}">
-
-        <label for="search">
-            Search Capstone Projects
-        </label>
-
-        <br>
-
-        <input
-            type="text"
-            id="search"
-            name="search"
-            value="{{ $search }}"
-            placeholder="Search by title, abstract, program..."
-        >
-
-        <button type="submit">
-            Search
-        </button>
-
-        @if($search)
-            <a href="{{ route('repository.index') }}">
-                Clear
+    <header class="lt-nav lt-nav--landing">
+        <div class="lt-nav__inner">
+            <a href="{{ route('dashboard') }}" class="lt-brand">
+                <span class="lt-brand__mark">L</span>
+                LogiTrack
             </a>
-        @endif
 
-    </form>
+            <button type="button" class="lt-nav__toggle" data-nav-toggle="#nav-menu" aria-label="Toggle menu" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
 
-    <hr>
+            <div class="lt-nav__menu" id="nav-menu">
+                <nav class="lt-nav__links lt-nav__links--app" aria-label="Main">
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link">Dashboard</a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link is-active">Repository</a>
+                </nav>
 
-    @if($capstones->count() > 0)
+                <div class="lt-nav__actions">
+                    <span class="lt-user-chip">
+                        <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
+                        {{ auth()->user()->first_name }}
+                    </span>
 
-        @foreach($capstones as $capstone)
-
-            <div style="margin-bottom: 30px;">
-
-                <h2>
-                    {{ $capstone->title }}
-                </h2>
-
-                <p>
-                    <strong>Program:</strong>
-                    {{ $capstone->program }}
-                </p>
-
-                <p>
-                    <strong>Year & Section:</strong>
-                    {{ $capstone->year_section ?? 'N/A' }}
-                </p>
-
-                <p>
-                    <strong>Authors:</strong>
-                </p>
-
-                <ul>
-                    @foreach($capstone->groupRoom->members as $member)
-                        <li>
-                            {{ $member->user->first_name }}
-                            {{ $member->user->last_name }}
-                        </li>
-                    @endforeach
-                </ul>
-
-                <p>
-                    <strong>Instructor / Adviser:</strong>
-                    {{ $capstone->groupRoom->classroom->instructor->first_name }}
-                    {{ $capstone->groupRoom->classroom->instructor->last_name }}
-                </p>
-
-                <p>
-                    <strong>Publication Date:</strong>
-                    {{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}
-                </p>
-
-                <p>
-                    <strong>Abstract:</strong>
-                </p>
-
-                <p>
-                    {{ \Illuminate\Support\Str::limit($capstone->abstract, 250) }}
-                </p>
-
-                <p>
-                    <a href="{{ route('repository.show', $capstone->id) }}">
-                        View Details
-                    </a>
-                </p>
-
-                <p>
-                    <strong>Repository Status:</strong>
-                    Approved
-                </p>
-
-                <hr>
-
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
+                    </form>
+                </div>
             </div>
+        </div>
+    </header>
 
-        @endforeach
+    <main class="lt-container lt-animate">
 
-        <div>
-            {{ $capstones->withQueryString()->links() }}
+        <div class="lt-page-head">
+            <span class="lt-eyebrow">Repository</span>
+            <h1>LogiTrack Repository</h1>
+            <p class="lt-page-head__sub">Browse approved capstone projects in the repository.</p>
         </div>
 
-    @else
+        <form method="GET" action="{{ route('repository.index') }}" class="lt-repo-search" data-submit-guard>
+            <label for="search" class="lt-label">Search Capstone Projects</label>
 
-        <p>
-            No approved capstone projects are currently available
-            in the repository.
+            <div class="lt-repo-search__row">
+                <div class="lt-repo-search__box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        class="lt-input"
+                        value="{{ $search }}"
+                        placeholder="Search by title, abstract, program..."
+                    >
+                </div>
+
+                <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="Searching...">Search</button>
+
+                @if($search)
+                    <a href="{{ route('repository.index') }}" class="lt-btn lt-btn--ghost">Clear</a>
+                @endif
+            </div>
+        </form>
+
+        @if($capstones->count() > 0)
+
+            <div class="lt-repo-list">
+                @foreach($capstones as $capstone)
+
+                    <article class="lt-card lt-repo-card">
+
+                        <div class="lt-repo-card__head">
+                            <h2 class="lt-repo-card__title">
+                                <a href="{{ route('repository.show', $capstone->id) }}">{{ $capstone->title }}</a>
+                            </h2>
+                            <span class="lt-badge lt-badge--approved" title="Repository Status">Approved</span>
+                        </div>
+
+                        <dl class="lt-repo-meta">
+                            <div>
+                                <dt>Program</dt>
+                                <dd>{{ $capstone->program }}</dd>
+                            </div>
+                            <div>
+                                <dt>Year &amp; Section</dt>
+                                <dd>{{ $capstone->year_section ?? 'N/A' }}</dd>
+                            </div>
+                            <div>
+                                <dt>Instructor / Adviser</dt>
+                                <dd>
+                                    {{ $capstone->groupRoom->classroom->instructor->first_name }}
+                                    {{ $capstone->groupRoom->classroom->instructor->last_name }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Publication Date</dt>
+                                <dd>{{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}</dd>
+                            </div>
+                        </dl>
+
+                        <div class="lt-repo-block">
+                            <div class="lt-doc__label">Authors</div>
+                            <ul class="lt-authors">
+                                @foreach($capstone->groupRoom->members as $member)
+                                    <li>
+                                        <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
+                                        {{ $member->user->first_name }}
+                                        {{ $member->user->last_name }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+
+                        <div class="lt-repo-block">
+                            <div class="lt-doc__label">Abstract</div>
+                            <p class="lt-repo-abstract">{{ \Illuminate\Support\Str::limit($capstone->abstract, 250) }}</p>
+                        </div>
+
+                        <div class="lt-repo-card__foot">
+                            <a href="{{ route('repository.show', $capstone->id) }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
+                        </div>
+
+                    </article>
+
+                @endforeach
+            </div>
+
+            <div class="lt-pager">
+                {{ $capstones->withQueryString()->links() }}
+            </div>
+
+        @else
+
+            <div class="lt-empty">
+                <div class="lt-empty__icon">&#9776;</div>
+                <div class="lt-empty__title">Nothing to show</div>
+                <p>
+                    No approved capstone projects are currently available
+                    in the repository.
+                </p>
+            </div>
+
+        @endif
+
+        <p class="lt-mt-lg">
+            <a href="{{ route('dashboard') }}" class="lt-back">← Back to Dashboard</a>
         </p>
 
-    @endif
-
-    <p>
-        <a href="{{ route('dashboard') }}">
-            Back to Dashboard
-        </a>
-    </p>
+    </main>
 
 </body>
 </html>

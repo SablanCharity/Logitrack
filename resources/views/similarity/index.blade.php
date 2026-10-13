@@ -1,448 +1,294 @@
-<x-app-layout>
-    <div class="min-h-screen bg-slate-50">
-        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ __('Similarity Checker') }} · LogiTrack</title>
+    @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
+</head>
 
-            {{-- Page Header --}}
-            <div class="mb-8">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <div class="mb-2 flex items-center gap-2 text-sm font-medium text-indigo-600">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a3 3 0 006 0M9 5a3 3 0 016 0"/>
-                            </svg>
-                            Research Similarity Analysis
-                        </div>
+<body class="lt-body">
 
-                        <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                            Similarity Checker
-                        </h1>
+    <header class="lt-nav lt-nav--landing">
+        <div class="lt-nav__inner">
+            <a href="{{ route('dashboard') }}" class="lt-brand">
+                <span class="lt-brand__mark">L</span>
+                LogiTrack
+            </a>
 
-                        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
-                            Compare a proposed capstone study with approved studies in the repository.
-                            The system analyzes both textual overlap and semantic similarity to identify
-                            related research.
-                        </p>
-                    </div>
+            <button type="button" class="lt-nav__toggle" data-nav-toggle="#nav-menu" aria-label="Toggle menu" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
 
-                    <a
-                        href="{{ route('repository.index') }}"
-                        class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300
-                               bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm
-                               transition hover:bg-slate-50"
-                    >
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round"
-                                  stroke-linejoin="round"
-                                  stroke-width="2"
-                                  d="M4 6h16M4 12h16M4 18h16"/>
-                        </svg>
-                        View Repository
-                    </a>
+            <div class="lt-nav__menu" id="nav-menu">
+                <nav class="lt-nav__links lt-nav__links--app" aria-label="Main">
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link">Dashboard</a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link">Repository</a>
+                    <a href="{{ route('similarity.index') }}" class="lt-nav__link is-active">Similarity Checker</a>
+                </nav>
+
+                <div class="lt-nav__actions">
+                    <span class="lt-user-chip">
+                        <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
+                        {{ auth()->user()->first_name }}
+                    </span>
+
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
+                    </form>
                 </div>
             </div>
+        </div>
+    </header>
 
-            {{-- How It Works --}}
-            <div class="mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div class="border-b border-slate-200 px-6 py-5">
-                    <h2 class="text-lg font-semibold text-slate-900">
-                        How the analysis works
-                    </h2>
+    <main class="lt-container lt-animate lt-sim">
 
-                    <p class="mt-1 text-sm text-slate-500">
-                        Your proposed study passes through several analysis stages before results are ranked.
+        {{-- Page Header --}}
+        <div class="lt-page-head">
+            <div class="lt-page-head__row">
+                <div>
+                    <span class="lt-eyebrow">Research Similarity Analysis</span>
+                    <h1>Similarity Checker</h1>
+                    <p class="lt-page-head__sub">
+                        Compare a proposed capstone study with approved studies in the repository.
+                        The system analyzes both textual overlap and semantic similarity to identify
+                        related research.
                     </p>
                 </div>
 
-                <div class="grid gap-0 md:grid-cols-5">
-                    @php
-                        $steps = [
-                            [
-                                'number' => '01',
-                                'title' => 'Preprocess',
-                                'description' => 'Normalize and clean the research text.',
-                            ],
-                            [
-                                'number' => '02',
-                                'title' => 'TF-IDF',
-                                'description' => 'Measure important shared terms.',
-                            ],
-                            [
-                                'number' => '03',
-                                'title' => 'Embeddings',
-                                'description' => 'Compare the meaning of the studies.',
-                            ],
-                            [
-                                'number' => '04',
-                                'title' => 'Hybrid Score',
-                                'description' => 'Combine lexical and semantic evidence.',
-                            ],
-                            [
-                                'number' => '05',
-                                'title' => 'DSS Guidance',
-                                'description' => 'Highlight areas that may need review.',
-                            ],
-                        ];
-                    @endphp
+                <a href="{{ route('repository.index') }}" class="lt-btn lt-btn--ghost">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    View Repository
+                </a>
+            </div>
+        </div>
 
-                    @foreach ($steps as $step)
-                        <div class="relative border-b border-slate-200 p-5 last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
-                            <div class="mb-3 flex items-center gap-3">
-                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">
-                                    {{ $step['number'] }}
-                                </span>
+        {{-- How It Works --}}
+        @php
+            $steps = [
+                [
+                    'number' => '01',
+                    'title' => 'Preprocess',
+                    'description' => 'Normalize and clean the research text.',
+                ],
+                [
+                    'number' => '02',
+                    'title' => 'TF-IDF',
+                    'description' => 'Measure important shared terms.',
+                ],
+                [
+                    'number' => '03',
+                    'title' => 'Embeddings',
+                    'description' => 'Compare the meaning of the studies.',
+                ],
+                [
+                    'number' => '04',
+                    'title' => 'Hybrid Score',
+                    'description' => 'Combine lexical and semantic evidence.',
+                ],
+                [
+                    'number' => '05',
+                    'title' => 'DSS Guidance',
+                    'description' => 'Highlight areas that may need review.',
+                ],
+            ];
+        @endphp
 
-                                <h3 class="text-sm font-semibold text-slate-900">
-                                    {{ $step['title'] }}
-                                </h3>
-                            </div>
-
-                            <p class="text-xs leading-5 text-slate-500">
-                                {{ $step['description'] }}
-                            </p>
-                        </div>
-                    @endforeach
-                </div>
+        <section class="lt-card lt-sim-how">
+            <div class="lt-sim-how__head">
+                <h2 class="lt-card__title">How the analysis works</h2>
+                <p>Your proposed study passes through several analysis stages before results are ranked.</p>
             </div>
 
-            {{-- Main Form --}}
-            <div class="grid gap-8 lg:grid-cols-3">
-
-                {{-- Form --}}
-                <div class="lg:col-span-2">
-                    <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-                        <div class="border-b border-slate-200 px-6 py-5 sm:px-8">
-                            <div class="flex items-start gap-4">
-                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="2"
-                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-8.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 7.5-7.5z"/>
-                                    </svg>
-                                </div>
-
-                                <div>
-                                    <h2 class="text-xl font-semibold text-slate-900">
-                                        Proposed Study
-                                    </h2>
-
-                                    <p class="mt-1 text-sm text-slate-500">
-                                        Enter the title and abstract you want to evaluate.
-                                    </p>
-                                </div>
-                            </div>
+            <ol class="lt-sim-steps">
+                @foreach ($steps as $step)
+                    <li class="lt-sim-step">
+                        <div class="lt-sim-step__top">
+                            <span class="lt-sim-step__num">{{ $step['number'] }}</span>
+                            <h3>{{ $step['title'] }}</h3>
                         </div>
+                        <p>{{ $step['description'] }}</p>
+                    </li>
+                @endforeach
+            </ol>
+        </section>
 
-                        <form
-                            method="POST"
-                            action="{{ route('similarity.check') }}"
-                            class="space-y-6 px-6 py-6 sm:px-8 sm:py-8"
-                        >
-                            @csrf
+        <div class="lt-sim-layout">
 
-                            {{-- Validation Summary --}}
-                            @if ($errors->any())
-                                <div class="rounded-xl border border-red-200 bg-red-50 p-4">
-                                    <div class="flex gap-3">
-                                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-600"
-                                             fill="none"
-                                             stroke="currentColor"
-                                             viewBox="0 0 24 24">
-                                            <path stroke-linecap="round"
-                                                  stroke-linejoin="round"
-                                                  stroke-width="2"
-                                                  d="M12 8v4m0 4h.01M10.29 3.86l-7.82 13a2 2 0 001.71 3.14h15.64a2 2 0 001.71-3.14l-7.82-13a2 2 0 00-3.42 0z"/>
-                                        </svg>
+            {{-- Form --}}
+            <section class="lt-card">
 
-                                        <div>
-                                            <h3 class="text-sm font-semibold text-red-800">
-                                                Please check the following:
-                                            </h3>
-
-                                            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700">
-                                                @foreach ($errors->all() as $error)
-                                                    <li>{{ $error }}</li>
-                                                @endforeach
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-
-                            {{-- Title --}}
-                            <div>
-                                <label
-                                    for="title"
-                                    class="mb-2 block text-sm font-semibold text-slate-700"
-                                >
-                                    Proposed Study Title
-                                </label>
-
-                                <input
-                                    id="title"
-                                    name="title"
-                                    type="text"
-                                    value="{{ old('title') }}"
-                                    maxlength="255"
-                                    required
-                                    placeholder="e.g. Student Attendance Monitoring System"
-                                    class="block w-full rounded-xl border-slate-300 bg-white px-4 py-3 text-sm
-                                           text-slate-900 shadow-sm outline-none transition
-                                           placeholder:text-slate-400
-                                           focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                                >
-
-                                @error('title')
-                                    <p class="mt-2 text-sm text-red-600">
-                                        {{ $message }}
-                                    </p>
-                                @enderror
-                            </div>
-
-                            {{-- Abstract --}}
-                            <div>
-                                <div class="mb-2 flex items-center justify-between gap-4">
-                                    <label
-                                        for="abstract"
-                                        class="block text-sm font-semibold text-slate-700"
-                                    >
-                                        Proposed Study Abstract
-                                    </label>
-
-                                    <span class="text-xs text-slate-400">
-                                        Minimum {{ config('similarity.minimum_text_length', 20) }} characters
-                                    </span>
-                                </div>
-
-                                <textarea
-                                    id="abstract"
-                                    name="abstract"
-                                    rows="12"
-                                    required
-                                    placeholder="Paste or write the abstract of the proposed study here..."
-                                    class="block w-full resize-y rounded-xl border-slate-300 bg-white px-4 py-3 text-sm
-                                           leading-6 text-slate-900 shadow-sm outline-none transition
-                                           placeholder:text-slate-400
-                                           focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
-                                >{{ old('abstract') }}</textarea>
-
-                                @error('abstract')
-                                    <p class="mt-2 text-sm text-red-600">
-                                        {{ $message }}
-                                    </p>
-                                @enderror
-
-                                <div class="mt-2 flex items-start gap-2 text-xs leading-5 text-slate-500">
-                                    <svg class="mt-0.5 h-4 w-4 shrink-0"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="2"
-                                              d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"/>
-                                    </svg>
-
-                                    <span>
-                                        For better results, provide a complete abstract describing the
-                                        problem, objectives, users, scope, and major features of the proposed system.
-                                    </span>
-                                </div>
-                            </div>
-
-                            {{-- Submit --}}
-                            <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
-                                <p class="text-xs leading-5 text-slate-500">
-                                    The checker compares your proposal against studies available in the repository.
-                                </p>
-
-                                <button
-                                    type="submit"
-                                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600
-                                           px-6 py-3 text-sm font-semibold text-white shadow-sm
-                                           transition hover:bg-indigo-700
-                                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-                                           active:bg-indigo-800"
-                                >
-                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round"
-                                              stroke-linejoin="round"
-                                              stroke-width="2"
-                                              d="M9 19V6l12-3v13M9 19a3 3 0 11-6 0 3 3 0 016 0zm12-3a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-
-                                    Analyze Similarity
-                                </button>
-                            </div>
-                        </form>
+                <div class="lt-sim-formhead">
+                    <span class="lt-sim-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.5-8.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 7.5-7.5z"/></svg></span>
+                    <div>
+                        <h2 class="lt-card__title">Proposed Study</h2>
+                        <p>Enter the title and abstract you want to evaluate.</p>
                     </div>
                 </div>
 
-                {{-- Information Sidebar --}}
-                <div class="space-y-6">
+                <form method="POST" action="{{ route('similarity.check') }}" class="lt-form" data-submit-guard>
+                    @csrf
 
-                    {{-- What is checked --}}
-                    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <div class="mb-5 flex items-center gap-3">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round"
-                                          stroke-linejoin="round"
-                                          stroke-width="2"
-                                          d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 12c0 5.591 3.824 10.29 9 11.622C17.176 22.29 21 17.591 21 12c0-1.041-.133-2.052-.382-3.016z"/>
-                                </svg>
-                            </div>
-
-                            <h2 class="text-base font-semibold text-slate-900">
-                                What is analyzed?
-                            </h2>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div class="flex gap-3">
-                                <div class="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500"></div>
-
-                                <div>
-                                    <p class="text-sm font-medium text-slate-800">
-                                        Lexical similarity
-                                    </p>
-
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">
-                                        Identifies important terms shared between the proposed and existing studies.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="flex gap-3">
-                                <div class="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500"></div>
-
-                                <div>
-                                    <p class="text-sm font-medium text-slate-800">
-                                        Semantic similarity
-                                    </p>
-
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">
-                                        Looks for similarities in meaning, even when different words are used.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="flex gap-3">
-                                <div class="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500"></div>
-
-                                <div>
-                                    <p class="text-sm font-medium text-slate-800">
-                                        Hybrid similarity
-                                    </p>
-
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">
-                                        Produces a combined score from the available lexical and semantic evidence.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="flex gap-3">
-                                <div class="mt-1 h-2 w-2 shrink-0 rounded-full bg-indigo-500"></div>
-
-                                <div>
-                                    <p class="text-sm font-medium text-slate-800">
-                                        Decision support
-                                    </p>
-
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">
-                                        Highlights research areas that should be reviewed rather than automatically rejecting a proposal.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- Review areas --}}
-                    <div class="rounded-2xl border border-indigo-100 bg-indigo-50 p-6">
-                        <div class="flex items-start gap-3">
-                            <svg class="mt-0.5 h-5 w-5 shrink-0 text-indigo-600"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
-
+                    {{-- Validation Summary --}}
+                    @if ($errors->any())
+                        <div class="lt-alert lt-alert--error" role="alert">
+                            <span class="lt-alert__icon">!</span>
                             <div>
-                                <h2 class="text-sm font-semibold text-indigo-900">
-                                    Recommended review areas
-                                </h2>
-
-                                <p class="mt-2 text-xs leading-5 text-indigo-800">
-                                    If related studies are found, pay particular attention to differences in:
-                                </p>
-
-                                <ul class="mt-3 space-y-2 text-xs text-indigo-800">
-                                    <li class="flex gap-2">
-                                        <span>•</span>
-                                        <span>Research objectives</span>
-                                    </li>
-
-                                    <li class="flex gap-2">
-                                        <span>•</span>
-                                        <span>Target users</span>
-                                    </li>
-
-                                    <li class="flex gap-2">
-                                        <span>•</span>
-                                        <span>System scope</span>
-                                    </li>
-
-                                    <li class="flex gap-2">
-                                        <span>•</span>
-                                        <span>Major features</span>
-                                    </li>
-
-                                    <li class="flex gap-2">
-                                        <span>•</span>
-                                        <span>Problem statement</span>
-                                    </li>
+                                <strong>Please check the following:</strong>
+                                <ul>
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
                                 </ul>
                             </div>
                         </div>
+                    @endif
+
+                    {{-- Title --}}
+                    <div class="lt-field">
+                        <label for="title" class="lt-label">Proposed Study Title</label>
+
+                        <input
+                            id="title"
+                            name="title"
+                            type="text"
+                            value="{{ old('title') }}"
+                            maxlength="255"
+                            required
+                            placeholder="e.g. Student Attendance Monitoring System"
+                            class="lt-input"
+                            data-counter="#title-count"
+                        >
+
+                        <div class="lt-counter">
+                            <span></span>
+                            <span id="title-count" class="lt-counter__num">0 / 255</span>
+                        </div>
+
+                        @error('title')
+                            <p class="lt-field-error">{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    {{-- Important note --}}
-                    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-6">
-                        <div class="flex items-start gap-3">
-                            <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-600"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      stroke-width="2"
-                                      d="M12 9v2m0 4h.01M10.29 3.86l-7.82 13a2 2 0 001.71 3.14h15.64a2 2 0 001.71-3.14l-7.82-13a2 2 0 00-3.42 0z"/>
-                            </svg>
+                    {{-- Abstract --}}
+                    <div class="lt-field">
+                        <div class="lt-label-row">
+                            <label for="abstract" class="lt-label">Proposed Study Abstract</label>
+                            <span class="lt-hint">Minimum {{ config('similarity.minimum_text_length', 20) }} characters</span>
+                        </div>
 
-                            <div>
-                                <h2 class="text-sm font-semibold text-amber-900">
-                                    Important
-                                </h2>
+                        <textarea
+                            id="abstract"
+                            name="abstract"
+                            rows="12"
+                            required
+                            placeholder="Paste or write the abstract of the proposed study here..."
+                            class="lt-textarea"
+                            style="min-height: 260px;"
+                            data-counter="#abstract-count"
+                        >{{ old('abstract') }}</textarea>
 
-                                <p class="mt-2 text-xs leading-5 text-amber-800">
-                                    A high similarity score does not automatically mean that a study should
-                                    be rejected. Results are intended to support academic review and help
-                                    identify areas that require closer comparison.
-                                </p>
-                            </div>
+                        <div class="lt-counter">
+                            <span class="lt-hint">Characters</span>
+                            <span id="abstract-count" class="lt-counter__num">0</span>
+                        </div>
+
+                        @error('abstract')
+                            <p class="lt-field-error">{{ $message }}</p>
+                        @enderror
+
+                        <div class="lt-sim-tip">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 16h-1v-4h-1m1-4h.01M12 20a8 8 0 100-16 8 8 0 000 16z"/></svg>
+                            <span>
+                                For better results, provide a complete abstract describing the
+                                problem, objectives, users, scope, and major features of the proposed system.
+                            </span>
                         </div>
                     </div>
 
-                </div>
-            </div>
+                    {{-- Submit --}}
+                    <div class="lt-sim-submit">
+                        <p>The checker compares your proposal against studies available in the repository.</p>
 
+                        <button type="submit" class="lt-btn lt-btn--primary lt-btn--lg" data-loading-text="Analyzing...">
+                            Analyze Similarity
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            {{-- Information Sidebar --}}
+            <aside class="lt-sim-side">
+
+                {{-- What is checked --}}
+                <section class="lt-card">
+                    <div class="lt-sim-sidehead">
+                        <span class="lt-sim-icon lt-sim-icon--green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 12c0 5.591 3.824 10.29 9 11.622C17.176 22.29 21 17.591 21 12c0-1.041-.133-2.052-.382-3.016z"/></svg></span>
+                        <h2>What is analyzed?</h2>
+                    </div>
+
+                    <ul class="lt-sim-points">
+                        <li>
+                            <div>
+                                <strong>Lexical similarity</strong>
+                                <span>Identifies important terms shared between the proposed and existing studies.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <div>
+                                <strong>Semantic similarity</strong>
+                                <span>Looks for similarities in meaning, even when different words are used.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <div>
+                                <strong>Hybrid similarity</strong>
+                                <span>Produces a combined score from the available lexical and semantic evidence.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <div>
+                                <strong>Decision support</strong>
+                                <span>Highlights research areas that should be reviewed rather than automatically rejecting a proposal.</span>
+                            </div>
+                        </li>
+                    </ul>
+                </section>
+
+                {{-- Review areas --}}
+                <div class="lt-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div>
+                        <h2>Recommended review areas</h2>
+                        <p>If related studies are found, pay particular attention to differences in:</p>
+                        <ul>
+                            <li>Research objectives</li>
+                            <li>Target users</li>
+                            <li>System scope</li>
+                            <li>Major features</li>
+                            <li>Problem statement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                {{-- Important note --}}
+                <div class="lt-note lt-note--warn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v2m0 4h.01M10.29 3.86l-7.82 13a2 2 0 001.71 3.14h15.64a2 2 0 001.71-3.14l-7.82-13a2 2 0 00-3.42 0z"/></svg>
+                    <div>
+                        <h2>Important</h2>
+                        <p>
+                            A high similarity score does not automatically mean that a study should
+                            be rejected. Results are intended to support academic review and help
+                            identify areas that require closer comparison.
+                        </p>
+                    </div>
+                </div>
+
+            </aside>
         </div>
-    </div>
-</x-app-layout>
+
+    </main>
+
+</body>
+</html>

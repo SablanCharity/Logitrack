@@ -1,177 +1,258 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>{{ $groupRoom->group_name }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ $groupRoom->group_name }} · LogiTrack</title>
+    @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
+    
 </head>
 
-<body>
+<body class="lt-body">
 
-    <h1>{{ $groupRoom->group_name }}</h1>
+    <header class="lt-nav">
+        <div class="lt-nav__inner">
+            <a href="{{ route('student.group-rooms', $groupRoom->classroom_id) }}" class="lt-brand">
+                <span class="lt-brand__mark">L</span>
+                LogiTrack
+            </a>
+            <span class="lt-nav__tag">Student</span>
+        </div>
+    </header>
 
-    <p>
-        Classroom:
-        <strong>{{ $groupRoom->classroom->classroom_name }}</strong>
-    </p>
+    <main class="lt-container lt-animate">
 
-    @if($groupRoom->capstoneProject)
+        <a href="{{ route('student.group-rooms', $groupRoom->classroom_id) }}" class="lt-back">
+            ← Back to Group Rooms
+        </a>
 
-    <p>
-        <strong>Capstone Status:</strong>
-        {{ ucfirst(str_replace('_', ' ', $groupRoom->capstoneProject->status)) }}
-    </p>
+        <div class="lt-page-head">
+            <span class="lt-eyebrow">{{ $groupRoom->classroom->classroom_name }}</span>
+            <h1>{{ $groupRoom->group_name }}</h1>
+        </div>
 
-    @if(in_array($groupRoom->capstoneProject->status, [
-            'returned_by_instructor',
-            'returned_by_admin'
-        ]))
-
-            @if($groupRoom->capstoneProject->return_reason)
-                <p>
-                    <strong>Reason for Return:</strong>
-                    {{ $groupRoom->capstoneProject->return_reason }}
-                </p>
-            @endif
-
-            <p>
-                <a href="{{ route('student.capstone.edit', $groupRoom->id) }}">
-                    Edit & Resubmit Capstone
-                </a>
-            </p>
-
+        @if(session('success'))
+            <div class="lt-alert lt-alert--success" role="status" data-autohide="6000">
+                <span class="lt-alert__icon">✓</span>
+                <div>{{ session('success') }}</div>
+            </div>
         @endif
 
-    @else
+        @if(session('error'))
+            <div class="lt-alert lt-alert--error" role="alert">
+                <span class="lt-alert__icon">!</span>
+                <div>{{ session('error') }}</div>
+            </div>
+        @endif
 
-        <p>
-            <a href="{{ route('student.capstone.create', $groupRoom->id) }}">
-                Submit Capstone
-            </a>
-        </p>
+        {{-- ===== Capstone status ===== --}}
+        <section class="lt-card">
 
-    @endif
+            @if($groupRoom->capstoneProject)
 
-    <hr>
+                @php
+                    $capstoneStatus = $groupRoom->capstoneProject->status;
+                    $badgeClass = match(true) {
+                        in_array($capstoneStatus, ['returned_by_instructor', 'returned_by_admin']) => 'lt-badge--returned',
+                        $capstoneStatus === 'admin_approved' => 'lt-badge--approved',
+                        $capstoneStatus === 'instructor_verified' => 'lt-badge--verified',
+                        $capstoneStatus === 'submitted' => 'lt-badge--submitted',
+                        default => 'lt-badge--draft',
+                    };
+                @endphp
 
-    <h2>Group Members</h2>
+                <div class="lt-status-panel">
+                    <div>
+                        <div class="lt-status-panel__label">Capstone Status</div>
+                        <span class="lt-badge {{ $badgeClass }}">
+                            {{ ucfirst(str_replace('_', ' ', $groupRoom->capstoneProject->status)) }}
+                        </span>
+                    </div>
 
-@if(session('success'))
-    <p style="color: green;">{{ session('success') }}</p>
-@endif
-
-@if(session('error'))
-    <p style="color: red;">{{ session('error') }}</p>
-@endif
-
-@if($groupRoom->members->count() < 3)
-    @php
-        $isLeader = $groupRoom->members
-            ->where('user_id', auth()->id())
-            ->where('is_leader', true)
-            ->isNotEmpty();
-    @endphp
-
-    @if($isLeader)
-        <h3>Add Member</h3>
-
-        <form method="POST"
-              action="{{ route('student.group-room.add-member', $groupRoom->id) }}">
-            @csrf
-
-            <label for="user_id">Select Student</label><br>
-
-            <select id="user_id" name="user_id" required>
-                <option value="">-- Select Student --</option>
-
-                @foreach($groupRoom->classroom->members as $classroomMember)
-                    @if(
-                        $classroomMember->status === 'approved' &&
-                        $classroomMember->user_id !== auth()->id() &&
-                        !$groupRoom->members->contains('user_id', $classroomMember->user_id)
-                    )
-                        <option value="{{ $classroomMember->user_id }}">
-                            {{ $classroomMember->user->first_name }}
-                            {{ $classroomMember->user->last_name }}
-                            — {{ $classroomMember->user->email }}
-                        </option>
+                    @if(in_array($groupRoom->capstoneProject->status, [
+                            'returned_by_instructor',
+                            'returned_by_admin'
+                        ]))
+                        <a href="{{ route('student.capstone.edit', $groupRoom->id) }}" class="lt-btn lt-btn--gold">
+                            Edit &amp; Resubmit Capstone
+                        </a>
                     @endif
-                @endforeach
-            </select>
+                </div>
 
-            <button type="submit">
-                Add Member
-            </button>
-        </form>
-    @endif
-@else
-    <p>This group has reached the maximum of 3 members.</p>
-@endif
+                @if(in_array($groupRoom->capstoneProject->status, [
+                        'returned_by_instructor',
+                        'returned_by_admin'
+                    ]))
 
-    @if($groupRoom->members->count() > 0)
+                    @if($groupRoom->capstoneProject->return_reason)
+                        <div class="lt-callout">
+                            <div class="lt-callout__label">Reason for Return</div>
+                            <p class="lt-callout__text">{{ $groupRoom->capstoneProject->return_reason }}</p>
+                        </div>
+                    @endif
 
-        <table border="1" cellpadding="10">
+                @endif
 
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Program</th>
-                    <th>Year & Section</th>
-                    <th>Role</th>
-                </tr>
-            </thead>
+            @else
 
-            <tbody>
+                <div class="lt-status-panel">
+                    <div>
+                        <div class="lt-status-panel__label">Capstone Status</div>
+                        <p class="lt-muted">Your group hasn't submitted a capstone yet.</p>
+                    </div>
 
-                @foreach($groupRoom->members as $member)
+                    <a href="{{ route('student.capstone.create', $groupRoom->id) }}" class="lt-btn lt-btn--primary">
+                        Submit Capstone
+                    </a>
+                </div>
 
-                    <tr>
+            @endif
 
-                        <td>
-                            {{ $member->user->first_name }}
-                            {{ $member->user->last_name }}
-                        </td>
+        </section>
 
-                        <td>
-                            {{ $member->user->email }}
-                        </td>
+        {{-- ===== Group members ===== --}}
+        <section class="lt-card">
 
-                        <td>
-                            {{ $member->user->program }}
-                        </td>
+            <div class="lt-card__head">
+                <h2 class="lt-card__title" style="margin:0;">Group Members</h2>
 
-                        <td>
-                            {{ $member->user->year_section }}
-                        </td>
+                <div class="lt-meter" title="{{ $groupRoom->members->count() }} of 3 members">
+                    <div class="lt-meter__track">
+                        @for($i = 1; $i <= 3; $i++)
+                            <span class="lt-meter__slot {{ $i <= $groupRoom->members->count() ? 'is-filled' : '' }}"></span>
+                        @endfor
+                    </div>
+                    <span class="lt-meter__text">{{ $groupRoom->members->count() }} / 3</span>
+                </div>
+            </div>
 
-                        <td>
-                            @if($member->is_leader)
-                                Leader
-                            @else
-                                Member
-                            @endif
-                        </td>
+            @if($groupRoom->members->count() < 3)
+                @php
+                    $isLeader = $groupRoom->members
+                        ->where('user_id', auth()->id())
+                        ->where('is_leader', true)
+                        ->isNotEmpty();
+                @endphp
 
-                    </tr>
+                @if($isLeader)
+                    <div class="lt-auto" style="margin-bottom: 22px;">
+                        <div class="lt-auto__title">Add Member</div>
 
-                @endforeach
+                        <form method="POST"
+                              action="{{ route('student.group-room.add-member', $groupRoom->id) }}"
+                              class="lt-field"
+                              data-submit-guard>
+                            @csrf
 
-            </tbody>
+                            <label for="user_id" class="lt-label">Select Student</label>
 
-        </table>
+                            <div class="lt-inline-form">
+                                <select id="user_id" name="user_id" class="lt-select" required>
+                                    <option value="">-- Select Student --</option>
 
-    @else
+                                    @foreach($groupRoom->classroom->members as $classroomMember)
+                                        @if(
+                                            $classroomMember->status === 'approved' &&
+                                            $classroomMember->user_id !== auth()->id() &&
+                                            !$groupRoom->members->contains('user_id', $classroomMember->user_id)
+                                        )
+                                            <option value="{{ $classroomMember->user_id }}">
+                                                {{ $classroomMember->user->first_name }}
+                                                {{ $classroomMember->user->last_name }}
+                                                — {{ $classroomMember->user->email }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
 
-        <p>
-            No members in this group.
-        </p>
+                                <button type="submit" class="lt-btn lt-btn--green" data-loading-text="Adding...">
+                                    Add Member
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                @endif
+            @else
+                <div class="lt-alert lt-alert--warning" style="margin-bottom: 22px;">
+                    <span class="lt-alert__icon">i</span>
+                    <div>This group has reached the maximum of 3 members.</div>
+                </div>
+            @endif
 
-    @endif
+            @if($groupRoom->members->count() > 0)
 
-    <br>
+                <div class="lt-table-wrap">
 
-    <a href="{{ route('student.group-rooms', $groupRoom->classroom_id) }}">
-        ← Back to Group Rooms
-    </a>
+                    <table class="lt-table">
+
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Program</th>
+                                <th>Year &amp; Section</th>
+                                <th>Role</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach($groupRoom->members as $member)
+
+                                <tr>
+
+                                    <td>
+                                        <div class="lt-cell-user">
+                                            <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
+                                            <span class="lt-cell-user__name">
+                                                {{ $member->user->first_name }}
+                                                {{ $member->user->last_name }}
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <td class="lt-muted">
+                                        {{ $member->user->email }}
+                                    </td>
+
+                                    <td>
+                                        {{ $member->user->program }}
+                                    </td>
+
+                                    <td>
+                                        {{ $member->user->year_section }}
+                                    </td>
+
+                                    <td>
+                                        @if($member->is_leader)
+                                            <span class="lt-badge lt-badge--leader">Leader</span>
+                                        @else
+                                            <span class="lt-badge lt-badge--member">Member</span>
+                                        @endif
+                                    </td>
+
+                                </tr>
+
+                            @endforeach
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            @else
+
+                <div class="lt-empty">
+                    <div class="lt-empty__title">No members yet</div>
+                    <p>No members in this group.</p>
+                </div>
+
+            @endif
+
+        </section>
+
+    </main>
 
 </body>
 </html>

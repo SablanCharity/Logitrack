@@ -1,86 +1,137 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $capstone->title }} - LogiTrack Repository</title>
+    @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
 </head>
-<body>
 
-    <h1>LogiTrack Repository</h1>
+<body class="lt-body">
 
-    <p>
-        <a href="{{ route('repository.index') }}">
-            ← Back to Repository
-        </a>
-    </p>
+    <header class="lt-nav lt-nav--landing">
+        <div class="lt-nav__inner">
+            <a href="{{ route('dashboard') }}" class="lt-brand">
+                <span class="lt-brand__mark">L</span>
+                LogiTrack
+            </a>
 
-    <hr>
+            <button type="button" class="lt-nav__toggle" data-nav-toggle="#nav-menu" aria-label="Toggle menu" aria-expanded="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
 
-    <h2>{{ $capstone->title }}</h2>
+            <div class="lt-nav__menu" id="nav-menu">
+                <nav class="lt-nav__links lt-nav__links--app" aria-label="Main">
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link">Dashboard</a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link is-active">Repository</a>
+                </nav>
 
-    <h3>Capstone Information</h3>
+                <div class="lt-nav__actions">
+                    <span class="lt-user-chip">
+                        <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
+                        {{ auth()->user()->first_name }}
+                    </span>
 
-    <p>
-        <strong>Program:</strong>
-        {{ $capstone->program }}
-    </p>
+                    <form method="POST" action="{{ route('logout') }}">
+                        @csrf
+                        <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </header>
 
-    <p>
-        <strong>Year & Section:</strong>
-        {{ $capstone->year_section ?? 'N/A' }}
-    </p>
+    <main class="lt-container lt-animate">
 
-    <p>
-        <strong>Publication Date:</strong>
-        {{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}
-    </p>
+        <a href="{{ route('repository.index') }}" class="lt-back">← Back to Repository</a>
 
-    <p>
-        <strong>Instructor / Adviser:</strong>
-        {{ $capstone->groupRoom->classroom->instructor->first_name }}
-        {{ $capstone->groupRoom->classroom->instructor->last_name }}
-    </p>
+        <div class="lt-page-head">
+            <div class="lt-page-head__row">
+                <div>
+                    <span class="lt-eyebrow">LogiTrack Repository</span>
+                    <h1>{{ $capstone->title }}</h1>
+                </div>
+                <span class="lt-badge lt-badge--approved">Approved</span>
+            </div>
+        </div>
 
-    <p>
-        <strong>Group:</strong>
-        {{ $capstone->groupRoom->group_name }}
-    </p>
+        <div class="lt-review">
 
-    <hr>
+            <div class="lt-review__stack">
 
-    <h3>Authors</h3>
+                <section class="lt-card">
+                    <h2 class="lt-card__title">Abstract</h2>
+                    <p class="lt-doc__abstract lt-mt">{{ $capstone->abstract }}</p>
+                </section>
 
-    <ul>
-        @foreach($capstone->groupRoom->members as $member)
-            <li>
-                {{ $member->user->first_name }}
-                {{ $member->user->last_name }}
+                <section class="lt-card">
+                    <h2 class="lt-card__title">Authors</h2>
+                    <ul class="lt-authors lt-mt">
+                        @foreach($capstone->groupRoom->members as $member)
+                            <li>
+                                <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
+                                {{ $member->user->first_name }}
+                                {{ $member->user->last_name }}
 
-                @if($member->is_leader)
-                    <strong>(Leader)</strong>
-                @endif
-            </li>
-        @endforeach
-    </ul>
+                                @if($member->is_leader)
+                                    <strong>(Leader)</strong>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
 
-    <hr>
+            </div>
 
-    <h3>Abstract</h3>
+            <aside class="lt-panel-sticky">
 
-    <p>
-        {{ $capstone->abstract }}
-    </p>
+                <section class="lt-auto">
+                    <div class="lt-auto__title">Capstone Information</div>
 
-    <hr>
+                    <div class="lt-auto__grid lt-auto__grid--stack">
+                        <div class="lt-auto__item">
+                            <div class="lt-auto__key">Program</div>
+                            <div class="lt-auto__val">{{ $capstone->program }}</div>
+                        </div>
 
-    <p>
-        <strong>Repository Status:</strong>
-        Approved
-    </p>
+                        <div class="lt-auto__item">
+                            <div class="lt-auto__key">Year &amp; Section</div>
+                            <div class="lt-auto__val">{{ $capstone->year_section ?? 'N/A' }}</div>
+                        </div>
 
-    <p>
-        This capstone has been reviewed and approved for inclusion
-        in the LogiTrack repository.
-    </p>
+                        <div class="lt-auto__item">
+                            <div class="lt-auto__key">Publication Date</div>
+                            <div class="lt-auto__val">{{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}</div>
+                        </div>
+
+                        <div class="lt-auto__item">
+                            <div class="lt-auto__key">Instructor / Adviser</div>
+                            <div class="lt-auto__val">
+                                {{ $capstone->groupRoom->classroom->instructor->first_name }}
+                                {{ $capstone->groupRoom->classroom->instructor->last_name }}
+                            </div>
+                        </div>
+
+                        <div class="lt-auto__item">
+                            <div class="lt-auto__key">Group</div>
+                            <div class="lt-auto__val">{{ $capstone->groupRoom->group_name }}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="lt-repo-status">
+                    <div class="lt-repo-status__label">Repository Status: <strong>Approved</strong></div>
+                    <p>
+                        This capstone has been reviewed and approved for inclusion
+                        in the LogiTrack repository.
+                    </p>
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
 
 </body>
 </html>
