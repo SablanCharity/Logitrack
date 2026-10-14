@@ -77,16 +77,28 @@
                 </div>
             </div>
 
-            <div class="lt-card__head">
-                <input
-                    type="search"
-                    class="lt-input"
-                    style="max-width: 320px;"
-                    placeholder="Search title, group, student..."
-                    aria-label="Search capstone submissions"
-                    data-table-filter="#capstone-table"
-                    data-filter-empty="#capstone-filter-empty"
-                >
+            <div class="lt-card__head lt-card__head--search">
+                <div class="lt-search-filter" data-year-filter-menu>
+                    <input
+                        type="search"
+                        class="lt-input"
+                        placeholder="Search title, group, student..."
+                        aria-label="Search capstone submissions"
+                        data-table-filter="#capstone-table"
+                        data-filter-year="#capstone-year"
+                        data-filter-empty="#capstone-filter-empty"
+                    >
+                    <button type="button" class="lt-search-filter__toggle" data-year-filter-toggle aria-label="Choose study year" aria-expanded="false" aria-controls="capstone-year-filter">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.5 7.5V19l-3 1v-7.5L4 5z"/></svg>
+                    </button>
+                    <div class="lt-search-filter__menu" id="capstone-year-filter" role="group" aria-label="Study year" hidden>
+                        <button type="button" class="lt-search-filter__option" data-year-filter-option="" aria-pressed="true">All years</button>
+                        @foreach($years as $studyYear)
+                            <button type="button" class="lt-search-filter__option" data-year-filter-option="{{ $studyYear }}" aria-pressed="false">{{ $studyYear }}</button>
+                        @endforeach
+                    </div>
+                    <input type="hidden" id="capstone-year" value="" data-year-filter-select>
+                </div>
             </div>
 
             <div class="lt-table-wrap">
@@ -116,7 +128,7 @@
                                 };
                             @endphp
 
-                            <tr>
+                            <tr data-study-year="{{ $capstone->publication_date?->format('Y') }}">
                                 <td style="min-width: 220px;">
                                     <a href="{{ route('instructor.capstone.review', $capstone->id) }}" class="lt-table__title">
                                         {{ $capstone->title }}

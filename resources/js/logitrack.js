@@ -13,6 +13,7 @@
         initDismissibleAlerts();
         initUnsavedWarning();
         initTableFilter();
+        initYearFilterMenus();
         initNavToggle();
         initReveal();
         initCopyButtons();
@@ -390,18 +391,78 @@
 
             var rows = table.querySelectorAll('tbody tr');
             var empty = document.querySelector(input.getAttribute('data-filter-empty') || '');
+            var yearSelect = document.querySelector(input.getAttribute('data-filter-year') || '');
 
-            input.addEventListener('input', function () {
+            function filterRows() {
                 var q = input.value.trim().toLowerCase();
+                var selectedYear = yearSelect ? yearSelect.value : '';
                 var visible = 0;
 
                 rows.forEach(function (row) {
-                    var match = row.textContent.toLowerCase().indexOf(q) !== -1;
+                    var matchesText = row.textContent.toLowerCase().indexOf(q) !== -1;
+                    var matchesYear = !selectedYear || row.getAttribute('data-study-year') === selectedYear;
+                    var match = matchesText && matchesYear;
                     row.classList.toggle('lt-hidden', !match);
                     if (match) visible++;
                 });
 
                 if (empty) empty.classList.toggle('lt-hidden', visible !== 0);
+            }
+
+            input.addEventListener('input', filterRows);
+            if (yearSelect) yearSelect.addEventListener('change', filterRows);
+        });
+    }
+
+    function initYearFilterMenus() {
+        document.querySelectorAll('[data-year-filter-menu]').forEach(function (filter) {
+            var toggle = filter.querySelector('[data-year-filter-toggle]');
+            var menu = filter.querySelector('.lt-search-filter__menu');
+            var select = filter.querySelector('[data-year-filter-select]');
+            var options = filter.querySelectorAll('[data-year-filter-option]');
+            if (!toggle || !menu || !select || !options.length) return;
+
+            toggle.addEventListener('click', function () {
+                var isOpen = menu.hidden;
+                menu.hidden = !isOpen;
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                if (isOpen) options[0].focus();
+            });
+
+            options.forEach(function (option) {
+                option.addEventListener('click', function () {
+                    select.value = option.getAttribute('data-year-filter-option');
+                    options.forEach(function (yearOption) {
+                        yearOption.setAttribute(
+                            'aria-pressed',
+                            yearOption === option ? 'true' : 'false'
+                        );
+                    });
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+
+            select.addEventListener('change', function () {
+                menu.hidden = true;
+                toggle.setAttribute('aria-expanded', 'false');
+
+                var form = filter.closest('form[data-year-filter-submit]');
+                if (form) form.requestSubmit();
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!filter.contains(event.target)) {
+                    menu.hidden = true;
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            filter.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    menu.hidden = true;
+                    toggle.setAttribute('aria-expanded', 'false');
+                    toggle.focus();
+                }
             });
         });
     }
