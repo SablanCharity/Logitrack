@@ -57,25 +57,37 @@
             <p class="lt-page-head__sub">Browse approved capstone projects in the repository.</p>
         </div>
 
-        <form method="GET" action="{{ route(request()->routeIs('dashboard') ? 'dashboard' : 'repository.index') }}" class="lt-repo-search" data-submit-guard>
+        <form method="GET" action="{{ route(request()->routeIs('dashboard') ? 'dashboard' : 'repository.index') }}" class="lt-repo-search" data-submit-guard data-year-filter-submit>
             <label for="search" class="lt-label">Search Capstone Projects</label>
 
             <div class="lt-repo-search__row">
                 <div class="lt-repo-search__box">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                    <input
-                        type="text"
-                        id="search"
-                        name="search"
-                        class="lt-input"
-                        value="{{ $search }}"
-                        placeholder="Search by title, abstract, program..."
-                    >
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.71.71l.27.28v.78l5 5L20.49 20l-4.99-5zm-5 0A4.5 4.5 0 1 1 10.5 5a4.5 4.5 0 0 1 0 9z"/></svg>
+                    <div class="lt-search-filter" data-year-filter-menu>
+                        <input
+                            type="text"
+                            id="search"
+                            name="search"
+                            class="lt-input"
+                            value="{{ $search }}"
+                            placeholder="Search by title, abstract, program..."
+                        >
+                        <button type="button" class="lt-search-filter__toggle" data-year-filter-toggle aria-label="Choose study year" aria-expanded="false" aria-controls="repository-year-filter">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.5 7.5V19l-3 1v-7.5L4 5z"/></svg>
+                        </button>
+                        <div class="lt-search-filter__menu" id="repository-year-filter" role="group" aria-label="Study year" hidden>
+                            <button type="button" class="lt-search-filter__option" data-year-filter-option="" aria-pressed="{{ $year ? 'false' : 'true' }}">All years</button>
+                            @foreach($years as $studyYear)
+                                <button type="button" class="lt-search-filter__option" data-year-filter-option="{{ $studyYear }}" aria-pressed="{{ (string) $year === (string) $studyYear ? 'true' : 'false' }}">{{ $studyYear }}</button>
+                            @endforeach
+                        </div>
+                        <input type="hidden" name="year" value="{{ $year }}" data-year-filter-select>
+                    </div>
                 </div>
 
                 <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="Searching...">Search</button>
 
-                @if($search)
+                @if($search || $year)
                     <a href="{{ route(request()->routeIs('dashboard') ? 'dashboard' : 'repository.index') }}" class="lt-btn lt-btn--ghost">Clear</a>
                 @endif
             </div>
