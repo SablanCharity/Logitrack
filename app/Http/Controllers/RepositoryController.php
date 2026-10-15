@@ -76,7 +76,11 @@ class RepositoryController extends Controller
             ]
         );
 
-        return view('repository.index', compact('capstones', 'search'));
+        return view('repository.index', [
+            'capstones' => $capstones,
+            'search' => $search,
+            'classroomId' => null,
+        ]);
     }
 
     public function show($id, Request $request)

@@ -1,81 +1,118 @@
-<x-app-layout>
-    <div class="max-w-7xl mx-auto py-10 px-4">
-        <h2 class="text-2xl font-bold mb-6">Review & Verify Extracted OCR Metadata</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Review Extracted Metadata · LogiTrack</title>
+    @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
+</head>
+
+<body class="lt-body">
+
+    <header class="lt-nav lt-nav--landing">
+        <div class="lt-nav__inner">
+            <a href="{{ route('dashboard') }}" class="lt-brand">
+                <span class="lt-brand__mark">L</span>
+                LogiTrack
+            </a>
+            <div class="lt-nav__actions">
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <main class="lt-container lt-animate">
+        <a href="{{ route('ocr.upload') }}" class="lt-back">← Upload Another Document</a>
+
+        <div class="lt-page-head">
+            <div class="lt-page-head__row">
+                <div>
+                    <span class="lt-eyebrow">OCR Verification</span>
+                    <h1>Review Extracted Metadata</h1>
+                </div>
+                <span class="lt-badge lt-badge--verified">Status: {{ ucfirst($oldCapstone->status) }}</span>
+            </div>
+            <p class="lt-page-head__sub">Verify and edit the fields extracted from the scanned document before final approval.</p>
+        </div>
 
         @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                {{ session('success') }}
+            <div class="lt-alert lt-alert--success" role="status">
+                <span class="lt-alert__icon">✓</span>
+                <div>{{ session('success') }}</div>
             </div>
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Left Column: Scanned Image Preview -->
-            <div class="bg-white p-4 rounded shadow">
-                <h3 class="font-semibold text-lg mb-3">Scanned Source Document</h3>
-                <img src="{{ asset('storage/' . $oldCapstone->metadata_image_path) }}" alt="Capstone Scan" class="w-full h-auto rounded border">
-                
-                <div class="mt-4">
-                    <h4 class="font-medium text-sm text-gray-600">Raw OCR Text Output:</h4>
-                    <pre class="bg-gray-100 p-3 rounded text-xs h-48 overflow-y-auto mt-1 whitespace-pre-wrap">{{ $oldCapstone->ocr_text }}</pre>
-                </div>
-            </div>
+        <div class="lt-review">
+            <!-- Left Column: Form to Edit Extracted Metadata -->
+            <div class="lt-review__stack">
+                <section class="lt-card">
+                    <h2 class="lt-card__title">Edit Metadata</h2>
 
-            <!-- Right Column: Editable Metadata Form -->
-            <div class="bg-white p-6 rounded shadow">
-                <h3 class="font-semibold text-lg mb-3">Extracted Metadata Verification</h3>
-                
-                <form action="{{ route('ocr.update', $oldCapstone->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium">Title</label>
-                        <input type="text" name="title" value="{{ old('title', $oldCapstone->title) }}" class="w-full border p-2 rounded text-sm" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium">Authors (comma-separated or JSON format)</label>
-                        <input type="text" name="authors" value="{{ old('authors', implode(', ', $oldCapstone->authors ?? [])) }}" class="w-full border p-2 rounded text-sm">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="block text-sm font-medium">Adviser</label>
-                        <input type="text" name="adviser" value="{{ old('adviser', $oldCapstone->adviser) }}" class="w-full border p-2 rounded text-sm">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2 mb-3">
-                        <div>
-                            <label class="block text-sm font-medium">Program</label>
-                            <input type="text" name="program" value="{{ old('program', $oldCapstone->program) }}" class="w-full border p-2 rounded text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium">Publication Date / Year</label>
-                            <input type="text" name="publication_date" value="{{ old('publication_date', $oldCapstone->publication_date) }}" class="w-full border p-2 rounded text-sm">
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium">Abstract</label>
-                        <textarea name="abstract" rows="6" class="w-full border p-2 rounded text-sm">{{ old('abstract', $oldCapstone->abstract) }}</textarea>
-                    </div>
-
-                    <div class="flex items-center justify-between">
-                        <button type="submit" class="bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-gray-700">
-                            Save Corrections
-                        </button>
-                    </div>
-                </form>
-
-                <!-- Final Approval Action (Admin Only) -->
-                @if(auth()->user()->role === 'admin' && $oldCapstone->status !== 'admin_approved')
-                    <form action="{{ route('ocr.approve', $oldCapstone->id) }}" method="POST" class="mt-4 pt-4 border-t">
+                    <form method="POST" action="{{ route('ocr.update', $oldCapstone->id) }}" class="lt-form">
                         @csrf
-                        <button type="submit" class="w-full bg-green-600 text-white py-2 rounded text-sm hover:bg-green-700 font-semibold">
-                            Approve & Publish to Main Repository
-                        </button>
+                        @method('PUT')
+
+                        <div class="lt-field">
+                            <label for="title" class="lt-label">Title</label>
+                            <input type="text" id="title" name="title" class="lt-input" value="{{ old('title', $oldCapstone->title) }}" required>
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="abstract" class="lt-label">Abstract</label>
+                            <textarea id="abstract" name="abstract" class="lt-textarea" rows="5">{{ old('abstract', $oldCapstone->abstract) }}</textarea>
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="authors" class="lt-label">Authors (comma separated)</label>
+                            <input type="text" id="authors" name="authors" class="lt-input" value="{{ old('authors', is_array($oldCapstone->authors) ? implode(', ', $oldCapstone->authors) : $oldCapstone->authors) }}">
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="adviser" class="lt-label">Adviser</label>
+                            <input type="text" id="adviser" name="adviser" class="lt-input" value="{{ old('adviser', $oldCapstone->adviser) }}">
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="program" class="lt-label">Program</label>
+                            <input type="text" id="program" name="program" class="lt-input" value="{{ old('program', $oldCapstone->program) }}">
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="publication_date" class="lt-label">Publication Date / Year</label>
+                            <input type="text" id="publication_date" name="publication_date" class="lt-input" value="{{ old('publication_date', $oldCapstone->publication_date) }}">
+                        </div>
+
+                        <button type="submit" class="lt-btn lt-btn--primary">Save Corrections</button>
                     </form>
-                @endif
+                </section>
             </div>
+
+            <!-- Right Column: Raw OCR Text & Final Approval Action -->
+            <aside class="lt-panel-sticky">
+                <section class="lt-card lt-review-forms">
+                    <h2 class="lt-card__title">Raw OCR Extraction</h2>
+                    <p class="lt-card__desc">Reference text scanned directly from the document file.</p>
+                    
+                    <div style="background: #f8fafc; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 250px; overflow-y: auto; margin-bottom: 20px; white-space: pre-wrap;">
+                        {{ $oldCapstone->ocr_text }}
+                    </div>
+
+                    @if(auth()->user()->role === 'admin')
+                        <form method="POST" action="{{ route('ocr.approve', $oldCapstone->id) }}">
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit" class="lt-btn lt-btn--green" style="width: 100%;">
+                                Approve &amp; Push to Repository
+                            </button>
+                        </form>
+                    @endif
+                </section>
+            </aside>
         </div>
-    </div>
-</x-app-layout>
+    </main>
+
+</body>
+</html>

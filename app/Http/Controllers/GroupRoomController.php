@@ -24,8 +24,8 @@ class GroupRoomController extends Controller
             abort(403, 'You are not an approved student in this classroom.');
         }
 
-    return view('student.group-rooms', compact('classroom'));
-}
+        return view('student.group-rooms', compact('classroom'));
+    }
 
     public function show(int $groupRoomId): View
     {
@@ -46,6 +46,7 @@ class GroupRoomController extends Controller
 
         return view('student.group-room-show', compact('groupRoom'));
     }
+
     public function create(int $classroomId): View
     {
         $classroom = Classroom::findOrFail($classroomId);
@@ -53,7 +54,7 @@ class GroupRoomController extends Controller
         return view('student.group-room-create', compact('classroom'));
     }
 
-  public function store(
+    public function store(
         Request $request,
         int $classroomId
     ): RedirectResponse {
@@ -103,7 +104,7 @@ class GroupRoomController extends Controller
         ]);
 
         return redirect()
-            ->route('student.group-rooms', $classroom->id)
+            ->route('student.group-rooms.index', $classroom->id)
             ->with('success', 'Group room created successfully.');
     }
 
