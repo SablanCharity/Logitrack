@@ -22,6 +22,8 @@ class CapstoneProject extends Model
         'verified_at',
         'approved_at',
         'return_reason',
+        'is_best',
+        'views_count',
     ];
 
     protected $casts = [
@@ -29,6 +31,8 @@ class CapstoneProject extends Model
         'submitted_at' => 'datetime',
         'verified_at' => 'datetime',
         'approved_at' => 'datetime',
+        'is_best' => 'boolean',
+        'views_count' => 'integer',
     ];
 
     /**

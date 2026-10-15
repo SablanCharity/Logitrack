@@ -45,7 +45,7 @@
 
     <main class="lt-container lt-container--narrow lt-animate">
 
-        <a href="{{ route('student.group-rooms.index', $classroom->id) }}" class="lt-back">← Back to group rooms</a>
+        <a href="{{ route('student.group-rooms.index', $classroom->id) }}" class="lt-back">⟵ Back to group rooms</a>
 
         <div class="lt-page-head">
             <span class="lt-eyebrow">New Group</span>

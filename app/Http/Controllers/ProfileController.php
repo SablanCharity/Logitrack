@@ -16,8 +16,14 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        $classroomId = $user->role === 'student'
+            ? $user->classroomMemberships()->where('status', 'approved')->value('classroom_id')
+            : null;
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'classroomId' => $classroomId,
         ]);
     }
 

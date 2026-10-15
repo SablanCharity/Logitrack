@@ -33,18 +33,17 @@
                     @if (Route::has('login'))
                         <div class="lt-nav__actions">
                             @auth
-                                <a href="{{ route('login') }}" class="lt-btn lt-btn--gold lt-btn--sm">
+                                <button type="button" class="lt-btn lt-btn--gold lt-btn--sm" data-open-dialog="#login-dialog">
                                     Log in
-                                </a>
+                                </button>
                             @else
-                                <a href="{{ route('login') }}" class="lt-btn lt-btn--outline-light lt-btn--sm">
+                                <button type="button" class="lt-btn lt-btn--outline-light lt-btn--sm" data-open-dialog="#login-dialog">
                                     Log in
-                                </a>
-
+                                </button>
                                 @if (Route::has('register'))
-                                    <a href="{{ route('register') }}" class="lt-btn lt-btn--gold lt-btn--sm">
+                                    <button type="button" class="lt-btn lt-btn--gold lt-btn--sm" data-open-dialog="#register-dialog">
                                         Register
-                                    </a>
+                                    </button>
                                 @endif
                             @endauth
                         </div>
@@ -73,19 +72,18 @@
                         <div class="lt-hero__cta">
                             @if (Route::has('login'))
                                 @auth
-                                    <a href="{{ route('login') }}" class="lt-btn lt-btn--gold lt-btn--lg">
+                                    <button type="button" class="lt-btn lt-btn--gold lt-btn--lg" data-open-dialog="#login-dialog">
                                         Log in
-                                    </a>
+                                    </button>
                                 @else
                                     @if (Route::has('register'))
-                                        <a href="{{ route('register') }}" class="lt-btn lt-btn--gold lt-btn--lg">
+                                        <button type="button" class="lt-btn lt-btn--gold lt-btn--lg" data-open-dialog="#register-dialog">
                                             Create your account
-                                        </a>
+                                        </button>
                                     @endif
-
-                                    <a href="{{ route('login') }}" class="lt-btn lt-btn--outline-light lt-btn--lg">
+                                    <button type="button" class="lt-btn lt-btn--outline-light lt-btn--lg" data-open-dialog="#login-dialog">
                                         Log in
-                                    </a>
+                                    </button>
                                 @endauth
                             @endif
                         </div>
@@ -229,22 +227,226 @@
             @if (Route::has('login'))
                 <section class="lt-cta">
                     <h2 data-reveal>Ready to get started?</h2>
-                    <p data-reveal>Ask your adviser for the class code, then create your account.</p>
+                    <p data-reveal>Ask your adviser for the class code, then log in to continue.</p>
 
                     <div data-reveal>
                         @auth
                             <a href="{{ url('/dashboard') }}" class="lt-btn lt-btn--gold lt-btn--lg">Go to Dashboard</a>
                         @else
                             @if (Route::has('register'))
-                                <a href="{{ route('register') }}" class="lt-btn lt-btn--gold lt-btn--lg">Register</a>
+                                <button type="button" class="lt-btn lt-btn--gold lt-btn--lg" data-open-dialog="#register-dialog">Register</button>
                             @endif
-                            <a href="{{ route('login') }}" class="lt-btn lt-btn--outline-light lt-btn--lg">Log in</a>
+                            <button type="button" class="lt-btn lt-btn--outline-light lt-btn--lg" data-open-dialog="#login-dialog">Log in</button>
                         @endauth
                     </div>
                 </section>
             @endif
 
         </main>
+
+        @if (Route::has('register'))
+            <dialog id="register-dialog" class="lt-dialog lt-dialog--register" aria-labelledby="register-dialog-title" @if (old('_form') === 'register') data-autoopen @endif>
+                <div class="lt-dialog__body lt-dialog__body--register">
+                    <button type="button" class="lt-search-filter__toggle lt-register-dialog__close" data-close-dialog aria-label="Close registration form">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                    </button>
+                    <div class="lt-register-dialog__head">
+                        <div>
+                            <h2 id="register-dialog-title" class="lt-dialog__title">Create your account</h2>
+                            <p class="lt-dialog__text">Join LogiTrack to access your capstone workspace.</p>
+                        </div>
+                    </div>
+
+                    <form id="landing-register-form" method="POST" action="{{ route('register') }}" class="lt-form lt-register-dialog__form" data-submit-guard>
+                        @csrf
+                        <input type="hidden" name="_form" value="register">
+
+                        <div class="lt-field">
+                            <label for="landing-first-name" class="lt-label">{{ __('First Name') }}</label>
+                            <input id="landing-first-name" class="lt-input {{ old('_form') === 'register' && $errors->has('first_name') ? 'is-invalid' : '' }}" type="text" name="first_name" value="{{ old('_form') === 'register' ? old('first_name') : '' }}" required autocomplete="given-name">
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('first_name') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="landing-last-name" class="lt-label">{{ __('Last Name') }}</label>
+                            <input id="landing-last-name" class="lt-input {{ old('_form') === 'register' && $errors->has('last_name') ? 'is-invalid' : '' }}" type="text" name="last_name" value="{{ old('_form') === 'register' ? old('last_name') : '' }}" required autocomplete="family-name">
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('last_name') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field lt-register-dialog__field--full">
+                            <label for="landing-email" class="lt-label">{{ __('School Email') }}</label>
+                            <input id="landing-email" class="lt-input {{ old('_form') === 'register' && $errors->has('email') ? 'is-invalid' : '' }}" type="email" name="email" value="{{ old('_form') === 'register' ? old('email') : '' }}" required autocomplete="username">
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('email') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="landing-program" class="lt-label">{{ __('Program') }}</label>
+                            <select id="landing-program" name="program" class="lt-select {{ old('_form') === 'register' && $errors->has('program') ? 'is-invalid' : '' }}" required>
+                                <option value="" disabled @selected(old('_form') !== 'register' || ! old('program'))>Select Program</option>
+                                <option value="BSIT" @selected(old('_form') === 'register' && old('program') === 'BSIT')>BSIT</option>
+                                <option value="BSCS" @selected(old('_form') === 'register' && old('program') === 'BSCS')>BSCS</option>
+                            </select>
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('program') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="landing-year-section" class="lt-label">{{ __('Year & Section') }}</label>
+                            <input id="landing-year-section" class="lt-input {{ old('_form') === 'register' && $errors->has('year_section') ? 'is-invalid' : '' }}" type="text" name="year_section" value="{{ old('_form') === 'register' ? old('year_section') : '' }}" placeholder="Example: 4-D" required>
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('year_section') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="landing-instructor" class="lt-label">{{ __('Instructor / Adviser') }}</label>
+                            <select id="landing-instructor" name="instructor_id" class="lt-select {{ old('_form') === 'register' && $errors->has('instructor_id') ? 'is-invalid' : '' }}" required>
+                                <option value="" disabled @selected(old('_form') !== 'register' || ! old('instructor_id'))>-- Select Instructor / Adviser --</option>
+                                @foreach($instructors as $instructor)
+                                    <option value="{{ $instructor->id }}" @selected(old('_form') === 'register' && old('instructor_id') == $instructor->id)>{{ $instructor->first_name }} {{ $instructor->last_name }}</option>
+                                @endforeach
+                            </select>
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('instructor_id') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="landing-class-code" class="lt-label">{{ __('Class Code') }}</label>
+                            <input id="landing-class-code" class="lt-input {{ old('_form') === 'register' && $errors->has('class_code') ? 'is-invalid' : '' }}" type="text" name="class_code" value="{{ old('_form') === 'register' ? old('class_code') : '' }}" required>
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('class_code') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="landing-password" class="lt-label">{{ __('Password') }}</label>
+                            <div class="lt-input-wrap">
+                                <input id="landing-password" class="lt-input {{ old('_form') === 'register' && $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
+                                <button type="button" class="lt-eye" data-toggle-password="#landing-password" aria-pressed="false" aria-label="Show password">
+                                    <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                                </button>
+                            </div>
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('password') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field lt-register-dialog__field--full">
+                            <label for="landing-password-confirmation" class="lt-label">{{ __('Confirm Password') }}</label>
+                            <div class="lt-input-wrap">
+                                <input id="landing-password-confirmation" class="lt-input {{ old('_form') === 'register' && $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required autocomplete="new-password">
+                                <button type="button" class="lt-eye" data-toggle-password="#landing-password-confirmation" aria-pressed="false" aria-label="Show password">
+                                    <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                                </button>
+                            </div>
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('password_confirmation') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-register-dialog__actions">
+                            <a class="lt-link" href="{{ route('login') }}">{{ __('Already registered?') }}</a>
+                            <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="Creating account...">{{ __('Register') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+        @endif
+
+        @if (Route::has('login'))
+            <dialog id="login-dialog" class="lt-dialog lt-dialog--login" aria-labelledby="login-dialog-title" @if (old('_form') === 'login') data-autoopen @endif>
+                <div class="lt-dialog__body lt-dialog__body--login">
+                    <button type="button" class="lt-search-filter__toggle lt-login-dialog__close" data-close-dialog aria-label="Close login form">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                    </button>
+                    <div class="lt-login-dialog__head">
+                        <h2 id="login-dialog-title" class="lt-dialog__title">Welcome back</h2>
+                        <p class="lt-dialog__text">Log in to your LogiTrack account.</p>
+                    </div>
+
+                    <form id="landing-login-form" method="POST" action="{{ route('login') }}" class="lt-form" data-submit-guard>
+                        @csrf
+                        <input type="hidden" name="_form" value="login">
+
+                        <div class="lt-field">
+                            <label for="landing-login-email" class="lt-label">{{ __('Email') }}</label>
+                            <input id="landing-login-email" class="lt-input {{ $errors->has('email') ? 'is-invalid' : '' }}" type="email" name="email" value="{{ old('_form') === 'login' ? old('email') : '' }}" required autocomplete="username">
+                            @if (old('_form') === 'login')
+                                @foreach($errors->get('email') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
+                            <label for="landing-login-password" class="lt-label">{{ __('Password') }}</label>
+                            <div class="lt-input-wrap">
+                                <input id="landing-login-password" class="lt-input {{ $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="current-password">
+                                <button type="button" class="lt-eye" data-toggle-password="#landing-login-password" aria-pressed="false" aria-label="Show password">
+                                    <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                                </button>
+                            </div>
+                            @if (old('_form') === 'login')
+                                @foreach($errors->get('password') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-auth__row">
+                            <label for="landing-login-remember" class="lt-check">
+                                <input id="landing-login-remember" type="checkbox" name="remember" value="1">
+                                <span>{{ __('Remember me') }}</span>
+                            </label>
+
+                            @if (Route::has('password.request'))
+                                <a class="lt-link" href="{{ route('password.request') }}">{{ __('Forgot your password?') }}</a>
+                            @endif
+                        </div>
+
+                        <button type="submit" class="lt-btn lt-btn--primary lt-btn--lg" style="width:100%;" data-loading-text="Logging in...">
+                            {{ __('Log in') }}
+                        </button>
+                    </form>
+
+                    @if (Route::has('register'))
+                        <p class="lt-auth__foot">
+                            New here?
+                            <button type="button" class="lt-link lt-login-dialog__register" data-close-dialog data-open-dialog="#register-dialog">{{ __('Create an account') }}</button>
+                        </p>
+                    @endif
+                </div>
+            </dialog>
+        @endif
 
         <footer class="lt-footer">
             <div class="lt-footer__inner">

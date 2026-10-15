@@ -7,6 +7,7 @@ use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\SimilarityController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,7 +26,14 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    $instructors = User::query()
+        ->where('role', 'instructor')
+        ->where('is_approved', true)
+        ->orderBy('last_name')
+        ->orderBy('first_name')
+        ->get();
+
+    return view('welcome', compact('instructors'));
 });
 
 /*
@@ -210,6 +218,11 @@ Route::middleware(['auth'])->group(function () {
         '/admin/capstones/{capstoneId}/return',
         [CapstoneProjectController::class, 'adminReturn']
     )->name('admin.capstone.return');
+
+    Route::patch(
+        '/admin/repository/{capstoneId}/best',
+        [CapstoneProjectController::class, 'setBestStudy']
+    )->middleware('admin')->name('admin.capstone.set-best');
 
 
     /*

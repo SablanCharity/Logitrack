@@ -103,7 +103,7 @@ class GroupRoomController extends Controller
         ]);
 
         return redirect()
-            ->route('student.group-rooms', $classroom->id)
+            ->route('student.group-rooms.index', $classroom->id)
             ->with('success', 'Group room created successfully.');
     }
 

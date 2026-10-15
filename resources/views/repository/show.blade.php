@@ -51,7 +51,7 @@
 
     <main class="lt-container lt-animate">
 
-        <a href="{{ route('repository.index') }}" class="lt-back">← Back to Repository</a>
+        <a href="{{ $backUrl }}" class="lt-back">⟵ Back</a>
 
         <div class="lt-page-head">
             <div class="lt-page-head__row">

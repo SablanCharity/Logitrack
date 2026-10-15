@@ -51,9 +51,15 @@
 
     <main class="lt-container lt-animate">
 
-        <div class="lt-page-head">
-            <span class="lt-eyebrow">Repository</span>
-            <h1>LogiTrack Repository</h1>
+        @if(request()->query('return_to') === 'similarity')
+            <a href="{{ route('similarity.index') }}" class="lt-back">⟵ Back</a>
+        @endif
+
+        <div class="lt-page-head {{ $isDashboard ? 'lt-page-head--dashboard' : '' }}">
+            @unless($isDashboard)
+                <span class="lt-eyebrow">Repository</span>
+            @endunless
+            <h1>{{ $isDashboard ? 'LogiTrack Capstone Repository' : 'LogiTrack Repository' }}</h1>
             <p class="lt-page-head__sub">Browse approved capstone projects in the repository.</p>
         </div>
 
@@ -93,52 +99,195 @@
             </div>
         </form>
 
+        @if(session('success'))
+            <div class="lt-alert lt-alert--success" role="status" data-autohide="6000">
+                <span class="lt-alert__icon">✓</span>
+                <div>{{ session('success') }}</div>
+            </div>
+        @endif
+
+        @if($showDashboardOverview)
+            <section class="lt-dashboard-stats" aria-label="Repository metrics">
+                <article class="lt-card lt-dashboard-stat">
+                    <div class="lt-dashboard-stat__head">
+                        <span class="lt-dashboard-stat__label">Best Capstone Study</span>
+                        <span class="lt-dashboard-stat__index" aria-hidden="true">01</span>
+                    </div>
+                    <strong class="lt-dashboard-stat__value">{{ $dashboardStudies['best']?->title ?? 'Not selected' }}</strong>
+                </article>
+                <article class="lt-card lt-dashboard-stat">
+                    <div class="lt-dashboard-stat__head">
+                        <span class="lt-dashboard-stat__label">Total Number of Capstone Studies</span>
+                        <span class="lt-dashboard-stat__index" aria-hidden="true">02</span>
+                    </div>
+                    <strong class="lt-dashboard-stat__value">{{ number_format($totalCapstoneStudies) }}</strong>
+                </article>
+                <article class="lt-card lt-dashboard-stat">
+                    <div class="lt-dashboard-stat__head">
+                        <span class="lt-dashboard-stat__label">Most Viewed Capstone Study</span>
+                        <span class="lt-dashboard-stat__index" aria-hidden="true">03</span>
+                    </div>
+                    <div class="lt-dashboard-stat__content">
+                        <strong class="lt-dashboard-stat__value">{{ $dashboardStudies['most_viewed']?->title ?? 'No studies yet' }}</strong>
+                        @if($dashboardStudies['most_viewed'])
+                            <span class="lt-dashboard-stat__views">{{ number_format($dashboardStudies['most_viewed']->views_count) }} views</span>
+                        @endif
+                    </div>
+                </article>
+            </section>
+
+            @if(auth()->user()->role === 'admin')
+                <div class="lt-dashboard-admin-action">
+                    <a href="{{ route('repository.index') }}" class="lt-btn lt-btn--outline">Manage repository studies</a>
+                </div>
+            @endif
+
+            <section class="lt-dashboard-featured" aria-label="Featured capstone studies" data-dashboard-featured>
+                <div class="lt-dashboard-featured__track" data-dashboard-featured-track>
+                    @foreach([
+                        ['label' => 'Best Capstone Study', 'study' => $dashboardStudies['best'], 'key' => 'best'],
+                        ['label' => 'Most Viewed Capstone Study', 'study' => $dashboardStudies['most_viewed'], 'key' => 'most-viewed'],
+                    ] as $index => $feature)
+                        <article
+                            class="lt-card lt-dashboard-feature"
+                            id="dashboard-feature-{{ $feature['key'] }}"
+                            data-dashboard-feature-panel
+                            aria-labelledby="dashboard-feature-title-{{ $feature['key'] }}"
+                            aria-hidden="{{ $index === 0 ? 'false' : 'true' }}"
+                            @if($index > 0) inert @endif
+                        >
+                            <div class="lt-dashboard-feature__heading">
+                                <div>
+                                    <span class="lt-eyebrow">Featured study 0{{ $index + 1 }} / 02</span>
+                                    <h2 class="lt-dashboard-feature__label" id="dashboard-feature-title-{{ $feature['key'] }}">{{ $feature['label'] }}</h2>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="lt-dashboard-next"
+                                    data-dashboard-feature-next
+                                    aria-label="Show {{ $index === 0 ? 'most viewed capstone study' : 'best capstone study' }}"
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        @if($index === 0)
+                                            <path d="M5 12h14m-6-6 6 6-6 6"/>
+                                        @else
+                                            <path d="M19 12H5m6 6-6-6 6-6"/>
+                                        @endif
+                                    </svg>
+                                </button>
+                            </div>
+                            @if($feature['study'])
+                                <h3 class="lt-dashboard-feature__title">{{ $feature['study']->title }}</h3>
+                                <p class="lt-repo-abstract">{{ \Illuminate\Support\Str::limit($feature['study']->abstract, 320) }}</p>
+                                <div class="lt-dashboard-feature__meta">
+                                    <span>{{ $feature['study']->program ?? 'Program not specified' }}</span>
+                                    @if($feature['key'] === 'most-viewed')
+                                        <span>{{ number_format($feature['study']->views_count) }} views</span>
+                                    @endif
+                                </div>
+                                <div class="lt-repo-card__foot">
+                                    <a href="{{ route('repository.show', ['capstoneId' => $feature['study']->id, 'return_to' => 'dashboard']) }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
+                                </div>
+                            @else
+                                <p class="lt-dashboard-feature__empty">
+                                    {{ $feature['key'] === 'best' ? 'An admin has not selected a best study yet.' : 'There are no approved capstone studies yet.' }}
+                                </p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @if(!$isDashboard || !$showDashboardOverview)
+            @if($isDashboard)
+                <div class="lt-page-head lt-dashboard-results-head">
+                    <a href="{{ route('dashboard') }}" class="lt-back">⟵ Back to Dashboard</a>
+                    <h2>Search Results</h2>
+                </div>
+            @endif
+
         @if($capstones->count() > 0)
 
             <div class="lt-repo-list">
                 @foreach($capstones as $capstone)
 
+                    @php
+                        $isOld = isset($capstone->source_type) && $capstone->source_type === 'old';
+                        $showRoute = route('repository.show', array_filter([
+                            'capstoneId' => $capstone->id,
+                            'type' => $isOld ? 'old' : 'modern',
+                            'return_to' => $isDashboard ? 'dashboard' : 'repository',
+                            'search' => $search,
+                            'year' => $year,
+                            'page' => request()->query('page'),
+                        ], fn ($value) => $value !== null && $value !== ''));
+                    @endphp
+
                     <article class="lt-card lt-repo-card">
 
                         <div class="lt-repo-card__head">
                             <h2 class="lt-repo-card__title">
-                                <a href="{{ route('repository.show', $capstone->id) }}">{{ $capstone->title }}</a>
+                                <a href="{{ $showRoute }}">{{ $capstone->title }}</a>
                             </h2>
-                            <span class="lt-badge lt-badge--approved" title="Repository Status">Approved</span>
+                            <div class="flex items-center gap-2">
+                                @if($isOld)
+                                    <span class="lt-badge lt-badge--secondary" title="Legacy Scanned Record">OCR Scanned</span>
+                                @endif
+                                @if(!$isOld && $capstone->is_best)
+                                    <span class="lt-badge lt-badge--approved">Best Study</span>
+                                @endif
+                                <span class="lt-badge lt-badge--approved" title="Repository Status">Approved</span>
+                            </div>
                         </div>
 
                         <dl class="lt-repo-meta">
                             <div>
                                 <dt>Program</dt>
-                                <dd>{{ $capstone->program }}</dd>
-                            </div>
-                            <div>
-                                <dt>Year &amp; Section</dt>
-                                <dd>{{ $capstone->year_section ?? 'N/A' }}</dd>
+                                <dd>{{ $capstone->program ?? 'N/A' }}</dd>
                             </div>
                             <div>
                                 <dt>Instructor / Adviser</dt>
                                 <dd>
-                                    {{ $capstone->groupRoom->classroom->instructor->first_name }}
-                                    {{ $capstone->groupRoom->classroom->instructor->last_name }}
+                                    @if($isOld)
+                                        {{ $capstone->adviser ?? 'N/A' }}
+                                    @else
+                                        {{ optional($capstone->groupRoom?->classroom?->instructor)->first_name }}
+                                        {{ optional($capstone->groupRoom?->classroom?->instructor)->last_name }}
+                                    @endif
                                 </dd>
                             </div>
                             <div>
                                 <dt>Publication Date</dt>
-                                <dd>{{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}</dd>
+                                <dd>
+                                    @if($isOld)
+                                        {{ $capstone->publication_date ?? 'N/A' }}
+                                    @else
+                                        {{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}
+                                    @endif
+                                </dd>
                             </div>
                         </dl>
 
                         <div class="lt-repo-block">
                             <div class="lt-doc__label">Authors</div>
                             <ul class="lt-authors">
-                                @foreach($capstone->groupRoom->members as $member)
-                                    <li>
-                                        <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
-                                        {{ $member->user->first_name }}
-                                        {{ $member->user->last_name }}
-                                    </li>
-                                @endforeach
+                                @if($isOld)
+                                    @foreach($capstone->authors ?? [] as $authorName)
+                                        <li>
+                                            <span class="lt-avatar">{{ strtoupper(substr($authorName, 0, 1)) }}</span>
+                                            {{ $authorName }}
+                                        </li>
+                                    @endforeach
+                                @else
+                                    @foreach($capstone->groupRoom?->members ?? [] as $member)
+                                        <li>
+                                            <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
+                                            {{ $member->user->first_name }}
+                                            {{ $member->user->last_name }}
+                                        </li>
+                                    @endforeach
+                                @endif
                             </ul>
                         </div>
 
@@ -148,7 +297,16 @@
                         </div>
 
                         <div class="lt-repo-card__foot">
-                            <a href="{{ route('repository.show', $capstone->id) }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
+                            @if(!$isOld && auth()->user()->role === 'admin')
+                                <form method="POST" action="{{ route('admin.capstone.set-best', $capstone->id) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="lt-btn {{ $capstone->is_best ? 'lt-btn--ghost' : 'lt-btn--outline' }} lt-btn--sm" @disabled($capstone->is_best)>
+                                        {{ $capstone->is_best ? 'Selected as Best' : 'Set as Best' }}
+                                    </button>
+                                </form>
+                            @endif
+                            <a href="{{ $showRoute }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
                         </div>
 
                     </article>
@@ -171,6 +329,7 @@
                 </p>
             </div>
 
+        @endif
         @endif
 
     </main>

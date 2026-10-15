@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CapstoneProject;
 use App\Models\GroupRoom;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -138,7 +139,15 @@ class CapstoneProjectController extends Controller
                 ->latest('submitted_at')
                 ->get();
 
-            return view('instructor.capstones', compact('capstones'));
+            $years = $capstones
+                ->pluck('publication_date')
+                ->filter()
+                ->map(fn ($publicationDate) => $publicationDate->year)
+                ->unique()
+                ->sortDesc()
+                ->values();
+
+            return view('instructor.capstones', compact('capstones', 'years'));
         }
 
         public function instructorReview(int $capstoneId): View
@@ -147,16 +156,12 @@ class CapstoneProjectController extends Controller
                 'groupRoom.classroom.instructor',
                 'groupRoom.members.user',
                 'submitter',
-            ])->findOrFail($capstoneId);
-
-            // Make sure this capstone belongs to one of the
-            // instructor's classrooms.
-            if (
-                $capstone->groupRoom->classroom->instructor_id
-                !== auth()->id()
-            ) {
-                abort(403, 'You are not authorized to review this capstone.');
-            }
+            ])
+                ->whereKey($capstoneId)
+                ->whereHas('groupRoom.classroom', function ($query) {
+                    $query->where('instructor_id', auth()->id());
+                })
+                ->firstOrFail();
 
             return view('instructor.capstone-review', compact('capstone'));
         }
@@ -462,4 +467,23 @@ class CapstoneProjectController extends Controller
                     'Capstone corrected and resubmitted successfully. Your instructor/adviser will review it again.'
                 );
         }
+
+        public function setBestStudy(int $capstoneId): RedirectResponse
+        {
+            DB::transaction(function () use ($capstoneId): void {
+                $capstone = CapstoneProject::query()
+                    ->where('status', 'admin_approved')
+                    ->lockForUpdate()
+                    ->findOrFail($capstoneId);
+
+                CapstoneProject::query()
+                    ->where('is_best', true)
+                    ->update(['is_best' => false]);
+
+                $capstone->update(['is_best' => true]);
+            });
+
+            return back()->with('success', 'Best capstone study updated.');
+        }
+
 }
