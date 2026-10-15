@@ -100,7 +100,6 @@
 
         <div class="lt-review">
 
-            {{-- ===== Left: the capstone details ===== --}}
             <div class="lt-review__stack">
 
                 <section class="lt-card">
@@ -154,8 +153,8 @@
                         <div class="lt-auto__item">
                             <div class="lt-auto__key">Instructor / Adviser</div>
                             <div class="lt-auto__val">
-                                {{ $capstone->groupRoom->classroom->instructor->first_name }}
-                                {{ $capstone->groupRoom->classroom->instructor->last_name }}
+                                {{ optional(optional($capstone->groupRoom->classroom)->instructor)->first_name }}
+                                {{ optional(optional($capstone->groupRoom->classroom)->instructor)->last_name }}
                             </div>
                         </div>
 
@@ -170,16 +169,16 @@
                         <div class="lt-details__row">
                             <dt>Submitted By</dt>
                             <dd>
-                                {{ $capstone->submitter->first_name }}
-                                {{ $capstone->submitter->last_name }}
+                                {{ optional($capstone->submitter)->first_name }}
+                                {{ optional($capstone->submitter)->last_name }}
                             </dd>
                         </div>
 
                         <div class="lt-details__row">
                             <dt>Verified By Instructor</dt>
                             <dd>
-                                {{ $capstone->verifier->first_name }}
-                                {{ $capstone->verifier->last_name }}
+                                {{ optional($capstone->verifier)->first_name }}
+                                {{ optional($capstone->verifier)->last_name }}
                             </dd>
                         </div>
 
@@ -201,7 +200,6 @@
 
             </div>
 
-            {{-- ===== Right: admin actions ===== --}}
             <aside class="lt-panel-sticky">
 
                 <section class="lt-card lt-review-forms">
@@ -218,13 +216,14 @@
                         <h3 class="lt-card__title" style="margin-bottom:10px;">Approve</h3>
 
                         <form method="POST"
-                            action="{{ route('admin.capstones.approve', $capstone->id) }}"
+                            action="{{ route('admin.capstone.approve', $capstone->id) }}"
                             data-confirm="This capstone will be published to the repository and become searchable by students."
                             data-confirm-title="Approve for repository?"
                             data-confirm-button="Approve"
                             data-submit-guard>
 
                             @csrf
+                            @method('PATCH')
 
                             <button type="submit" class="lt-btn lt-btn--green" style="width:100%;" data-loading-text="Approving...">
                                 Approve for Repository
@@ -236,7 +235,7 @@
                     <hr class="lt-divider">
 
                     <form method="POST"
-                        action="{{ route('admin.capstones.return', $capstone->id) }}"
+                        action="{{ route('admin.capstone.return', $capstone->id) }}"
                         class="lt-form"
                         data-confirm="The student will see your reason and will need to correct and resubmit."
                         data-confirm-title="Return for correction?"
@@ -245,6 +244,7 @@
                         data-submit-guard>
 
                         @csrf
+                        @method('PATCH')
 
                         <h3 class="lt-card__title" style="margin:0;">Return for Correction</h3>
 

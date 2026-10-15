@@ -169,9 +169,7 @@
                         $dss = $similarity['dss'] ?? [];
                         $level = strtolower((string) ($dss['level'] ?? 'low'));
 
-                        // high / moderate / anything else = low (same rule as before)
                         $levelKey = $level === 'high' ? 'high' : ($level === 'moderate' ? 'moderate' : 'low');
-
                         $rank = $index + 1;
                     @endphp
 
@@ -281,7 +279,10 @@
                             <p>Result ranked by hybrid similarity score.</p>
 
                             @if(isset($result['id']))
-                                <a href="{{ route('repository.show', $result['id']) }}" class="lt-btn lt-btn--ghost lt-btn--sm">
+                                @php
+                                    $matchType = ($result['type'] ?? 'modern') === 'old' ? 'old' : 'modern';
+                                @endphp
+                                <a href="{{ route('repository.show', ['capstoneId' => $result['id'], 'type' => $matchType]) }}" class="lt-btn lt-btn--ghost lt-btn--sm">
                                     View Study
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
                                 </a>

@@ -103,13 +103,14 @@
                         </div>
 
                         <div class="lt-auto__item">
-                            <div class="lt-auto__key">Year &amp; Section</div>
-                            <div class="lt-auto__val">{{ $capstone->year_section ?? 'N/A' }}</div>
-                        </div>
-
-                        <div class="lt-auto__item">
                             <div class="lt-auto__key">Publication Date</div>
-                            <div class="lt-auto__val">{{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}</div>
+                            <div class="lt-auto__val">
+                                @if(isset($capstone->source_type) && $capstone->source_type === 'old')
+                                    {{ $capstone->publication_date ?? 'N/A' }}
+                                @else
+                                    {{ optional($capstone->publication_date)->format('F d, Y') ?? 'N/A' }}
+                                @endif
+                            </div>
                         </div>
 
                         <div class="lt-auto__item">
