@@ -26,6 +26,10 @@
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>
+        <env name="SIMILARITY_HYBRID_METHOD" value="weighted_mean"/>
+        <env name="SIMILARITY_LEXICAL_WEIGHT" value="0.40"/>
+        <env name="SIMILARITY_SEMANTIC_WEIGHT" value="0.60"/>
+        <env name="TESSERACT_PSM" value="3"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>

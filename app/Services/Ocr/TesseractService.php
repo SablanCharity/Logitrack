@@ -24,7 +24,7 @@ class TesseractService
             '-l',
             'eng',
             '--psm',
-            '6',
+            (string) config('services.tesseract.psm', 3),
         ]);
 
         $process->setTimeout(120);
