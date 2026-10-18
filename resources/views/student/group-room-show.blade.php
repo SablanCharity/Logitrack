@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $groupRoom->group_name }} · LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
-    
 </head>
 
 <body class="lt-body">
@@ -68,6 +67,13 @@
             </div>
         @endif
 
+        @php
+            $isGroupMember = $groupRoom->members->contains(
+                'user_id',
+                auth()->id()
+            );
+        @endphp
+
         {{-- ===== Capstone status ===== --}}
         <section class="lt-card">
 
@@ -92,7 +98,7 @@
                         </span>
                     </div>
 
-                    @if(in_array($groupRoom->capstoneProject->status, [
+                    @if($isGroupMember && in_array($groupRoom->capstoneProject->status, [
                             'returned_by_instructor',
                             'returned_by_admin'
                         ]))
@@ -124,9 +130,11 @@
                         <p class="lt-muted">Your group hasn't submitted a capstone yet.</p>
                     </div>
 
-                    <a href="{{ route('student.capstone.create', $groupRoom->id) }}" class="lt-btn lt-btn--primary">
-                        Submit Capstone
-                    </a>
+                    @if($isGroupMember)
+                        <a href="{{ route('student.capstone.create', $groupRoom->id) }}" class="lt-btn lt-btn--primary">
+                            Submit Capstone
+                        </a>
+                    @endif
                 </div>
 
             @endif

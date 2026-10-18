@@ -3,30 +3,47 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Models\GroupMember;
 use App\Models\GroupRoom;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class GroupRoomController extends Controller
 {
+    /**
+     * Display groups in a classroom.
+     */
     public function index(int $classroomId): View
     {
         $classroom = Classroom::with('groupRooms')
             ->findOrFail($classroomId);
 
-        $membership = $classroom->members()
+        // Only approved classroom members can view its groups.
+        $this->ensureApprovedClassroomMember($classroom);
+
+        // Check whether the current student already belongs
+        // to a group in this classroom.
+        $alreadyInGroup = GroupMember::whereHas(
+            'groupRoom',
+            function ($query) use ($classroom) {
+                $query->where('classroom_id', $classroom->id);
+            }
+        )
             ->where('user_id', auth()->id())
-            ->where('status', 'approved')
             ->exists();
 
-        if (! $membership) {
-            abort(403, 'You are not an approved student in this classroom.');
-        }
-
-        return view('student.group-rooms', compact('classroom'));
+        return view(
+            'student.group-rooms',
+            compact('classroom', 'alreadyInGroup')
+        );
     }
 
+    /**
+     * Display a group room.
+     */
     public function show(int $groupRoomId): View
     {
         $groupRoom = GroupRoom::with([
@@ -34,31 +51,62 @@ class GroupRoomController extends Controller
             'members.user',
         ])->findOrFail($groupRoomId);
 
-        $membership = $groupRoom->classroom
-            ->members()
-            ->where('user_id', auth()->id())
-            ->where('status', 'approved')
-            ->exists();
-
-        if (! $membership) {
-            abort(403, 'You are not an approved student in this classroom.');
-        }
+        // Authorize access through the GroupRoom policy.
+        Gate::authorize('view', $groupRoom);
 
         return view('student.group-room-show', compact('groupRoom'));
     }
 
-    public function create(int $classroomId): View
-    {
+    /**
+     * Display the group creation form.
+     */
+    public function create(
+        int $classroomId
+    ): View|RedirectResponse {
         $classroom = Classroom::findOrFail($classroomId);
+
+        // Only students can create group rooms.
+        Gate::authorize('create', GroupRoom::class);
+
+        // The student must be an approved classroom member.
+        $this->ensureApprovedClassroomMember($classroom);
+
+        // Prevent opening the creation form outside the allowed period.
+        $periodError = $this->groupCreationPeriodError($classroom);
+
+        if ($periodError !== null) {
+            return redirect()
+                ->route('student.group-rooms.index', $classroom->id)
+                ->with('error', $periodError);
+        }
+
+        $alreadyInGroup = GroupMember::whereHas(
+            'groupRoom',
+            function ($query) use ($classroom) {
+                $query->where('classroom_id', $classroom->id);
+            }
+        )
+            ->where('user_id', auth()->id())
+            ->exists();
+
+        if ($alreadyInGroup) {
+            abort(
+                403,
+                'You are already a member of a group in this classroom.'
+            );
+        }
 
         return view('student.group-room-create', compact('classroom'));
     }
 
+    /**
+     * Create a group room.
+     */
     public function store(
         Request $request,
         int $classroomId
     ): RedirectResponse {
-        $request->validate([
+        $validated = $request->validate([
             'group_name' => [
                 'required',
                 'string',
@@ -68,16 +116,21 @@ class GroupRoomController extends Controller
 
         $classroom = Classroom::findOrFail($classroomId);
 
-        $membership = $classroom->members()
-            ->where('user_id', auth()->id())
-            ->where('status', 'approved')
-            ->first();
+        // Only approved classroom members can create groups.
+        Gate::authorize('create', GroupRoom::class);
+        $this->ensureApprovedClassroomMember($classroom);
 
-        if (! $membership) {
-            abort(403, 'You are not an approved student in this classroom.');
+        // Enforce the period again when the form is submitted.
+        // This prevents direct requests from bypassing the deadline.
+        $periodError = $this->groupCreationPeriodError($classroom);
+
+        if ($periodError !== null) {
+            return redirect()
+                ->route('student.group-rooms.index', $classroom->id)
+                ->with('error', $periodError);
         }
 
-        $alreadyInGroup = \App\Models\GroupMember::whereHas(
+        $alreadyInGroup = GroupMember::whereHas(
             'groupRoom',
             function ($query) use ($classroom) {
                 $query->where('classroom_id', $classroom->id);
@@ -95,9 +148,10 @@ class GroupRoomController extends Controller
 
         $groupRoom = GroupRoom::create([
             'classroom_id' => $classroom->id,
-            'group_name' => $request->group_name,
+            'group_name' => $validated['group_name'],
         ]);
 
+        // The creator becomes the group leader.
         $groupRoom->members()->create([
             'user_id' => auth()->id(),
             'is_leader' => true,
@@ -108,61 +162,147 @@ class GroupRoomController extends Controller
             ->with('success', 'Group room created successfully.');
     }
 
+    /**
+     * Add an approved student to a group room.
+     */
     public function addMember(
         Request $request,
         int $groupRoomId
     ): RedirectResponse {
-        $groupRoom = GroupRoom::with('members')
+        $groupRoom = GroupRoom::with('classroom')
             ->findOrFail($groupRoomId);
 
-        // Only the group leader can add members
-        $isLeader = $groupRoom->members()
-            ->where('user_id', auth()->id())
-            ->where('is_leader', true)
-            ->exists();
+        // The policy verifies that the current user is the group leader
+        // and is allowed to add members.
+        Gate::authorize('addMember', $groupRoom);
 
-        if (! $isLeader) {
-            abort(403, 'Only the group leader can add members.');
-        }
-
-        // Maximum of 3 members
-        if ($groupRoom->members()->count() >= 3) {
-            return back()->with('error', 'This group already has the maximum of 3 members.');
-        }
-
-        $request->validate([
+        // The selected account must exist and have the student role.
+        $validated = $request->validate([
             'user_id' => [
                 'required',
                 'integer',
-                'exists:users,id',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('role', 'student')
+                ),
             ],
         ]);
 
-        // Make sure the selected student belongs to the same classroom
+        $selectedUserId = (int) $validated['user_id'];
+
+        // Only approved students in this classroom can be added.
         $studentIsInClassroom = $groupRoom->classroom
             ->members()
-            ->where('user_id', $request->user_id)
+            ->where('user_id', $selectedUserId)
             ->where('status', 'approved')
             ->exists();
 
         if (! $studentIsInClassroom) {
-            return back()->with('error', 'The selected student is not an approved member of this classroom.');
+            return back()->with(
+                'error',
+                'The selected student is not an approved member of this classroom.'
+            );
         }
 
-        // Prevent duplicate group membership
+        // Prevent duplicate membership in this group.
         $alreadyMember = $groupRoom->members()
-            ->where('user_id', $request->user_id)
+            ->where('user_id', $selectedUserId)
             ->exists();
 
         if ($alreadyMember) {
-            return back()->with('error', 'This student is already a member of the group.');
+            return back()->with(
+                'error',
+                'This student is already a member of the group.'
+            );
+        }
+
+        // Prevent a student from joining multiple groups in this classroom.
+        $alreadyInAnotherGroup = GroupMember::where(
+            'user_id',
+            $selectedUserId
+        )
+            ->whereHas(
+                'groupRoom',
+                function ($query) use ($groupRoom) {
+                    $query->where(
+                        'classroom_id',
+                        $groupRoom->classroom_id
+                    );
+                }
+            )
+            ->exists();
+
+        if ($alreadyInAnotherGroup) {
+            return back()->with(
+                'error',
+                'This student is already a member of another group in this classroom.'
+            );
+        }
+
+        // Maximum of three members, including the leader.
+        if ($groupRoom->members()->count() >= 3) {
+            return back()->with(
+                'error',
+                'This group already has the maximum of 3 members.'
+            );
         }
 
         $groupRoom->members()->create([
-            'user_id' => $request->user_id,
+            'user_id' => $selectedUserId,
             'is_leader' => false,
         ]);
 
-        return back()->with('success', 'Member added successfully.');
+        return back()->with(
+            'success',
+            'Member added successfully.'
+        );
+    }
+
+    /**
+     * Return an error if group creation is outside the allowed period.
+     *
+     * A blank opening time means there is no opening-time restriction.
+     * A blank closing time means there is no closing-time restriction.
+     */
+    private function groupCreationPeriodError(
+        Classroom $classroom
+    ): ?string {
+        $now = now();
+
+        if (
+            $classroom->group_creation_opens_at !== null &&
+            $now->lt($classroom->group_creation_opens_at)
+        ) {
+            return 'Group creation for this classroom has not opened yet.';
+        }
+
+        if (
+            $classroom->group_creation_closes_at !== null &&
+            $now->greaterThanOrEqualTo(
+                $classroom->group_creation_closes_at
+            )
+        ) {
+            return 'The group creation period for this classroom has ended.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Verify that the current user is an approved member of a classroom.
+     */
+    private function ensureApprovedClassroomMember(
+        Classroom $classroom
+    ): void {
+        $membership = $classroom->members()
+            ->where('user_id', auth()->id())
+            ->where('status', 'approved')
+            ->exists();
+
+        if (! $membership) {
+            abort(
+                403,
+                'You are not an approved student in this classroom.'
+            );
+        }
     }
 }

@@ -57,4 +57,56 @@ class ClassroomController extends Controller
             ->route('instructor.classrooms')
             ->with('success', 'Classroom created successfully.');
     }
+
+    /**
+     * Save the group creation opening and closing times.
+     * Only the instructor who owns the classroom can update them.
+     */
+    public function updateGroupCreationPeriod(
+        Request $request,
+        int $classroomId
+    ): RedirectResponse {
+        $classroom = auth()->user()
+            ->classrooms()
+            ->findOrFail($classroomId);
+
+        $validated = $request->validate([
+            'group_creation_opens_at' => [
+                'nullable',
+                'date',
+            ],
+            'group_creation_closes_at' => [
+                'nullable',
+                'date',
+            ],
+        ]);
+
+        $opensAt = $validated['group_creation_opens_at'] ?? null;
+        $closesAt = $validated['group_creation_closes_at'] ?? null;
+
+        if (
+            $opensAt !== null &&
+            $closesAt !== null &&
+            strtotime($closesAt) <= strtotime($opensAt)
+        ) {
+            return back()
+                ->withErrors([
+                    'group_creation_closes_at' =>
+                        'The closing date and time must be after the opening date and time.',
+                ])
+                ->withInput();
+        }
+
+        $classroom->update([
+            'group_creation_opens_at' => $opensAt,
+            'group_creation_closes_at' => $closesAt,
+        ]);
+
+        return redirect()
+            ->route('instructor.classroom.show', $classroom->id)
+            ->with(
+                'success',
+                'Group creation period updated successfully.'
+            );
+    }
 }

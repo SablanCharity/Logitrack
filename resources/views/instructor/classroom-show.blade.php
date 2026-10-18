@@ -89,6 +89,81 @@
             </div>
         @endif
 
+        {{-- Group Creation Schedule --}}
+        <section class="lt-card" style="margin-bottom: 24px;">
+            <div class="lt-card__head">
+                <h2 class="lt-card__title" style="margin:0;">
+                    Group Creation Period
+                </h2>
+            </div>
+
+            <p class="lt-muted">
+                Set when students can create groups in this classroom.
+                Students will not be able to create new groups outside this period.
+            </p>
+
+            @if($errors->any())
+                <div class="lt-alert lt-alert--error" role="alert">
+                    <ul style="margin:0; padding-left:20px;">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form
+                method="POST"
+                action="{{ route('instructor.classrooms.group-creation-period.update', $classroom->id) }}"
+            >
+                @csrf
+                @method('PATCH')
+
+                <div class="lt-form-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+                    <div>
+                        <label for="group_creation_opens_at">
+                            Opening date and time
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="group_creation_opens_at"
+                            name="group_creation_opens_at"
+                            class="lt-input"
+                            value="{{ old('group_creation_opens_at', $classroom->group_creation_opens_at?->format('Y-m-d\TH:i')) }}"
+                        >
+                        @error('group_creation_opens_at')
+                            <p class="lt-text-danger">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="group_creation_closes_at">
+                            Closing date and time
+                        </label>
+                        <input
+                            type="datetime-local"
+                            id="group_creation_closes_at"
+                            name="group_creation_closes_at"
+                            class="lt-input"
+                            value="{{ old('group_creation_closes_at', $classroom->group_creation_closes_at?->format('Y-m-d\TH:i')) }}"
+                        >
+                        @error('group_creation_closes_at')
+                            <p class="lt-text-danger">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <p class="lt-hint" style="margin-top:12px;">
+                    Both fields are optional. If either field is blank, that side
+                    of the schedule will have no time restriction.
+                </p>
+
+                <button type="submit" class="lt-btn lt-btn--green">
+                    Save Group Creation Period
+                </button>
+            </form>
+        </section>
+
         <div class="lt-card__head">
             <h2 class="lt-card__title" style="margin:0;">Students</h2>
         </div>

@@ -12,7 +12,20 @@ class Classroom extends Model
         'instructor_id',
         'classroom_name',
         'class_code',
+        'group_creation_opens_at',
+        'group_creation_closes_at',
     ];
+
+    /**
+     * Cast the group creation period fields to date/time objects.
+     */
+    protected function casts(): array
+    {
+        return [
+            'group_creation_opens_at' => 'datetime',
+            'group_creation_closes_at' => 'datetime',
+        ];
+    }
 
     /**
      * The instructor who owns this classroom.

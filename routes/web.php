@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\OldCapstoneController;
 use App\Http\Controllers\CapstoneProjectController;
+use App\Http\Controllers\CapstoneAuditController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\GroupRoomController;
 use App\Http\Controllers\InstructorController;
@@ -14,9 +15,6 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Routes for the Logitrack web application.
-|
 */
 
 Route::get('/', function () {
@@ -25,82 +23,268 @@ Route::get('/', function () {
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/dashboard', [RepositoryController::class, 'index'])->name('dashboard');
+    /* Dashboard - Role-Based Access */
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+
+        if ($user->role === 'instructor') {
+            return redirect()->route('instructor.repository.index');
+        }
+
+        if ($user->role === 'student') {
+            if (!$user->is_approved) {
+                return redirect()->route('student.pending');
+            }
+
+            return redirect()->route('repository.index');
+        }
+
+        if ($user->role === 'admin') {
+            return redirect()->route('admin.capstones');
+        }
+
+        abort(403, 'Unauthorized access.');
+    })->name('dashboard');
 
     /* Profile */
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::delete('/profile', [ProfileController::class, 'destroy'])
+        ->name('profile.destroy');
 
     /* Student Routes */
     Route::get('/student/pending', function () {
         if (auth()->check() && auth()->user()->is_approved) {
             return redirect()->route('dashboard');
         }
+
         return view('student.pending');
     })->name('student.pending');
 
     Route::get('/student/classroom-redirect', function () {
-        $membership = \App\Models\ClassroomMember::where('user_id', auth()->id())->first();
-        
+        $membership = \App\Models\ClassroomMember::where(
+            'user_id',
+            auth()->id()
+        )->first();
+
         if (!$membership) {
-            return redirect()->route('dashboard')->with('error', 'You are not assigned to any classroom yet.');
+            return redirect()->route('dashboard')
+                ->with('error', 'You are not assigned to any classroom yet.');
         }
 
-        return redirect()->route('student.group-rooms.index', ['classroomId' => $membership->classroom_id]);
-    })->name('student.classroom.redirect');
+        return redirect()->route('student.group-rooms.index', [
+            'classroomId' => $membership->classroom_id,
+        ]);
+    })
+        ->middleware(['student.role', 'student.approved'])
+        ->name('student.classroom.redirect');
 
-    Route::get('/student/classrooms/{classroomId}/groups', [GroupRoomController::class, 'index'])->name('student.group-rooms.index');
-    Route::get('/student/classrooms/{classroomId}/groups/create', [GroupRoomController::class, 'create'])->name('student.group-rooms.create');
-    Route::post('/student/classrooms/{classroomId}/groups', [GroupRoomController::class, 'store'])->name('student.group-rooms.store');
-    Route::get('/student/group-rooms/{groupRoomId}', [GroupRoomController::class, 'show'])->name('student.group-room.show');
-    Route::post('/student/group-rooms/{groupRoomId}/members', [GroupRoomController::class, 'addMember'])->name('student.group-room.add-member');
+    Route::middleware(['student.role', 'student.approved'])->group(function () {
 
-    /* Student Capstone Routes */
-    Route::get('/student/group-rooms/{groupRoomId}/capstone/create', [CapstoneProjectController::class, 'create'])->name('student.capstone.create');
-    Route::post('/student/group-rooms/{groupRoomId}/capstone', [CapstoneProjectController::class, 'store'])->name('student.capstone.store');
-    Route::get('/student/group-rooms/{groupRoomId}/capstone/edit', [CapstoneProjectController::class, 'edit'])->name('student.capstone.edit');
-    Route::put('/student/group-rooms/{groupRoomId}/capstone', [CapstoneProjectController::class, 'update'])->name('student.capstone.update');
+        /* Student Group Routes */
+        Route::get(
+            '/student/classrooms/{classroomId}/groups',
+            [GroupRoomController::class, 'index']
+        )->name('student.group-rooms.index');
 
-    /* Instructor Routes */
-    Route::get('/instructor/students', [InstructorController::class, 'students'])->name('instructor.students');
-    Route::post('/instructor/students/{studentId}/approve', [InstructorController::class, 'approveStudent'])->name('instructor.students.approve');
-    Route::get('/instructor/classrooms', [ClassroomController::class, 'index'])->name('instructor.classrooms');
-    Route::get('/instructor/classrooms/create', [ClassroomController::class, 'create'])->name('instructor.classrooms.create');
-    Route::post('/instructor/classrooms', [ClassroomController::class, 'store'])->name('instructor.classrooms.store');
-    Route::get('/instructor/classrooms/{classroomId}', [ClassroomController::class, 'show'])->name('instructor.classroom.show');
+        Route::get(
+            '/student/classrooms/{classroomId}/groups/create',
+            [GroupRoomController::class, 'create']
+        )->name('student.group-rooms.create');
 
-    /* Instructor Capstone Review */
-    Route::get('/instructor/capstones', [CapstoneProjectController::class, 'instructorIndex'])->name('instructor.capstones');
-    Route::get('/instructor/capstones/{capstoneId}', [CapstoneProjectController::class, 'instructorReview'])->name('instructor.capstone.review');
-    Route::patch('/instructor/capstones/{capstoneId}/verify', [CapstoneProjectController::class, 'instructorVerify'])->name('instructor.capstone.verify');
-    Route::patch('/instructor/capstones/{capstoneId}/return', [CapstoneProjectController::class, 'instructorReturn'])->name('instructor.capstone.return');
+        Route::post(
+            '/student/classrooms/{classroomId}/groups',
+            [GroupRoomController::class, 'store']
+        )->name('student.group-rooms.store');
 
-    /* Admin Capstone Review */
-    Route::get('/admin/capstones', [CapstoneProjectController::class, 'adminIndex'])->name('admin.capstones');
-    Route::get('/admin/capstones/{capstoneId}', [CapstoneProjectController::class, 'adminReview'])->name('admin.capstone.review');
-    Route::patch('/admin/capstones/{capstoneId}/approve', [CapstoneProjectController::class, 'adminApprove'])->name('admin.capstone.approve');
-    Route::patch('/admin/capstones/{capstoneId}/return', [CapstoneProjectController::class, 'adminReturn'])->name('admin.capstone.return');
+        Route::get(
+            '/student/group-rooms/{groupRoomId}',
+            [GroupRoomController::class, 'show']
+        )->name('student.group-room.show');
 
-    /* Repository */
-    Route::get('/repository', [RepositoryController::class, 'index'])->name('repository.index');
-    Route::get('/repository/{capstoneId}', [RepositoryController::class, 'show'])->name('repository.show');
+        Route::post(
+            '/student/group-rooms/{groupRoomId}/members',
+            [GroupRoomController::class, 'addMember']
+        )->name('student.group-room.add-member');
 
-    /* Similarity Checker */
-    Route::get('/similarity-checker', [SimilarityController::class, 'index'])->name('similarity.index');
-    Route::post('/similarity-checker', [SimilarityController::class, 'check'])->name('similarity.check');
+        /* Student Capstone Routes */
+        Route::get(
+            '/student/group-rooms/{groupRoomId}/capstone/create',
+            [CapstoneProjectController::class, 'create']
+        )->name('student.capstone.create');
 
-    /*
-    |--------------------------------------------------------------------------
-    | Legacy OCR Capstone Routes (Old Capstones)
-    |--------------------------------------------------------------------------
-    */
-    Route::get('/admin/old-capstones/create', [OldCapstoneController::class, 'create'])->name('ocr.upload');
-    Route::post('/admin/old-capstones', [OldCapstoneController::class, 'store'])->name('ocr.store');
-    Route::get('/admin/old-capstones/{oldCapstone}/review', [OldCapstoneController::class, 'review'])->name('ocr.review');
-    Route::put('/admin/old-capstones/{oldCapstone}', [OldCapstoneController::class, 'update'])->name('ocr.update');
-    Route::patch('/admin/old-capstones/{oldCapstone}/approve', [OldCapstoneController::class, 'approve'])->name('ocr.approve');
+        Route::post(
+            '/student/group-rooms/{groupRoomId}/capstone',
+            [CapstoneProjectController::class, 'store']
+        )->name('student.capstone.store');
 
+        Route::get(
+            '/student/group-rooms/{groupRoomId}/capstone/edit',
+            [CapstoneProjectController::class, 'edit']
+        )->name('student.capstone.edit');
+
+        Route::put(
+            '/student/group-rooms/{groupRoomId}/capstone',
+            [CapstoneProjectController::class, 'update']
+        )->name('student.capstone.update');
+    });
+
+    /* Instructor Routes - Instructor Only */
+    Route::middleware(['instructor'])->group(function () {
+
+        /* Instructor Repository */
+        Route::get(
+            '/instructor/repository',
+            [RepositoryController::class, 'index']
+        )->name('instructor.repository.index');
+
+        Route::get(
+            '/instructor/repository/{capstoneId}',
+            [RepositoryController::class, 'show']
+        )->name('instructor.repository.show');
+
+        /* Instructor Students */
+        Route::get(
+            '/instructor/students',
+            [InstructorController::class, 'students']
+        )->name('instructor.students');
+
+        Route::post(
+            '/instructor/students/{studentId}/approve',
+            [InstructorController::class, 'approveStudent']
+        )->name('instructor.students.approve');
+
+        /* Instructor Classrooms */
+        Route::get(
+            '/instructor/classrooms',
+            [ClassroomController::class, 'index']
+        )->name('instructor.classrooms');
+
+        Route::get(
+            '/instructor/classrooms/create',
+            [ClassroomController::class, 'create']
+        )->name('instructor.classrooms.create');
+
+        Route::post(
+            '/instructor/classrooms',
+            [ClassroomController::class, 'store']
+        )->name('instructor.classrooms.store');
+
+        Route::get(
+            '/instructor/classrooms/{classroomId}',
+            [ClassroomController::class, 'show']
+        )->name('instructor.classroom.show');
+
+        Route::patch(
+    '/instructor/classrooms/{classroomId}/group-creation-period',
+    [ClassroomController::class, 'updateGroupCreationPeriod']
+)->name('instructor.classrooms.group-creation-period.update');
+
+        /* Instructor Capstone Review */
+        Route::get(
+            '/instructor/capstones',
+            [CapstoneProjectController::class, 'instructorIndex']
+        )->name('instructor.capstones');
+
+        Route::get(
+            '/instructor/capstones/{capstoneId}',
+            [CapstoneProjectController::class, 'instructorReview']
+        )->name('instructor.capstone.review');
+
+        Route::patch(
+            '/instructor/capstones/{capstoneId}/verify',
+            [CapstoneProjectController::class, 'instructorVerify']
+        )->name('instructor.capstone.verify');
+
+        Route::patch(
+            '/instructor/capstones/{capstoneId}/return',
+            [CapstoneProjectController::class, 'instructorReturn']
+        )->name('instructor.capstone.return');
+    });
+
+    /* Admin Capstone Review - Admin Only */
+    Route::middleware(['admin'])->group(function () {
+
+        Route::get(
+            '/admin/capstones',
+            [CapstoneProjectController::class, 'adminIndex']
+        )->name('admin.capstones');
+
+        Route::get(
+            '/admin/capstones/{capstoneId}',
+            [CapstoneProjectController::class, 'adminReview']
+        )->name('admin.capstone.review');
+
+        Route::patch(
+            '/admin/capstones/{capstoneId}/approve',
+            [CapstoneProjectController::class, 'adminApprove']
+        )->name('admin.capstone.approve');
+
+        Route::patch(
+            '/admin/capstones/{capstoneId}/return',
+            [CapstoneProjectController::class, 'adminReturn']
+        )->name('admin.capstone.return');
+
+        /* Capstone Audit History */
+        Route::get(
+            '/admin/capstone-audits',
+            [CapstoneAuditController::class, 'index']
+        )->name('admin.capstone-audits');
+
+        /* Legacy OCR Capstone Routes */
+        Route::get(
+            '/admin/old-capstones/create',
+            [OldCapstoneController::class, 'create']
+        )->name('ocr.upload');
+
+        Route::post(
+            '/admin/old-capstones',
+            [OldCapstoneController::class, 'store']
+        )->name('ocr.store');
+
+        Route::get(
+            '/admin/old-capstones/{oldCapstone}/review',
+            [OldCapstoneController::class, 'review']
+        )->name('ocr.review');
+
+        Route::put(
+            '/admin/old-capstones/{oldCapstone}',
+            [OldCapstoneController::class, 'update']
+        )->name('ocr.update');
+
+        Route::patch(
+            '/admin/old-capstones/{oldCapstone}/approve',
+            [OldCapstoneController::class, 'approve']
+        )->name('ocr.approve');
+    });
+
+    /* Student-only Repository and Similarity Checker */
+    Route::middleware(['student.role', 'student.approved'])->group(function () {
+
+        Route::get(
+            '/repository',
+            [RepositoryController::class, 'index']
+        )->name('repository.index');
+
+        Route::get(
+            '/repository/{capstoneId}',
+            [RepositoryController::class, 'show']
+        )->name('repository.show');
+
+        Route::get(
+            '/similarity-checker',
+            [SimilarityController::class, 'index']
+        )->name('similarity.index');
+
+        Route::post(
+            '/similarity-checker',
+            [SimilarityController::class, 'check']
+        )->name('similarity.check');
+    });
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

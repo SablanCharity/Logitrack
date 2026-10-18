@@ -22,9 +22,11 @@
             </button>
 
             <div class="lt-nav__menu" id="nav-menu">
-                <nav class="lt-nav__links lt-nav__links--app" aria-label="Admin">
-                    <a href="{{ route('admin.capstones') }}" class="lt-nav__link {{ request()->routeIs('admin.capstones*') ? 'is-active' : '' }}">Capstone Approval</a>
-                </nav>
+<nav class="lt-nav__links lt-nav__links--app" aria-label="Admin">
+    <a href="{{ route('admin.capstones') }}" class="lt-nav__link {{ request()->routeIs('admin.capstones*') ? 'is-active' : '' }}">Capstone Approval</a>
+
+    <a href="{{ route('admin.capstone-audits') }}" class="lt-nav__link {{ request()->routeIs('admin.capstone-audits') ? 'is-active' : '' }}">Capstone Audit History</a>
+</nav>
 
                 <div class="lt-nav__actions">
                     <span class="lt-user-chip">
