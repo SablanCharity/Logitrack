@@ -57,7 +57,7 @@
     <main class="lt-container lt-animate">
 
         <a href="{{ route('instructor.capstones') }}" class="lt-back">
-            ← Back to Capstone Submissions
+            ⟵ Back to Capstone Submissions
         </a>
 
         <div class="lt-page-head">

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Capstone Approval · LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
-    
+
 </head>
 
 <body class="lt-body">

@@ -6,7 +6,6 @@ use App\Models\OldCapstone;
 use App\Services\Ocr\MetadataExtractionService;
 use App\Services\Ocr\TesseractService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class OldCapstoneController extends Controller
 {
@@ -44,13 +43,13 @@ class OldCapstoneController extends Controller
 
             // Save as a pending old capstone record for human review
             $oldCapstone = OldCapstone::create([
-                'title' => $metadata['title'] ?? 'Untitled Capstone',
+                'title' => $metadata['title'] ?? '',
                 'abstract' => $metadata['abstract'],
                 'authors' => $metadata['authors'],
                 'adviser' => $metadata['adviser'],
-                'program' => $metadata['program'] ?? 'Bachelor of Science in Information Technology',
-                'department' => $metadata['department'] ?? 'Computer Studies Department',
-                'institution' => $metadata['institution'] ?? 'Cavite State University – Imus Campus',
+                'program' => $metadata['program'],
+                'department' => $metadata['department'],
+                'institution' => $metadata['institution'],
                 'publication_date' => $metadata['publication_date'],
                 'metadata_image_path' => $imagePath,
                 'ocr_text' => $rawText,

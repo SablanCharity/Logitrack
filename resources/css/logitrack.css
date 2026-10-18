@@ -1204,6 +1204,53 @@ html { scroll-behavior: smooth; }
 .lt-dialog__title { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
 .lt-dialog__text { color: var(--text-muted); }
 .lt-dialog__foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 26px 22px; flex-wrap: wrap; }
+.lt-dialog--register {
+    width: min(720px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+    border-radius: var(--radius);
+}
+.lt-dialog--login {
+    width: min(440px, calc(100vw - 32px));
+    border-radius: var(--radius);
+}
+.lt-dialog__body--register {
+    position: relative;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    border-radius: inherit;
+    scrollbar-width: none;
+}
+.lt-dialog__body--register::-webkit-scrollbar { display: none; }
+.lt-register-dialog__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; padding-right: 40px; }
+.lt-dialog--register .lt-register-dialog__close {
+    position: absolute; top: 14px; right: 14px; z-index: 1;
+    transform: none;
+}
+.lt-dialog__body--login { position: relative; }
+.lt-dialog--login .lt-login-dialog__close {
+    position: absolute; top: 14px; right: 14px; z-index: 1;
+    transform: none;
+}
+.lt-login-dialog__head { margin-bottom: 22px; padding-right: 40px; }
+.lt-login-dialog__head .lt-dialog__title { font-size: 1.4rem; }
+.lt-dialog__body--login .lt-auth__row { margin-bottom: 20px; }
+.lt-dialog__body--login .lt-auth__foot { margin-top: 20px; }
+.lt-dialog__body--login .lt-auth__foot .lt-link {
+    padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer;
+}
+.lt-register-dialog__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
+.lt-register-dialog__form .lt-input,
+.lt-register-dialog__form .lt-select { border-radius: var(--radius-sm); }
+#landing-program:required:invalid { color: #98a0bd; }
+#landing-program option { color: var(--navy); }
+#landing-program option[value=""] { color: #98a0bd; }
+#landing-instructor:required:invalid { color: #98a0bd; }
+#landing-instructor option { color: var(--navy); }
+#landing-instructor option[value=""] { color: #98a0bd; }
+.lt-register-dialog__field--full,
+.lt-register-dialog__actions { grid-column: 1 / -1; }
+.lt-register-dialog__actions { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
 
 @media (max-width: 860px) {
     .lt-review { grid-template-columns: 1fr; }
@@ -1358,6 +1405,11 @@ html { scroll-behavior: smooth; }
 
 @media (max-width: 560px) {
     .lt-grid-2 { grid-template-columns: 1fr; gap: 22px; }
+    .lt-register-dialog__form { grid-template-columns: 1fr; }
+    .lt-register-dialog__field--full,
+    .lt-register-dialog__actions { grid-column: auto; }
+    .lt-register-dialog__actions { align-items: stretch; flex-direction: column; }
+    .lt-register-dialog__actions .lt-btn { width: 100%; }
 }
 
 /* ==========================================================================
@@ -1499,6 +1551,81 @@ html { scroll-behavior: smooth; }
 .lt-repo-card__title a { color: inherit !important; text-decoration: none; }
 .lt-repo-card__title a:hover { color: var(--green) !important; }
 .lt-repo-card__foot { display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--border); padding-top: 16px; }
+
+.lt-dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 1fr;
+    align-items: stretch;
+    gap: 16px;
+    margin-bottom: 26px;
+}
+.lt-dashboard-stats .lt-dashboard-stat + .lt-dashboard-stat { margin-top: 0; }
+.lt-dashboard-stat {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    align-content: stretch;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    min-height: 236px;
+    border-top: 4px solid var(--gold);
+    background: linear-gradient(145deg, #fff 58%, #f8f6ef 100%);
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.lt-dashboard-stat:nth-child(2) { border-top-color: var(--green); }
+.lt-dashboard-stat:nth-child(3) { border-top-color: var(--navy-soft); }
+.lt-dashboard-stat:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); }
+.lt-dashboard-stat__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.lt-dashboard-stat__label { max-width: 25ch; color: var(--text-muted); font-size: .78rem; font-weight: 700; letter-spacing: .08em; line-height: 1.5; text-transform: uppercase; }
+.lt-dashboard-stat__index { flex: none; color: var(--gold); font-size: .85rem; font-weight: 800; letter-spacing: .08em; }
+.lt-dashboard-stat:nth-child(2) .lt-dashboard-stat__index { color: var(--green); }
+.lt-dashboard-stat:nth-child(3) .lt-dashboard-stat__index { color: var(--navy-soft); }
+.lt-dashboard-stat__value { display: block; align-self: center; min-width: 0; color: var(--navy); font-size: clamp(1.05rem, 1.35vw, 1.3rem); font-weight: 700; line-height: 1.45; overflow-wrap: anywhere; }
+.lt-dashboard-stat:nth-child(2) .lt-dashboard-stat__value { font-size: clamp(2rem, 3.2vw, 2.7rem); line-height: 1.1; }
+.lt-dashboard-stat__content { display: grid; align-content: center; gap: 10px; min-width: 0; }
+.lt-dashboard-stat__views { color: var(--text-muted); font-size: .88rem; font-weight: 600; }
+.lt-dashboard-admin-action { display: flex; justify-content: flex-end; margin: -8px 0 20px; }
+.lt-page-head--dashboard h1 { font-size: clamp(1.5rem, 2.5vw, 2rem); }
+.lt-dashboard-featured { margin-bottom: 30px; overflow: hidden; }
+.lt-dashboard-featured { display: grid; }
+.lt-dashboard-featured__track { display: contents; }
+.lt-dashboard-feature { display: grid; grid-area: 1 / 1; align-content: start; gap: 18px; min-width: 0; background: linear-gradient(135deg, #fff 55%, #f8f6ef 100%); opacity: 0; pointer-events: none; transition: opacity .65s ease-in-out; }
+.lt-dashboard-feature[aria-hidden="false"] { z-index: 1; opacity: 1; pointer-events: auto; }
+.lt-dashboard-feature + .lt-dashboard-feature { margin-top: 0; }
+.lt-dashboard-feature__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.lt-dashboard-feature__label { margin-top: 4px; color: var(--navy-soft); font-size: 1rem; font-weight: 600; }
+.lt-dashboard-next { display: grid; place-items: center; flex: none; width: 46px; height: 46px; padding: 0; border: 1px solid var(--border); border-radius: 50%; background: #fff; color: var(--navy); box-shadow: var(--shadow-sm); cursor: pointer; transition: background .2s, border-color .2s, color .2s, transform .25s, box-shadow .2s; }
+.lt-dashboard-next:hover { transform: translateX(4px) scale(1.06); border-color: var(--gold); background: var(--navy); color: #fff; box-shadow: var(--shadow-md); }
+.lt-dashboard-next:focus-visible { outline: 3px solid rgba(228, 176, 40, .65); outline-offset: 2px; }
+.lt-dashboard-next svg { width: 21px; height: 21px; }
+.lt-dashboard-feature__title { font-size: 1.25rem; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.lt-dashboard-feature__meta { display: flex; justify-content: space-between; gap: 12px; color: var(--text-muted); font-size: .88rem; }
+.lt-dashboard-feature .lt-repo-card__foot { justify-content: flex-end; margin-top: 4px; }
+.lt-dashboard-feature__empty { color: var(--text-muted); }
+.lt-dashboard-results-head { margin: 28px 0 16px; }
+.lt-dashboard-results-head h2 { font-size: 1.35rem; font-weight: 700; }
+
+@media (max-width: 760px) {
+    .lt-dashboard-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lt-dashboard-stat { min-height: 220px; }
+}
+
+@media (max-width: 560px) {
+    .lt-dashboard-stats { grid-template-columns: 1fr; gap: 12px; }
+    .lt-dashboard-stat { min-height: 196px; }
+    .lt-dashboard-feature { gap: 15px; }
+}
+
+@media (max-width: 480px) {
+    .lt-dashboard-feature__heading { align-items: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lt-dashboard-feature,
+    .lt-dashboard-stat,
+    .lt-dashboard-next { transition: none; }
+}
 
 .lt-repo-meta {
     margin: 0; display: grid; gap: 14px 24px;

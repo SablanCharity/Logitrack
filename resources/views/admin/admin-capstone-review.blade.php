@@ -54,7 +54,7 @@
     <main class="lt-container lt-animate">
 
         <a href="{{ route('admin.capstones') }}" class="lt-back">
-            ← Back to Capstone Approval
+            ⟵ Back to Capstone Approval
         </a>
 
         <div class="lt-page-head">

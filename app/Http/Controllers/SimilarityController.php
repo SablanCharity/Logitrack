@@ -21,9 +21,14 @@ class SimilarityController extends Controller
     /**
      * Display the Similarity Checker form.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('similarity.index');
+        $user = $request->user();
+        $classroomId = $user->role === 'student'
+            ? $user->classroomMemberships()->where('status', 'approved')->value('classroom_id')
+            : null;
+
+        return view('similarity.index', compact('classroomId'));
     }
 
     /**
@@ -138,6 +143,11 @@ class SimilarityController extends Controller
          * Display only the most similar capstone project.
          * The study count still reflects ALL approved studies compared.
          */
+        $user = $request->user();
+        $classroomId = $user->role === 'student'
+            ? $user->classroomMemberships()->where('status', 'approved')->value('classroom_id')
+            : null;
+
         return view(
             'similarity.results',
             [
@@ -151,6 +161,7 @@ class SimilarityController extends Controller
                 'studyCount' => count($existingStudies),
 
                 'recommendations' => $recommendations,
+                'classroomId' => $classroomId,
             ]
         );
     }

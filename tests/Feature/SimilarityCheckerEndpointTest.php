@@ -6,16 +6,13 @@ use App\Models\CapstoneProject;
 use App\Models\Classroom;
 use App\Models\GroupRoom;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\ConnectionResolverInterface;
-use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Facade;
-
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class SimilarityCheckerEndpointTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected User $testUser;
 
     protected Classroom $testClassroom;
@@ -24,56 +21,9 @@ class SimilarityCheckerEndpointTest extends TestCase
 
     protected GroupRoom $secondaryGroupRoom;
 
-    protected string $originalDefaultConnection;
-
-    protected ?ConnectionResolverInterface $originalConnectionResolver = null;
-
-    protected ?Dispatcher $originalEventDispatcher = null;
-
-    protected function ensureEloquentIsConnected(): void
-    {
-        // Restore Laravel's facade application after other tests run.
-        Facade::setFacadeApplication($this->app);
-        Facade::clearResolvedInstance('db');
-
-        // Explicitly restore the database manager and Eloquent state.
-        config(['database.default' => 'mysql']);
-
-        $databaseManager = $this->app->make('db');
-        $databaseManager->setDefaultConnection('mysql');
-
-        Model::setConnectionResolver($databaseManager);
-        Model::setEventDispatcher($this->app->make('events'));
-    }
-
     protected function setUp(): void
     {
         parent::setUp();
-
-        $this->originalDefaultConnection = config(
-            'database.default',
-            'sqlite'
-        );
-
-        $this->originalConnectionResolver = Model::getConnectionResolver();
-        $this->originalEventDispatcher = Model::getEventDispatcher();
-
-        config([
-            'database.default' => 'mysql',
-            'database.connections.mysql.driver' => 'mysql',
-            'database.connections.mysql.host' => '127.0.0.1',
-            'database.connections.mysql.port' => 3306,
-            'database.connections.mysql.database' => 'logitrack_db',
-            'database.connections.mysql.username' => 'root',
-            'database.connections.mysql.password' => '',
-        ]);
-
-        DB::purge('mysql');
-        DB::setDefaultConnection('mysql');
-        DB::reconnect('mysql');
-
-        Model::setConnectionResolver($this->app['db']);
-        Model::setEventDispatcher($this->app['events']);
 
         $this->testUser = User::create([
             'first_name' => 'Similarity',
@@ -107,41 +57,7 @@ class SimilarityCheckerEndpointTest extends TestCase
 
     protected function tearDown(): void
     {
-        try {
-            if (isset($this->testGroupRoom)) {
-                DB::connection('mysql')
-                    ->table('capstone_projects')
-                    ->where('group_room_id', $this->testGroupRoom->id)
-                    ->delete();
-
-                $this->testGroupRoom->delete();
-            }
-
-            if (isset($this->secondaryGroupRoom)) {
-                DB::connection('mysql')
-                    ->table('capstone_projects')
-                    ->where('group_room_id', $this->secondaryGroupRoom->id)
-                    ->delete();
-
-                $this->secondaryGroupRoom->delete();
-            }
-
-            if (isset($this->testClassroom)) {
-                $this->testClassroom->delete();
-            }
-
-            if (isset($this->testUser)) {
-                $this->testUser->delete();
-            }
-        } finally {
-            DB::setDefaultConnection($this->originalDefaultConnection);
-            DB::purge('mysql');
-
-            Model::setConnectionResolver($this->originalConnectionResolver);
-            Model::setEventDispatcher($this->originalEventDispatcher);
-
-            parent::tearDown();
-        }
+        parent::tearDown();
     }
 
     public function test_similarity_checker_page_is_accessible(): void
@@ -154,8 +70,6 @@ class SimilarityCheckerEndpointTest extends TestCase
 
     public function test_similarity_checker_accepts_valid_proposed_study(): void
     {
-        $this->ensureEloquentIsConnected();
-
         $studyBeforeRequest = CapstoneProject::query()
             ->where(
                 'status',
@@ -206,8 +120,6 @@ class SimilarityCheckerEndpointTest extends TestCase
 
     public function test_similarity_checker_uses_approved_repository_studies_only(): void
     {
-        $this->ensureEloquentIsConnected();
-
         $studyBeforeRequest = CapstoneProject::query()
             ->where(
                 'status',
@@ -291,7 +203,6 @@ class SimilarityCheckerEndpointTest extends TestCase
 
     protected function createApprovedStudy(): CapstoneProject
     {
-        $this->ensureEloquentIsConnected();
 
         return CapstoneProject::create([
             'group_room_id' => $this->testGroupRoom->id,

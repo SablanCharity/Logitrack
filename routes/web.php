@@ -1,14 +1,16 @@
 <?php
 
-use App\Http\Controllers\OldCapstoneController;
-use App\Http\Controllers\CapstoneProjectController;
 use App\Http\Controllers\CapstoneAuditController;
+use App\Http\Controllers\CapstoneProjectController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\GroupRoomController;
 use App\Http\Controllers\InstructorController;
+use App\Http\Controllers\OldCapstoneController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\SimilarityController;
+use App\Models\ClassroomMember;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,33 +20,21 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    $instructors = User::query()
+        ->where('role', 'instructor')
+        ->where('is_approved', true)
+        ->orderBy('last_name')
+        ->orderBy('first_name')
+        ->get();
+
+    return view('welcome', compact('instructors'));
 });
 
 Route::middleware(['auth'])->group(function () {
 
     /* Dashboard - Role-Based Access */
-    Route::get('/dashboard', function () {
-        $user = auth()->user();
-
-        if ($user->role === 'instructor') {
-            return redirect()->route('instructor.repository.index');
-        }
-
-        if ($user->role === 'student') {
-            if (!$user->is_approved) {
-                return redirect()->route('student.pending');
-            }
-
-            return redirect()->route('repository.index');
-        }
-
-        if ($user->role === 'admin') {
-            return redirect()->route('admin.capstones');
-        }
-
-        abort(403, 'Unauthorized access.');
-    })->name('dashboard');
+    Route::get('/dashboard', [RepositoryController::class, 'dashboard'])
+        ->name('dashboard');
 
     /* Profile */
     Route::get('/profile', [ProfileController::class, 'edit'])
@@ -66,12 +56,12 @@ Route::middleware(['auth'])->group(function () {
     })->name('student.pending');
 
     Route::get('/student/classroom-redirect', function () {
-        $membership = \App\Models\ClassroomMember::where(
+        $membership = ClassroomMember::where(
             'user_id',
             auth()->id()
         )->first();
 
-        if (!$membership) {
+        if (! $membership) {
             return redirect()->route('dashboard')
                 ->with('error', 'You are not assigned to any classroom yet.');
         }
@@ -180,9 +170,9 @@ Route::middleware(['auth'])->group(function () {
         )->name('instructor.classroom.show');
 
         Route::patch(
-    '/instructor/classrooms/{classroomId}/group-creation-period',
-    [ClassroomController::class, 'updateGroupCreationPeriod']
-)->name('instructor.classrooms.group-creation-period.update');
+            '/instructor/classrooms/{classroomId}/group-creation-period',
+            [ClassroomController::class, 'updateGroupCreationPeriod']
+        )->name('instructor.classrooms.group-creation-period.update');
 
         /* Instructor Capstone Review */
         Route::get(
@@ -228,6 +218,13 @@ Route::middleware(['auth'])->group(function () {
             '/admin/capstones/{capstoneId}/return',
             [CapstoneProjectController::class, 'adminReturn']
         )->name('admin.capstone.return');
+
+        Route::patch(
+            '/admin/repository/{capstoneId}/best',
+            [CapstoneProjectController::class, 'setBestStudy']
+        )
+            ->middleware('admin')
+            ->name('admin.capstone.set-best');
 
         /* Capstone Audit History */
         Route::get(

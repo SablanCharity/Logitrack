@@ -51,7 +51,7 @@
 
     <main class="lt-container lt-container--narrow lt-animate">
 
-        <a href="{{ route('dashboard') }}" class="lt-back">← Back to dashboard</a>
+        <a href="{{ route('dashboard') }}" class="lt-back">⟵ Back to dashboard</a>
 
         <div class="lt-page-head">
             <span class="lt-eyebrow">Account</span>

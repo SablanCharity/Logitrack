@@ -95,7 +95,7 @@
                 <section class="lt-card lt-review-forms">
                     <h2 class="lt-card__title">Raw OCR Extraction</h2>
                     <p class="lt-card__desc">Reference text scanned directly from the document file.</p>
-                    
+
                     <div style="background: #f8fafc; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 250px; overflow-y: auto; margin-bottom: 20px; white-space: pre-wrap;">
                         {{ $oldCapstone->ocr_text }}
                     </div>

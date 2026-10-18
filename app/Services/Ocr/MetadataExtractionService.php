@@ -23,69 +23,127 @@ class MetadataExtractionService
             return $metadata;
         }
 
-        $metadata['title'] = $this->extractTitle($text);
         $metadata['authors'] = $this->extractAuthors($text);
+        $metadata['title'] = $this->extractTitle($text);
         $metadata['adviser'] = $this->extractAdviser($text);
         $metadata['program'] = $this->extractProgram($text);
         $metadata['department'] = $this->extractDepartment($text);
         $metadata['institution'] = $this->extractInstitution($text);
         $metadata['publication_date'] = $this->extractPublicationDate($text);
-        $metadata['abstract'] = $this->extractAbstract($text);
+        $abstract = $this->extractAbstract($text);
+        $metadata['abstract'] = $abstract !== null
+            ? $this->cleanAbstract($abstract)
+            : null;
 
         return $metadata;
     }
 
     private function normalizeText(string $text): string
     {
-        $text = str_replace(["\r\n", "\r"], "\n", $text);
-        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text) ?? $text;
+        $text = str_replace(
+            ["\r\n", "\r", "\f", "\u{00A0}", '—', '–'],
+            ["\n", "\n", "\n", ' ', '-', '-'],
+            $text
+        );
 
-        $lines = explode("\n", $text);
-        $lines = array_map(function (string $line): string {
-            $line = preg_replace('/[ \t]+/', ' ', trim($line)) ?? trim($line);
-            if (preg_match('/^(?:page\s*)?\d{1,3}$/i', $line)) {
-                return '';
-            }
-            return $line;
-        }, $lines);
+        // Remove OCR pipe artifacts without joining neighboring words.
+        $text = str_replace('|', ' ', $text);
 
-        return trim(implode("\n", $lines));
+        // Normalize horizontal whitespace but preserve paragraph boundaries.
+        $text = preg_replace('/[ \t]+/', ' ', $text) ?? $text;
+        $text = preg_replace('/ *\n */', "\n", $text) ?? $text;
+        $text = preg_replace('/\n{3,}/', "\n\n", $text) ?? $text;
+
+        return trim($text);
     }
 
-    private function extractTitle(string $text): ?string
+    /**
+     * Get the metadata header before the degree and adviser information.
+     * Supports different hardbound formats.
+     */
+    private function extractHeader(string $text): ?string
     {
-        $lines = array_values(array_filter(
-            array_map(fn ($line) => trim($line), preg_split('/\R/u', $text) ?: []),
-            fn ($line) => $line !== ''
-        ));
+        $text = preg_replace(
+            '/^\s*(?:v\s*)?\bABSTRACT\b\s*/i',
+            '',
+            $text
+        ) ?? $text;
 
-        foreach ($lines as $index => $line) {
-            if (preg_match('/^(?:capstone\s+project\s+title|project\s+title|title)\s*[:\-]\s*(.+)$/iu', $line, $matches)) {
-                return $this->cleanField($matches[1]);
-            }
+        if (preg_match(
+            '/\bUndergraduate\s+Thesis\b|\bUndergraduate\s+Capstone\s+Project\b|\bBachelor\s+of\s+Science\b|\bAdviser\s*:/i',
+            $text,
+            $matches,
+            PREG_OFFSET_CAPTURE
+        )) {
+            $text = substr($text, 0, $matches[0][1]);
         }
 
-        $flatText = preg_replace('/\s+/u', ' ', trim($text)) ?? trim($text);
-        $flatText = str_replace('|', '', $flatText);
+        $text = preg_split('/\n\s*\n/', trim($text), 2)[0] ?? $text;
 
-        if (preg_match('/(?:[A-ZÑ\s\.,]+\.,\s*)+(?:AND\s+[A-ZÑ\s\.,]+\.,\s*)?(.+?)(?=\.\s*Undergraduate\b)/iu', $flatText, $matches)) {
-            $candidate = $this->cleanField($matches[1]);
-            if ($candidate !== null && mb_strlen($candidate) >= 5) {
-                return $candidate;
-            }
+        return trim($text) !== '' ? trim($text) : null;
+    }
+
+    private function extractAuthorAndTitleBoundary(string $text): ?array
+    {
+        $header = $this->extractHeader($text);
+
+        if ($header === null) {
+            return null;
         }
 
-        foreach (array_slice($lines, 0, 15) as $line) {
-            if (
-                !$this->isMetadataLabel($line)
-                && !$this->isInstitutionLine($line)
-                && !$this->isProgramLine($line)
-                && !$this->isDateLine($line)
-                && !$this->isAuthorLabel($line)
-                && !preg_match('/^[A-ZÑ\s.,\'-]+$/u', $line)
-                && $this->isPlausibleTitle($line)
-            ) {
-                return $this->cleanField($line);
+        $header = trim($header);
+
+        if (preg_match(
+            '/\b([A-Z][a-z][A-Za-z0-9-]*(?:\s+[A-Z][a-z][A-Za-z0-9-]*)*)\s*:/',
+            $header,
+            $matches,
+            PREG_OFFSET_CAPTURE
+        )) {
+            $titleStart = $matches[0][1];
+
+            return [
+                'authors_text' => trim(substr($header, 0, $titleStart)),
+                'title' => trim(substr($header, $titleStart)),
+                'author_format' => 'surname_first',
+            ];
+        }
+
+        if (preg_match(
+            '/^(.+?[A-Z]{2,}[.,]+)\s+(?=[A-Z][a-z])/s',
+            $header,
+            $matches
+        )) {
+            $authorsText = trim($matches[1]);
+            $title = trim(substr($header, strlen($matches[1])));
+
+            $title = preg_replace('/^[\s.,;:-]+/', '', $title) ?? $title;
+            $title = preg_replace('/\s+/', ' ', $title) ?? $title;
+
+            return [
+                'authors_text' => $authorsText,
+                'title' => rtrim($title, " \t\n\r\0\x0B.,;"),
+                'author_format' => 'given_first',
+            ];
+        }
+
+        $lines = preg_split('/\n+/', $header) ?: [];
+
+        if (count($lines) >= 2) {
+            $firstLine = trim($lines[0]);
+            $remaining = trim(implode(' ', array_slice($lines, 1)));
+
+            $hasUppercaseAuthorList =
+                preg_match('/^[A-Z][A-Z .,\'-]+$/', $firstLine) === 1;
+
+            $titleStartsWithMixedCase =
+                preg_match('/^[A-Z][a-z]/', $remaining) === 1;
+
+            if ($hasUppercaseAuthorList && $titleStartsWithMixedCase) {
+                return [
+                    'authors_text' => $firstLine,
+                    'title' => rtrim($remaining, " \t\n\r\0\x0B.,;"),
+                    'author_format' => 'surname_first',
+                ];
             }
         }
 
@@ -94,141 +152,157 @@ class MetadataExtractionService
 
     private function extractAuthors(string $text): array
     {
-        $labels = '(?:authors?|researchers?|proponents?|prepared\s+by|submitted\s+by)';
+        $boundary = $this->extractAuthorAndTitleBoundary($text);
 
-        if (preg_match(
-            '/(?:^|\n)\s*' . $labels . '\s*[:\-]\s*(.+?)(?=\n\s*(?:adviser|advisor|abstract|program|course|department|institution|school|university|college|date|publication\s+date|title)\b|\n\s*$|\z)/is',
-            $text,
-            $matches
-        )) {
-            $authors = $this->splitAuthors($matches[1]);
-            if ($authors !== []) {
-                return $authors;
-            }
+        if ($boundary === null) {
+            return [];
         }
 
-        $flatText = preg_replace('/\s+/u', ' ', trim($text)) ?? trim($text);
-        $flatText = str_replace('|', '', $flatText);
-        $flatText = preg_replace('/^(?:[vVIVX]+\s*)?ABSTRACT\b\s*/i', '', $flatText);
-
-        if (preg_match(
-            '/^([A-ZÑ\s,\.]+(?:,\s*[A-ZÑ\s,\.]+\.?)+?)\.\s+[A-ZÑ]/u',
-            trim($flatText),
-            $matches
-        )) {
-            $authors = $this->splitAuthors($matches[1]);
-            if ($authors !== []) {
-                return $authors;
-            }
-        }
-
-        return [];
-    }
-
-    private function splitAuthors(string $value): array
-    {
-        $value = trim($value);
-        $value = preg_replace('/\s+(?:and|&)\s+/i', '|', $value) ?? $value;
-        $value = str_replace([";", "\n"], '|', $value);
-
-        $parts = preg_split('/\s*\|\s*/', $value) ?: [];
+        $authorsText = trim($boundary['authors_text']);
         $authors = [];
 
-        foreach ($parts as $part) {
-            $part = $this->cleanField($part);
-            if ($part === null) {
-                continue;
-            }
+        if (($boundary['author_format'] ?? '') === 'surname_first') {
+            // Split between authors, preserving initials such as "T." and "D."
+            $parts = preg_split(
+                '/\.\s*,\s*(?=[A-Z][A-Z\'-]+,\s*[A-Z])/',
+                $authorsText
+            ) ?: [];
 
-            if (str_contains($part, ',')) {
-                $commaParts = array_values(array_filter(
-                    array_map('trim', explode(',', $part)),
-                    fn (string $item): bool => $item !== ''
-                ));
+            foreach ($parts as $part) {
+                $part = trim($part, " \t\n\r\0\x0B,;");
 
-                if (count($commaParts) >= 2 && count($commaParts) <= 8) {
-                    foreach ($commaParts as $namePart) {
-                        if ($this->looksLikePersonName($namePart)) {
-                            $authors[] = $namePart;
-                        }
-                    }
+                if (! preg_match(
+                    '/^([A-Z][A-Z\'-]+),\s*(.+)$/s',
+                    $part,
+                    $matches
+                )) {
                     continue;
+                }
+
+                $surname = trim($matches[1]);
+                $givenNames = preg_replace(
+                    '/\s+/',
+                    ' ',
+                    trim($matches[2])
+                ) ?? trim($matches[2]);
+
+                $name = $surname . ', ' . rtrim($givenNames, " \t\n\r\0\x0B,;.");
+
+                if ($name !== ', ' && ! in_array($name, $authors, true)) {
+                    $authors[] = $name;
                 }
             }
 
-            if ($this->looksLikePersonName($part)) {
-                $authors[] = $part;
+            if ($authors !== []) {
+                return $authors;
             }
         }
 
-        $authors = array_map(
-            fn (string $name): string => $this->cleanField($name) ?? '',
-            $authors
-        );
+        $authorsText = preg_replace(
+            '/\s+\bAND\s+/i',
+            ', ',
+            $authorsText
+        ) ?? $authorsText;
 
-        return array_values(array_unique(array_filter($authors)));
+        $parts = preg_split('/\.\s*,\s*/', $authorsText) ?: [];
+
+        foreach ($parts as $part) {
+            $name = preg_replace('/\s+/', ' ', trim($part)) ?? trim($part);
+            $name = preg_replace('/^AND\s+/i', '', $name) ?? $name;
+            $name = trim($name, " \t\n\r\0\x0B.,;");
+
+            if ($name !== '' && ! in_array($name, $authors, true)) {
+                $authors[] = $name;
+            }
+        }
+
+        return $authors;
     }
 
-    private function looksLikePersonName(string $name): bool
+    private function extractTitle(string $text): ?string
     {
-        $name = trim($name);
-        if (mb_strlen($name) < 3 || mb_strlen($name) > 100) {
-            return false;
+        $boundary = $this->extractAuthorAndTitleBoundary($text);
+
+        if ($boundary === null || trim($boundary['title']) === '') {
+            return null;
         }
 
-        if (
-            preg_match('/\d/', $name)
-            || preg_match('/\b(?:bachelor|science|university|college|department|campus|abstract|thesis|project|online|management)\b/i', $name)
-            || $this->isMetadataLabel($name)
-        ) {
-            return false;
-        }
+        $title = preg_replace(
+            '/\s+/',
+            ' ',
+            trim($boundary['title'])
+        ) ?? trim($boundary['title']);
 
-        return preg_match('/^[\p{L}][\p{L}\s.\'-]*$/u', $name) === 1;
+        return rtrim($title, " \t\n\r\0\x0B.,;");
     }
+
 
     private function extractAdviser(string $text): ?string
     {
-        return $this->extractLabeledValue(
+        /*
+        * The adviser value ends at the blank line separating
+        * the metadata block from the abstract body.
+        *
+        * This supports names with initials and wrapped lines.
+        */
+        if (! preg_match(
+            '/\bAdviser\s*:?\s*(.*?)(?=\n\s*\n|$)/is',
             $text,
-            ['project adviser', 'project advisor', 'research adviser', 'research advisor', 'adviser', 'advisor', 'thesis adviser', 'thesis advisor']
-        );
+            $matches
+        )) {
+            return null;
+        }
+
+        $adviser = preg_replace(
+            '/\s+/',
+            ' ',
+            trim($matches[1])
+        ) ?? trim($matches[1]);
+
+        // Remove trailing punctuation without removing periods in initials.
+        $adviser = rtrim($adviser, " \t\n\r\0\x0B,;:");
+
+        // Reject an empty value or a value that is only punctuation.
+        if ($adviser === '' || preg_match('/^[[:punct:]]+$/', $adviser)) {
+            return null;
+        }
+
+        // Remove the final period after the complete name, if present.
+        $adviser = preg_replace('/\.$/', '', $adviser) ?? $adviser;
+
+        return trim($adviser) !== '' ? trim($adviser) : null;
     }
+
 
     private function extractProgram(string $text): ?string
     {
-        $programPatterns = [
-            '/\b(Bachelor\s+of\s+Science\s+in\s+Computer\s+Science)\b/i',
-            '/\b(Bachelor\s+of\s+Science\s+in\s+Information\s+Technology)\b/i',
-            '/\b(Bachelor\s+of\s+Science\s+in\s+Hospitality\s+Management)\b/i',
+        $patterns = [
+            '/Bachelor\s+of\s+Science\s+in\s+Computer\s+Science/i'
+                => 'Bachelor of Science in Computer Science',
+            '/Bachelor\s+of\s+Science\s+in\s+Information\s+Technology/i'
+                => 'Bachelor of Science in Information Technology',
+            '/BS\s*CS\b/i'
+                => 'BSCS',
+            '/BS\s*IT\b/i'
+                => 'BSIT',
         ];
 
-        foreach ($programPatterns as $pattern) {
-            if (preg_match($pattern, $text, $matches)) {
-                return $this->cleanField($matches[1]);
+        foreach ($patterns as $pattern => $canonicalName) {
+            if (preg_match($pattern, $text)) {
+                return $canonicalName;
             }
         }
 
-        if (preg_match('/\b(BSCS|BSIT|BSHM)\b/i', $text, $matches)) {
-            return strtoupper($matches[1]);
-        }
-
-        return $this->extractLabeledValue($text, ['degree program', 'program', 'course']);
+        return null;
     }
 
     private function extractDepartment(string $text): ?string
     {
-        $value = $this->extractLabeledValue($text, ['academic department', 'department']);
-        if ($value !== null) {
-            return $value;
-        }
-
-        if (preg_match('/\b(Department\s+of\s+[\p{L}\s&-]{3,100}?)(?=\s+(?:of\s+Cavite|Cavite\s+State|Undergraduate|Bachelor)|[.,\n]|\z)/iu', $text, $matches)) {
-            return $this->cleanField($matches[1]);
-        }
-
-        if (preg_match('/\b(Computer\s+Studies\s+Department)\b/i', $text, $matches)) {
-            return $this->cleanField($matches[1]);
+        if (preg_match(
+            '/\bComputer\s+Studies\s+Department\b/i',
+            $text
+        )) {
+            return 'Computer Studies Department';
         }
 
         return null;
@@ -236,105 +310,108 @@ class MetadataExtractionService
 
     private function extractInstitution(string $text): ?string
     {
-        $patterns = [
-            '/\bCavite\s+State\s+University\s*[-–—,]?\s*(?:Imus\s+Campus|Imus\s+City(?:\s*,?\s*Cavite)?|Campus\s+of\s+Imus)\b/i',
-            '/\bCavite\s+State\s+University\b/i',
-        ];
-
-        foreach ($patterns as $pattern) {
-            if (preg_match($pattern, $text, $matches)) {
-                return $this->cleanField($matches[0]);
-            }
+        if (preg_match(
+            '/\bCavite\s+State\s+University\s*-\s*Imus\s+Campus\b/i',
+            $text
+        )) {
+            return 'Cavite State University - Imus Campus';
         }
 
-        return 'Cavite State University – Imus Campus';
+        return null;
     }
 
     private function extractPublicationDate(string $text): ?string
     {
         $months = 'January|February|March|April|May|June|July|August|September|October|November|December';
 
-        if (preg_match('/\b(' . $months . ')\s+((?:19|20)\d{2})\b/i', $text, $matches)) {
+        if (preg_match(
+            '/\b(' . $months . ')\s+((?:19|20)\d{2})\b/i',
+            $text,
+            $matches
+        )) {
             return ucfirst(strtolower($matches[1])) . ' ' . $matches[2];
         }
 
-        if (preg_match('/\b((?:19|20)\d{2})\b/', $text, $matches)) {
-            return $matches[1];
+        // Also support dates written numerically, such as 06/2022.
+        if (preg_match(
+            '/\b(0?[1-9]|1[0-2])[\/-]((?:19|20)\d{2})\b/',
+            $text,
+            $matches
+        )) {
+            $monthNames = [
+                1 => 'January', 2 => 'February', 3 => 'March',
+                4 => 'April', 5 => 'May', 6 => 'June',
+                7 => 'July', 8 => 'August', 9 => 'September',
+                10 => 'October', 11 => 'November', 12 => 'December',
+            ];
+
+            return $monthNames[(int) $matches[1]] . ' ' . $matches[2];
         }
 
         return null;
+    }
+
+    private function cleanAbstract(string $abstract): string
+    {
+        $abstract = str_replace(
+            ["\r\n", "\r", "\u{00A0}"],
+            ["\n", "\n", ' '],
+            $abstract
+        );
+
+        $abstract = preg_replace('/[ \t]+/', ' ', $abstract) ?? $abstract;
+
+        $rawParagraphs = preg_split('/\n\s*\n+/', trim($abstract)) ?: [];
+        $paragraphs = [];
+
+        foreach ($rawParagraphs as $paragraph) {
+            $paragraph = trim($paragraph);
+
+            if ($paragraph === '') {
+                continue;
+            }
+
+            $paragraph = preg_replace(
+                '/(?<=\p{L})-\s*\n\s*(?=\p{L})/u',
+                '',
+                $paragraph
+            ) ?? $paragraph;
+
+            $paragraph = preg_replace('/\s*\n\s*/', ' ', $paragraph) ?? $paragraph;
+            $paragraph = preg_replace('/\s+/', ' ', $paragraph) ?? $paragraph;
+
+            $paragraphs[] = trim($paragraph);
+        }
+
+        return implode("\n\n", $paragraphs);
     }
 
     private function extractAbstract(string $text): ?string
     {
-        if (preg_match(
-            '/(?:^|\n)\s*ABSTRACT\s*[:\-]?\s*\n?(.*?)(?=\n\s*(?:keywords?|key\s+words|introduction|chapter\s+1|table\s+of\s+contents|acknowledg(?:e)?ments?|references|bibliography|chapter\s+\d+)\b|\z)/is',
+        /*
+         * In this document format, the abstract body starts after the
+         * adviser metadata line and its following blank line.
+         */
+        if (! preg_match(
+            '/\bAdviser\s*:.*?(?:\n\s*\n)/is',
             $text,
-            $matches
+            $matches,
+            PREG_OFFSET_CAPTURE
         )) {
-            $abstract = $this->cleanField($matches[1]);
-            if ($abstract !== null && mb_strlen($abstract) >= 20) {
-                return $abstract;
-            }
-        }
-
-        return null;
-    }
-
-    private function extractLabeledValue(string $text, array $labels): ?string
-    {
-        $labelsPattern = implode('|', array_map(fn (string $label): string => preg_quote($label, '/'), $labels));
-        $pattern = '/(?:^|\n)\s*(?:' . $labelsPattern . ')\s*[:\-]\s*([^\n]+)/i';
-
-        if (preg_match($pattern, $text, $matches)) {
-            return $this->cleanField($matches[1]);
-        }
-
-        return null;
-    }
-
-    private function cleanField(?string $value): ?string
-    {
-        if ($value === null) {
             return null;
         }
 
-        $value = preg_replace('/\s+/u', ' ', trim($value)) ?? trim($value);
-        $value = preg_replace('/^[A-ZÑ\s\.,\-\']+\.,\s*/u', '', $value);
-        $value = trim($value, " \t\n\r\0\x0B:;,-–—|.");
+        $start = $matches[0][1] + strlen($matches[0][0]);
+        $abstract = substr($text, $start);
 
-        return $value === '' ? null : $value;
-    }
+        // Remove interface text accidentally included in OCR output.
+        $abstract = preg_split(
+            '/\bApprove\s*(?:&|and)\s*Push\s+to\s+Repository\b/i',
+            $abstract
+        )[0] ?? $abstract;
 
-    private function isPlausibleTitle(string $line): bool
-    {
-        return mb_strlen($line) >= 12
-            && preg_match('/[\p{L}]{3}/u', $line) === 1
-            && !preg_match('/^(?:by|prepared by|submitted by|in partial fulfillment|a thesis|a capstone project)\b/i', $line);
-    }
+        $abstract = trim($abstract);
 
-    private function isMetadataLabel(string $line): bool
-    {
-        return preg_match('/^(?:title|project\s+title|capstone\s+project\s+title|authors?|researchers?|proponents?|prepared\s+by|submitted\s+by|adviser|advisor|abstract|program|degree\s+program|course|department|institution|school|university|college|publication\s+date|date|keywords?)\b/i', trim($line)) === 1;
-    }
-
-    private function isAuthorLabel(string $line): bool
-    {
-        return preg_match('/^(?:authors?|researchers?|proponents?|prepared\s+by|submitted\s+by)\b/i', trim($line)) === 1;
-    }
-
-    private function isInstitutionLine(string $line): bool
-    {
-        return preg_match('/\b(university|college|institution|campus)\b/i', $line) === 1;
-    }
-
-    private function isProgramLine(string $line): bool
-    {
-        return preg_match('/\b(BSCS|BSIT|BSHM|Bachelor\s+of\s+Science)\b/i', $line) === 1;
-    }
-
-    private function isDateLine(string $line): bool
-    {
-        return preg_match('/\b(?:19|20)\d{2}\b/', $line) === 1;
+        return $abstract !== '' ? $abstract : null;
     }
 }

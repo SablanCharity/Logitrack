@@ -7,6 +7,7 @@ use App\Models\CapstoneProject;
 use App\Models\GroupRoom;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CapstoneProjectController extends Controller
@@ -109,7 +110,6 @@ class CapstoneProjectController extends Controller
             ->latest('submitted_at')
             ->get();
 
-        // Define the years variable expected by the Blade view.
         $years = $capstones
             ->pluck('year_section')
             ->filter()
@@ -126,15 +126,12 @@ class CapstoneProjectController extends Controller
             'groupRoom.classroom.instructor',
             'groupRoom.members.user',
             'submitter',
-        ])->findOrFail($capstoneId);
-
-        // Only the instructor assigned to this classroom may review it.
-        if (
-            (int) $capstone->groupRoom->classroom->instructor_id
-            !== (int) auth()->id()
-        ) {
-            abort(403, 'You are not authorized to review this capstone.');
-        }
+        ])
+            ->whereKey($capstoneId)
+            ->whereHas('groupRoom.classroom', function ($query) {
+                $query->where('instructor_id', auth()->id());
+            })
+            ->firstOrFail();
 
         return view('instructor.capstone-review', compact('capstone'));
     }
@@ -215,12 +212,30 @@ class CapstoneProjectController extends Controller
             $capstone,
             'returned_by_instructor',
             'Instructor returned the capstone. Reason: '
-                . $validated['return_reason']
+                .$validated['return_reason']
         );
 
         return redirect()
             ->route('instructor.capstones')
             ->with('success', 'Capstone returned to the student for correction.');
+    }
+
+    public function setBestStudy(int $capstoneId): RedirectResponse
+    {
+        DB::transaction(function () use ($capstoneId): void {
+            $capstone = CapstoneProject::query()
+                ->where('status', 'admin_approved')
+                ->lockForUpdate()
+                ->findOrFail($capstoneId);
+
+            CapstoneProject::query()
+                ->where('is_best', true)
+                ->update(['is_best' => false]);
+
+            $capstone->update(['is_best' => true]);
+        });
+
+        return back()->with('success', 'Best capstone study updated.');
     }
 
     public function adminIndex(): View
@@ -316,7 +331,7 @@ class CapstoneProjectController extends Controller
             $capstone,
             'returned_by_admin',
             'Administrator returned the capstone. Reason: '
-                . $validated['return_reason']
+                .$validated['return_reason']
         );
 
         return redirect()

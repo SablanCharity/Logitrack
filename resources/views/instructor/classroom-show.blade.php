@@ -47,7 +47,7 @@
     <main class="lt-container lt-animate">
 
         <a href="{{ route('instructor.classrooms') }}" class="lt-back">
-            ← Back to Classrooms
+            ⟵ Back to Classrooms
         </a>
 
         <div class="lt-page-head">

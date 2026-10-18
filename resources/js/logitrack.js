@@ -14,6 +14,8 @@
         initUnsavedWarning();
         initTableFilter();
         initYearFilterMenus();
+        initDashboardFeaturedStudies();
+        initAuthenticatedBackLinks();
         initNavToggle();
         initReveal();
         initCopyButtons();
@@ -465,5 +467,65 @@
                 }
             });
         });
+    }
+
+    function initDashboardFeaturedStudies() {
+        document.querySelectorAll('[data-dashboard-featured]').forEach(function (featured) {
+            var panels = Array.from(featured.querySelectorAll('[data-dashboard-feature-panel]'));
+            var track = featured.querySelector('[data-dashboard-featured-track]');
+            if (panels.length < 2 || !track) return;
+
+            var activeIndex = panels.findIndex(function (panel) {
+                return panel.getAttribute('aria-hidden') !== 'true';
+            });
+            if (activeIndex < 0) activeIndex = 0;
+            panels.forEach(function (panel) {
+                var next = panel.querySelector('[data-dashboard-feature-next]');
+                if (!next) return;
+
+                next.addEventListener('click', function () {
+                    var nextIndex = (activeIndex + 1) % panels.length;
+
+                    panels.forEach(function (item, itemIndex) {
+                        var isActive = itemIndex === nextIndex;
+                        item.inert = !isActive;
+                        item.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+                    });
+                    activeIndex = nextIndex;
+                    panels[nextIndex].querySelector('[data-dashboard-feature-next]').focus();
+                });
+            });
+        });
+    }
+
+    function initAuthenticatedBackLinks() {
+        var navigation = document.querySelector('.lt-nav__links--app');
+        var main = document.querySelector('main');
+        if (!navigation || !main || main.querySelector('.lt-back')) return;
+
+        var dashboardLink = navigation.querySelector('a[href*="/dashboard"]');
+        if (
+            (dashboardLink && new URL(dashboardLink.href).pathname === window.location.pathname)
+            || window.location.pathname.startsWith('/similarity')
+            || window.location.pathname.startsWith('/instructor/students')
+        ) return;
+
+        var backUrl = dashboardLink ? dashboardLink.href : window.location.origin;
+
+        if (document.referrer) {
+            var referrer = new URL(document.referrer);
+            var currentPage = window.location.pathname + window.location.search;
+            var referrerPage = referrer.pathname + referrer.search;
+
+            if (referrer.origin === window.location.origin && referrerPage !== currentPage) {
+                backUrl = referrer.href;
+            }
+        }
+
+        var backLink = document.createElement('a');
+        backLink.className = 'lt-back';
+        backLink.href = backUrl;
+        backLink.textContent = '⟵ Back';
+        main.insertBefore(backLink, main.firstChild);
     }
 })();

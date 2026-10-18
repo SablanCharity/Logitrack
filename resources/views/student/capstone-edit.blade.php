@@ -44,7 +44,7 @@
 
     <main class="lt-container lt-container--narrow lt-animate">
 
-        <a href="{{ route('student.group-room.show', $groupRoom->id) }}" class="lt-back">← Back to group room</a>
+        <a href="{{ route('student.group-room.show', $groupRoom->id) }}" class="lt-back">⟵ Back to group room</a>
 
         <div class="lt-page-head">
             <span class="lt-eyebrow">Capstone Resubmission</span>

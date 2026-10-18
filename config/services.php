@@ -37,6 +37,7 @@ return [
 
     'tesseract' => [
         'binary' => env('TESSERACT_BINARY', 'tesseract'),
+        'psm' => (int) env('TESSERACT_PSM', 3),
     ],
 
 

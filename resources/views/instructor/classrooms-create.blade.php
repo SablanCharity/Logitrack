@@ -46,7 +46,7 @@
 
     <main class="lt-container lt-container--narrow lt-animate">
 
-        <a href="{{ route('instructor.classrooms') }}" class="lt-back">← Back to classrooms</a>
+        <a href="{{ route('instructor.classrooms') }}" class="lt-back">⟵ Back to classrooms</a>
 
         <div class="lt-page-head">
             <span class="lt-eyebrow">New Classroom</span>
