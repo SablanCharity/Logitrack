@@ -5,8 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class OldCapstone extends Model
+class ArchivedCapstone extends Model
 {
+    protected $table = 'archived_capstones';
+
     protected $fillable = [
         'title',
         'abstract',

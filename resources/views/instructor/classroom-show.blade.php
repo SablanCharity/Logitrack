@@ -24,9 +24,9 @@
             <div class="lt-nav__menu" id="nav-menu">
                 <nav class="lt-nav__links lt-nav__links--app" aria-label="Instructor">
                     <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}">Repository</a>
                     <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*', 'instructor.classroom.*') ? 'is-active' : '' }}">Classroom</a>
                     <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*', 'instructor.capstone.*') ? 'is-active' : '' }}">Capstone Submissions</a>
-                    <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}">Pending Students</a>
                 </nav>
 
                 <div class="lt-nav__actions">
@@ -39,6 +39,7 @@
                         @csrf
                         <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
                     </form>
+                    <a href="{{ route('profile.edit') }}" class="lt-btn lt-btn--outline-light lt-btn--sm">Profile</a>
                 </div>
             </div>
         </div>
@@ -89,136 +90,23 @@
             </div>
         @endif
 
-        <div class="lt-card__head">
-            <h2 class="lt-card__title" style="margin:0;">Students</h2>
+        <div class="lt-grid-2">
+            <section class="lt-card lt-classroom-option">
+                <div class="lt-card__head">
+                    <h2 class="lt-card__title">Students</h2>
+                </div>
+                <p>View and manage the students enrolled in this classroom.</p>
+                <a href="{{ route('instructor.classroom.students', $classroom->id) }}" class="lt-btn lt-btn--ghost lt-btn--sm">View Students</a>
+            </section>
+
+            <section class="lt-card lt-classroom-option">
+                <div class="lt-card__head">
+                    <h2 class="lt-card__title">Group Rooms</h2>
+                </div>
+                <p>View the groups and capstone submission status for this classroom.</p>
+                <a href="{{ route('instructor.classroom.group-rooms', $classroom->id) }}" class="lt-btn lt-btn--ghost lt-btn--sm">View Group Rooms</a>
+            </section>
         </div>
-
-        @if($classroom->members->count() > 0)
-
-            <div class="lt-stats">
-                <div class="lt-stat">
-                    <div class="lt-stat__num">{{ $classroom->members->count() }}</div>
-                    <div class="lt-stat__label">Total</div>
-                </div>
-                <div class="lt-stat">
-                    <div class="lt-stat__num">{{ $classroom->members->where('status', 'approved')->count() }}</div>
-                    <div class="lt-stat__label">Approved</div>
-                </div>
-                <div class="lt-stat">
-                    <div class="lt-stat__num">{{ $classroom->members->where('status', 'pending')->count() }}</div>
-                    <div class="lt-stat__label">Pending</div>
-                </div>
-            </div>
-
-            <div class="lt-card__head">
-                <input
-                    type="search"
-                    class="lt-input"
-                    style="max-width: 320px;"
-                    placeholder="Search students..."
-                    aria-label="Search students"
-                    data-table-filter="#student-table"
-                    data-filter-empty="#student-filter-empty"
-                >
-            </div>
-
-            <div class="lt-table-wrap">
-
-                <table class="lt-table" id="student-table">
-
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Program</th>
-                            <th>Year &amp; Section</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                        @foreach($classroom->members as $member)
-
-                            <tr>
-
-                                <td>
-                                    <div class="lt-cell-user">
-                                        <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
-                                        <span class="lt-cell-user__name">
-                                            {{ $member->user->first_name }}
-                                            {{ $member->user->last_name }}
-                                        </span>
-                                    </div>
-                                </td>
-
-                                <td class="lt-muted">
-                                    {{ $member->user->email }}
-                                </td>
-
-                                <td>
-                                    {{ $member->user->program }}
-                                </td>
-
-                                <td>
-                                    {{ $member->user->year_section }}
-                                </td>
-
-                                <td>
-
-                                    <div class="lt-actions">
-
-                                        <span class="lt-badge {{ $member->status === 'approved' ? 'lt-badge--approved' : ($member->status === 'pending' ? 'lt-badge--pending' : 'lt-badge--draft') }}">
-                                            {{ ucfirst($member->status) }}
-                                        </span>
-
-                                        @if($member->status === 'pending')
-
-                                            <form
-                                                method="POST"
-                                                action="{{ route('instructor.students.approve', $member->user_id) }}"
-                                                data-submit-guard
-                                            >
-
-                                                @csrf
-
-                                                <button type="submit" class="lt-btn lt-btn--green lt-btn--sm" data-loading-text="Approving...">
-                                                    Approve
-                                                </button>
-
-                                            </form>
-
-                                        @endif
-
-                                    </div>
-
-                                </td>
-
-                            </tr>
-
-                        @endforeach
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-            <div id="student-filter-empty" class="lt-empty lt-hidden lt-mt">
-                <div class="lt-empty__title">No matching student</div>
-                <p>Try a different name or email.</p>
-            </div>
-
-        @else
-
-            <div class="lt-empty">
-                <div class="lt-empty__icon">+</div>
-                <div class="lt-empty__title">No students yet</div>
-                <p>No students have joined this classroom yet.</p>
-                <p class="lt-hint lt-mt">Share the class code above so they can join.</p>
-            </div>
-
-        @endif
 
     </main>
 

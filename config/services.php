@@ -40,5 +40,11 @@ return [
         'psm' => (int) env('TESSERACT_PSM', 3),
     ],
 
+    'google_cloud' => [
+        'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
+        'document_ai_location' => env('GOOGLE_CLOUD_DOCUMENT_AI_LOCATION', 'us'),
+        'document_ai_processor_id' => env('GOOGLE_CLOUD_DOCUMENT_AI_PROCESSOR_ID'),
+        'credentials' => env('GOOGLE_APPLICATION_CREDENTIALS'),
+    ],
 
 ];

@@ -24,9 +24,9 @@
             <div class="lt-nav__menu" id="nav-menu">
                 <nav class="lt-nav__links lt-nav__links--app" aria-label="Instructor">
                     <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}">Repository</a>
                     <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*') ? 'is-active' : '' }}">Classroom</a>
                     <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*') ? 'is-active' : '' }}">Capstone Submissions</a>
-                    <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}" aria-current="page">Pending Students</a>
                 </nav>
 
                 <div class="lt-nav__actions">
@@ -39,6 +39,7 @@
                         @csrf
                         <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
                     </form>
+                    <a href="{{ route('profile.edit') }}" class="lt-btn lt-btn--outline-light lt-btn--sm">Profile</a>
                 </div>
             </div>
         </div>

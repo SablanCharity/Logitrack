@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Models\GroupMember;
 use App\Models\GroupRoom;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +13,11 @@ class GroupRoomController extends Controller
 {
     public function index(int $classroomId): View
     {
-        $classroom = Classroom::with('groupRooms')
+        $classroom = Classroom::with(['groupRooms' => function ($query): void {
+            $query->whereHas('members', function ($memberQuery): void {
+                $memberQuery->where('user_id', auth()->id());
+            });
+        }])
             ->findOrFail($classroomId);
 
         $membership = $classroom->members()
@@ -77,7 +82,7 @@ class GroupRoomController extends Controller
             abort(403, 'You are not an approved student in this classroom.');
         }
 
-        $alreadyInGroup = \App\Models\GroupMember::whereHas(
+        $alreadyInGroup = GroupMember::whereHas(
             'groupRoom',
             function ($query) use ($classroom) {
                 $query->where('classroom_id', $classroom->id);

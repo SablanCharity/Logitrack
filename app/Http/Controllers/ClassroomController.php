@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Classroom;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ClassroomController extends Controller
@@ -23,10 +23,35 @@ class ClassroomController extends Controller
     {
         $classroom = auth()->user()
             ->classrooms()
-            ->with(['members.user'])
             ->findOrFail($classroomId);
 
         return view('instructor.classroom-show', compact('classroom'));
+    }
+
+    public function students(int $classroomId): View
+    {
+        $classroom = auth()->user()
+            ->classrooms()
+            ->with('members.user')
+            ->findOrFail($classroomId);
+
+        return view('instructor.classroom-section', [
+            'classroom' => $classroom,
+            'section' => 'students',
+        ]);
+    }
+
+    public function groupRooms(int $classroomId): View
+    {
+        $classroom = auth()->user()
+            ->classrooms()
+            ->with(['groupRooms.members.user', 'groupRooms.capstoneProject'])
+            ->findOrFail($classroomId);
+
+        return view('instructor.classroom-section', [
+            'classroom' => $classroom,
+            'section' => 'group-rooms',
+        ]);
     }
 
     public function create(): View
@@ -45,7 +70,7 @@ class ClassroomController extends Controller
         ]);
 
         $classCode = strtoupper(
-            'CLS-' . \Illuminate\Support\Str::random(6)
+            'CLS-'.Str::random(6)
         );
 
         auth()->user()->classrooms()->create([

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
-use App\Models\OldCapstone;
 use App\Services\CapstoneRecommendationService;
 use App\Services\SimilarityService;
 use Illuminate\Http\RedirectResponse;
@@ -15,8 +15,7 @@ class SimilarityController extends Controller
     public function __construct(
         protected SimilarityService $similarityService,
         protected CapstoneRecommendationService $recommendationService
-    ) {
-    }
+    ) {}
 
     /**
      * Display the Similarity Checker form.
@@ -24,6 +23,7 @@ class SimilarityController extends Controller
     public function index(Request $request): View
     {
         $user = $request->user();
+        abort_if($user->role === 'admin', 403, 'Similarity checking is not available to administrators.');
         $classroomId = $user->role === 'student'
             ? $user->classroomMemberships()->where('status', 'approved')->value('classroom_id')
             : null;
@@ -37,6 +37,7 @@ class SimilarityController extends Controller
      */
     public function check(Request $request): View|RedirectResponse
     {
+        abort_if($request->user()->role === 'admin', 403, 'Similarity checking is not available to administrators.');
         /*
          * Validate the proposed study.
          */
@@ -50,7 +51,7 @@ class SimilarityController extends Controller
             'abstract' => [
                 'required',
                 'string',
-                'min:' . config(
+                'min:'.config(
                     'similarity.minimum_text_length',
                     20
                 ),
@@ -61,7 +62,7 @@ class SimilarityController extends Controller
          * Combine the title and abstract for analysis.
          */
         $proposedText = trim(
-            $validated['title'] . ' ' . $validated['abstract']
+            $validated['title'].' '.$validated['abstract']
         );
 
         /*
@@ -89,10 +90,10 @@ class SimilarityController extends Controller
         /*
          * Retrieve approved OCR/old repository studies.
          */
-        $oldStudies = OldCapstone::query()
-            ->where('status', 'admin_approved')
+        $oldStudies = ArchivedCapstone::query()
+            ->where('status', 'approved')
             ->get()
-            ->map(function (OldCapstone $study): array {
+            ->map(function (ArchivedCapstone $study): array {
                 return [
                     'id' => $study->id,
                     'title' => $study->title ?? '',

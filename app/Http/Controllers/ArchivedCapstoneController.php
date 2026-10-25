@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\OldCapstone;
+use App\Models\ArchivedCapstone;
 use App\Services\Ocr\MetadataExtractionService;
 use App\Services\Ocr\TesseractService;
 use Illuminate\Http\Request;
 
-class OldCapstoneController extends Controller
+class ArchivedCapstoneController extends Controller
 {
     // Show upload form for scanning old capstones
     public function create()
     {
-        if (!in_array(auth()->user()?->role, ['admin', 'ojt'])) {
+        if (auth()->user()?->role !== 'admin') {
             abort(403, 'Unauthorized action.');
         }
 
@@ -22,7 +22,7 @@ class OldCapstoneController extends Controller
     // Handle image upload, run Tesseract and Metadata Extraction
     public function store(Request $request, TesseractService $tesseract, MetadataExtractionService $extractor)
     {
-        if (!in_array(auth()->user()?->role, ['admin', 'ojt'])) {
+        if (auth()->user()?->role !== 'admin') {
             abort(403, 'Unauthorized action.');
         }
 
@@ -32,7 +32,7 @@ class OldCapstoneController extends Controller
 
         // Store the uploaded image in storage/app/public/ocr_uploads
         $imagePath = $request->file('image')->store('ocr_uploads', 'public');
-        $fullPath = storage_path('app/public/' . $imagePath);
+        $fullPath = storage_path('app/public/'.$imagePath);
 
         try {
             // Run Tesseract OCR
@@ -42,7 +42,7 @@ class OldCapstoneController extends Controller
             $metadata = $extractor->extract($rawText);
 
             // Save as a pending old capstone record for human review
-            $oldCapstone = OldCapstone::create([
+            $archivedCapstone = ArchivedCapstone::create([
                 'title' => $metadata['title'] ?? '',
                 'abstract' => $metadata['abstract'],
                 'authors' => $metadata['authors'],
@@ -56,29 +56,33 @@ class OldCapstoneController extends Controller
                 'status' => 'pending',
             ]);
 
-            return redirect()->route('ocr.review', $oldCapstone->id)
+            return redirect()->route('ocr.review', $archivedCapstone->id)
                 ->with('success', 'OCR processing complete. Please review and verify the extracted metadata.');
 
         } catch (\Exception $e) {
-            return back()->withErrors(['image' => 'OCR processing failed: ' . $e->getMessage()]);
+            return back()->withErrors(['image' => 'OCR processing failed: '.$e->getMessage()]);
         }
     }
 
     // Display the human review and verification form
-    public function review(OldCapstone $oldCapstone)
+    public function review(ArchivedCapstone $archivedCapstone)
     {
-        if (!in_array(auth()->user()?->role, ['admin', 'ojt'])) {
+        if (! in_array(auth()->user()?->role, ['admin', 'ojt'])) {
             abort(403, 'Unauthorized action.');
         }
 
-        return view('ocr.review', compact('oldCapstone'));
+        return view('ocr.review', compact('archivedCapstone'));
     }
 
     // Update/Correct the extracted metadata after human review
-    public function update(Request $request, OldCapstone $oldCapstone)
+    public function update(Request $request, ArchivedCapstone $archivedCapstone)
     {
-        if (!in_array(auth()->user()?->role, ['admin', 'ojt'])) {
+        if (! in_array(auth()->user()?->role, ['admin', 'ojt'])) {
             abort(403, 'Unauthorized action.');
+        }
+
+        if (auth()->user()?->role === 'ojt' && $archivedCapstone->status === 'approved') {
+            abort(403, 'Approved capstones cannot be changed by OJTs.');
         }
 
         $validated = $request->validate([
@@ -96,26 +100,26 @@ class OldCapstoneController extends Controller
             $validated['authors'] = array_map('trim', explode(',', $validated['authors']));
         }
 
-        $oldCapstone->update([
+        $archivedCapstone->update([
             ...$validated,
             'status' => 'reviewed',
             'reviewed_by' => auth()->id(),
             'reviewed_at' => now(),
         ]);
 
-        return redirect()->route('ocr.review', $oldCapstone->id)
+        return redirect()->route('ocr.review', $archivedCapstone->id)
             ->with('success', 'Capstone metadata successfully updated and marked as reviewed.');
     }
 
     // Final Admin approval to officially push/recognize into the repository flow
-    public function approve(OldCapstone $oldCapstone)
+    public function approve(ArchivedCapstone $archivedCapstone)
     {
         if (auth()->user()?->role !== 'admin') {
             abort(403, 'Only administrators can approve capstones into the final repository.');
         }
 
-        $oldCapstone->update([
-            'status' => 'admin_approved',
+        $archivedCapstone->update([
+            'status' => 'approved',
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);

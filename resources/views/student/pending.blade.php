@@ -25,6 +25,7 @@
                 <nav class="lt-nav__links lt-nav__links--app" aria-label="Main">
                     <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
                     <a href="{{ route('student.pending') }}" class="lt-nav__link is-active" aria-current="page">Classroom</a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}">Repository</a>
                     <a href="{{ route('similarity.index') }}" class="lt-nav__link {{ request()->routeIs('similarity.*') ? 'is-active' : '' }}">Similarity Checker</a>
                 </nav>
 

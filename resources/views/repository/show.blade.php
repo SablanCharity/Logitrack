@@ -21,13 +21,23 @@
             </button>
 
             <div class="lt-nav__menu" id="nav-menu">
-                <nav class="lt-nav__links lt-nav__links--app" aria-label="Main">
-                    <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                <nav class="lt-nav__links lt-nav__links--app {{ auth()->user()->role === 'admin' ? 'lt-admin-nav' : '' }}" aria-label="Main">
+                    @if(auth()->user()->role !== 'admin')
+                        <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
+                        <a href="{{ route('repository.index') }}" class="lt-nav__link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}">Repository</a>
+                    @endif
 
                     @if(auth()->user()->role === 'instructor')
                     <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*', 'instructor.classroom.*') ? 'is-active' : '' }}">Classroom</a>
                     <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*', 'instructor.capstone.*') ? 'is-active' : '' }}">Capstone Submissions</a>
                     <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}">Pending Students</a>
+                    @elseif(auth()->user()->role === 'admin')
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}" data-tooltip="Dashboard" aria-label="Dashboard"><span class="material-symbols-outlined">dashboard</span><span class="lt-admin-nav-label">Dashboard</span></a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}" data-tooltip="Repository" aria-label="Repository"><span class="material-symbols-outlined">menu_book</span><span class="lt-admin-nav-label">Repository</span></a>
+                    <a href="{{ route('admin.capstones') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Capstone Review" aria-label="Capstone Review"><span class="material-symbols-outlined">fact_check</span><span class="lt-admin-nav-label">Capstone Review</span></a>
+                    <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Upload Archived" aria-label="Upload Archived"><span class="material-symbols-outlined">upload_file</span><span class="lt-admin-nav-label">Upload Archived</span></a>
+                    <a href="{{ route('admin.accounts.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Staff Accounts" aria-label="Staff Accounts"><span class="material-symbols-outlined">manage_accounts</span><span class="lt-admin-nav-label">Staff Accounts</span></a>
+                    <a href="{{ route('admin.students.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Student Accounts" aria-label="Student Accounts"><span class="material-symbols-outlined">school</span><span class="lt-admin-nav-label">Student Accounts</span></a>
                     @elseif(auth()->user()->role === 'student')
                     <a href="{{ $classroomId ? route('student.group-rooms.index', $classroomId) : route('student.pending') }}" class="lt-nav__link {{ request()->routeIs('student.group-rooms.*', 'student.group-room.*', 'student.capstone.*', 'student.pending') ? 'is-active' : '' }}">Classroom</a>
                     <a href="{{ route('similarity.index') }}" class="lt-nav__link {{ request()->routeIs('similarity.*') ? 'is-active' : '' }}">Similarity Checker</a>
@@ -59,7 +69,12 @@
                     <span class="lt-eyebrow">LogiTrack Repository</span>
                     <h1>{{ $capstone->title }}</h1>
                 </div>
-                <span class="lt-badge lt-badge--approved">Approved</span>
+                <div class="lt-page-head__actions">
+                    <span class="lt-badge lt-badge--approved">Approved</span>
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.repository.edit', ['capstoneId' => $capstone->id, 'type' => $capstone->source_type]) }}" class="lt-btn lt-btn--outline">Edit Metadata</a>
+                    @endif
+                </div>
             </div>
         </div>
 

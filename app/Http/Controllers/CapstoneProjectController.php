@@ -3,16 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\CapstoneProject;
+use App\Models\CapstoneSubmissionWindow;
 use App\Models\GroupRoom;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CapstoneProjectController extends Controller
 {
     public function create(int $groupRoomId): View|RedirectResponse
     {
+        if (! CapstoneSubmissionWindow::current()->is_open) {
+            return redirect()
+                ->route('student.group-room.show', $groupRoomId)
+                ->with('error', 'Capstone submissions are currently closed. Please wait for the department admin to open submissions.');
+        }
+
         $groupRoom = GroupRoom::with([
             'classroom.instructor',
             'members.user',
@@ -52,6 +59,10 @@ class CapstoneProjectController extends Controller
         Request $request,
         int $groupRoomId
     ): RedirectResponse {
+        if (! CapstoneSubmissionWindow::current()->is_open) {
+            return back()->with('error', 'Capstone submissions are currently closed. Please wait for the department admin to open submissions.');
+        }
+
         $groupRoom = GroupRoom::with([
             'classroom.instructor',
             'members.user',
@@ -269,7 +280,20 @@ class CapstoneProjectController extends Controller
             ->latest('verified_at')
             ->get();
 
-        return view('admin.capstones', compact('capstones'));
+        return view('admin.capstones', [
+            'capstones' => $capstones,
+            'submissionWindow' => CapstoneSubmissionWindow::current(),
+        ]);
+    }
+
+    public function toggleSubmissionWindow(): RedirectResponse
+    {
+        $window = CapstoneSubmissionWindow::current();
+        $window->update(['is_open' => ! $window->is_open]);
+
+        return back()->with('success', $window->is_open
+            ? 'Capstone submissions are now open.'
+            : 'Capstone submissions are now closed.');
     }
 
     public function adminReview(int $capstoneId): View

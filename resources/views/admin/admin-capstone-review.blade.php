@@ -32,15 +32,20 @@
             </button>
 
             <div class="lt-nav__menu" id="nav-menu">
-                <nav class="lt-nav__links lt-nav__links--app" aria-label="Admin">
-                    <a href="{{ route('admin.capstones') }}" class="lt-nav__link {{ request()->routeIs('admin.capstones*') ? 'is-active' : '' }}">Capstone Approval</a>
+                <nav class="lt-nav__links lt-nav__links--app lt-admin-nav" aria-label="Admin">
+                    <a href="{{ route('dashboard') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Dashboard" aria-label="Dashboard"><span class="material-symbols-outlined">dashboard</span><span class="lt-admin-nav-label">Dashboard</span></a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Repository" aria-label="Repository"><span class="material-symbols-outlined">menu_book</span><span class="lt-admin-nav-label">Repository</span></a>
+                    <a href="{{ route('admin.capstones') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.capstones*') ? 'is-active' : '' }}" data-tooltip="Capstone Review" aria-label="Capstone Review"><span class="material-symbols-outlined">fact_check</span><span class="lt-admin-nav-label">Capstone Review</span></a>
+                    <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Upload Archived" aria-label="Upload Archived"><span class="material-symbols-outlined">upload_file</span><span class="lt-admin-nav-label">Upload Archived</span></a>
+                    <a href="{{ route('admin.accounts.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Staff Accounts" aria-label="Staff Accounts"><span class="material-symbols-outlined">manage_accounts</span><span class="lt-admin-nav-label">Staff Accounts</span></a>
+                    <a href="{{ route('admin.students.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Student Accounts" aria-label="Student Accounts"><span class="material-symbols-outlined">school</span><span class="lt-admin-nav-label">Student Accounts</span></a>
                 </nav>
 
                 <div class="lt-nav__actions">
-                    <span class="lt-user-chip">
+                    <a href="{{ route('profile.edit') }}" class="lt-user-chip lt-user-chip--link" aria-label="Edit profile">
                         <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
                         {{ auth()->user()->first_name }}
-                    </span>
+                    </a>
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

@@ -6,6 +6,7 @@
    ========================================================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0');
 
 :root {
     --navy: #0B1849;
@@ -193,6 +194,88 @@ body.lt-body {
     gap: 12px;
     flex-wrap: wrap;
     margin-bottom: 18px;
+}
+
+.lt-classroom-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.lt-classroom-option .lt-card__head {
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.lt-classroom-option p {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.lt-member-popover {
+    position: relative;
+    display: inline-block;
+}
+
+.lt-member-count {
+    border: 0;
+    border-bottom: 1px dashed var(--navy);
+    background: transparent;
+    color: var(--navy);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    padding: 2px 4px;
+}
+
+.lt-member-count:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+}
+
+.lt-member-popover__panel {
+    position: absolute;
+    z-index: 5;
+    top: calc(100% + 8px);
+    left: 50%;
+    min-width: 190px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    box-shadow: var(--shadow-md);
+    color: var(--text);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -4px);
+    transition: opacity .15s, transform .15s;
+}
+
+.lt-member-popover:hover .lt-member-popover__panel,
+.lt-member-popover:focus-within .lt-member-popover__panel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+}
+
+.lt-member-popover__panel strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.lt-member-popover__panel ul {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding-left: 18px;
+    text-align: left;
+}
+
+.lt-member-leader {
+    color: var(--gold-dark);
+    font-size: .78rem;
+    font-weight: 600;
 }
 
 /* ---------- Info chips (classroom / group) ---------- */
@@ -739,6 +822,47 @@ html { scroll-behavior: smooth; }
 
 .lt-nav__link:hover { color: #fff !important; background: rgba(255, 255, 255, .08); }
 
+.lt-admin-nav { flex: 1; justify-content: center; }
+
+.lt-admin-nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lt-admin-nav-link .material-symbols-outlined {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.lt-admin-nav-label { display: none; }
+
+.lt-admin-nav-link::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    z-index: 10;
+    top: calc(100% + 9px);
+    left: 50%;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: var(--navy);
+    color: var(--bone);
+    font-size: .75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -3px);
+    transition: opacity .15s, transform .15s;
+}
+
+.lt-admin-nav-link:hover::after,
+.lt-admin-nav-link:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
 .lt-nav__actions { display: flex; align-items: center; gap: 10px; }
 
 .lt-nav__toggle {
@@ -1066,6 +1190,10 @@ html { scroll-behavior: smooth; }
 
     .lt-nav__menu.is-open { display: flex; }
     .lt-nav__links { flex-direction: column; align-items: stretch; }
+    .lt-admin-nav { align-items: stretch; }
+    .lt-admin-nav-link { justify-content: flex-start; gap: 8px; }
+    .lt-admin-nav-label { display: inline; }
+    .lt-admin-nav-link::after { display: none; }
     .lt-nav__actions { flex-direction: column; align-items: stretch; }
     .lt-nav--landing .lt-nav__inner { position: relative; }
 }
@@ -1358,6 +1486,16 @@ html { scroll-behavior: smooth; }
 /* Password show / hide */
 .lt-input-wrap { position: relative; }
 .lt-input-wrap .lt-input { padding-right: 50px; }
+.lt-input-wrap .lt-input-icon {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    z-index: 1;
+    color: var(--muted);
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+.lt-input-wrap .lt-input-icon + .lt-input { padding-left: 46px; }
 
 .lt-eye {
     position: absolute;

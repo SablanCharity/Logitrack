@@ -59,6 +59,13 @@
             <p class="lt-page-head__sub">Manage your account details, password and security.</p>
         </div>
 
+        @if($user->role === 'instructor' && $user->must_change_password)
+            <div class="lt-alert lt-alert--error" role="alert">
+                <span class="lt-alert__icon">!</span>
+                <div>Please change your temporary password before continuing to use LogiTrack.</div>
+            </div>
+        @endif
+
         <div class="lt-profile-id">
             <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
             <div>

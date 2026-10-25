@@ -25,6 +25,7 @@
                 <nav class="lt-nav__links lt-nav__links--app" aria-label="Student">
                     <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
                     <a href="{{ route('student.group-rooms.index', $classroom->id) }}" class="lt-nav__link is-active" aria-current="page">Classroom</a>
+                    <a href="{{ route('repository.index') }}" class="lt-nav__link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}">Repository</a>
                     <a href="{{ route('similarity.index') }}" class="lt-nav__link {{ request()->routeIs('similarity.*') ? 'is-active' : '' }}">Similarity Checker</a>
                 </nav>
 
@@ -68,18 +69,6 @@
 
         @if($classroom->groupRooms->count() > 0)
 
-            <div class="lt-card__head">
-                <input
-                    type="search"
-                    class="lt-input"
-                    style="max-width: 320px;"
-                    placeholder="Search group name..."
-                    aria-label="Search group rooms"
-                    data-table-filter="#group-table"
-                    data-filter-empty="#group-filter-empty"
-                >
-            </div>
-
             <div class="lt-table-wrap">
 
                 <table class="lt-table" id="group-table">
@@ -114,11 +103,6 @@
 
                 </table>
 
-            </div>
-
-            <div id="group-filter-empty" class="lt-empty lt-hidden lt-mt">
-                <div class="lt-empty__title">No matching group</div>
-                <p>Try a different name.</p>
             </div>
 
         @else

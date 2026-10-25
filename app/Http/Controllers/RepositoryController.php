@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
-use App\Models\OldCapstone;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -13,53 +14,80 @@ class RepositoryController extends Controller
     public function index(Request $request): View
     {
         $search = $request->input('search');
+        $year = $request->input('year');
+        $isDashboard = $request->routeIs('dashboard');
 
         // 1. Get modern approved capstones
         $modernCapstones = CapstoneProject::where('status', 'admin_approved')
             ->when($search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%")
-                      ->orWhere('abstract', 'like', "%{$search}%")
-                      ->orWhere('program', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search) {
+                    $query->where('title', 'like', "%{$search}%")
+                        ->orWhere('abstract', 'like', "%{$search}%")
+                        ->orWhere('program', 'like', "%{$search}%");
+                });
             })
             ->get()
             ->map(function ($item) {
                 $item->source_type = 'modern';
+                $item->study_year = $item->publication_date?->format('Y');
+
                 return $item;
             });
 
         // 2. Get approved old/OCR capstones
-        $oldCapstones = OldCapstone::where('status', 'admin_approved')
+        $archivedCapstones = ArchivedCapstone::where('status', 'approved')
             ->when($search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%")
-                      ->orWhere('abstract', 'like', "%{$search}%")
-                      ->orWhere('program', 'like', "%{$search}%");
+                $query->where(function ($query) use ($search) {
+                    $query->where('title', 'like', "%{$search}%")
+                        ->orWhere('abstract', 'like', "%{$search}%")
+                        ->orWhere('program', 'like', "%{$search}%");
+                });
             })
             ->get()
             ->map(function ($item) {
                 $item->source_type = 'old';
-                $item->year_section = $item->publication_date; 
-                
+                $item->year_section = $item->publication_date;
+                $item->study_year = $this->publicationYear($item->publication_date);
+
                 // Safe dummy relationship fallbacks including group_name
-                $item->groupRoom = (object)[
+                $item->groupRoom = (object) [
                     'id' => null,
                     'group_name' => 'Legacy Record Group',
                     'group_leader' => null,
-                    'classroom' => (object)[
+                    'classroom' => (object) [
                         'name' => 'Legacy Repository',
-                        'instructor' => (object)['first_name' => $item->adviser, 'last_name' => '']
+                        'instructor' => (object) ['first_name' => $item->adviser, 'last_name' => ''],
                     ],
-                    'members' => collect($item->authors ?? [])->map(fn($author) => (object)[
+                    'members' => collect($item->authors ?? [])->map(fn ($author) => (object) [
                         'is_leader' => false,
-                        'user' => (object)['first_name' => $author, 'last_name' => '']
-                    ])
+                        'user' => (object) ['first_name' => $author, 'last_name' => ''],
+                    ]),
                 ];
-                $item->instructor = (object)['first_name' => $item->adviser, 'last_name' => ''];
-                
+                $item->instructor = (object) ['first_name' => $item->adviser, 'last_name' => ''];
+
                 return $item;
             });
 
         // 3. Merge collections and sort by newest first
-        $mergedCollection = $modernCapstones->concat($oldCapstones)->sortByDesc('created_at')->values();
+        $allCapstones = $modernCapstones->concat($archivedCapstones);
+        $mergedCollection = $allCapstones
+            ->when($year, fn ($items) => $items->where('study_year', (int) $year))
+            ->sortByDesc('created_at')
+            ->values();
+
+        $years = $allCapstones
+            ->pluck('study_year')
+            ->filter()
+            ->unique()
+            ->sortDesc()
+            ->values();
+
+        $dashboardStudies = [
+            'best' => $modernCapstones->firstWhere('is_best', true),
+            'most_viewed' => $modernCapstones->sortByDesc('views_count')->first(),
+        ];
+        $totalCapstoneStudies = $allCapstones->count();
+        $showDashboardOverview = $isDashboard && ! $search && ! $year;
 
         // 4. Manually paginate the merged collection
         $perPage = 10;
@@ -80,6 +108,12 @@ class RepositoryController extends Controller
         return view('repository.index', [
             'capstones' => $capstones,
             'search' => $search,
+            'year' => $year,
+            'years' => $years,
+            'isDashboard' => $isDashboard,
+            'showDashboardOverview' => $showDashboardOverview,
+            'dashboardStudies' => $dashboardStudies,
+            'totalCapstoneStudies' => $totalCapstoneStudies,
             'classroomId' => null,
         ]);
     }
@@ -90,7 +124,7 @@ class RepositoryController extends Controller
             'type' => ['nullable', 'in:old,modern'],
             'return_to' => ['nullable', 'in:dashboard,repository'],
             'search' => ['nullable', 'string', 'max:255'],
-            'year' => ['nullable', 'digits:4', 'integer', 'min:1900', 'max:' . (now()->year + 1)],
+            'year' => ['nullable', 'digits:4', 'integer', 'min:1900', 'max:'.(now()->year + 1)],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
         $returnRoute = ($returnParameters['return_to'] ?? null) === 'dashboard'
@@ -102,7 +136,7 @@ class RepositoryController extends Controller
             'page' => $returnParameters['page'] ?? null,
         ], fn ($value) => $value !== null && $value !== ''));
         $type = $returnParameters['type']
-            ?? (OldCapstone::whereKey($capstoneId)->exists() ? 'old' : 'modern');
+            ?? (ArchivedCapstone::whereKey($capstoneId)->exists() ? 'old' : 'modern');
 
         $user = $request->user();
         $classroomId = $user->role === 'student'
@@ -110,8 +144,8 @@ class RepositoryController extends Controller
             : null;
 
         if ($type === 'old') {
-            $capstone = OldCapstone::query()
-                ->where('status', 'admin_approved')
+            $capstone = ArchivedCapstone::query()
+                ->where('status', 'approved')
                 ->findOrFail($capstoneId);
             $capstone = $this->prepareLegacyCapstone($capstone);
         } else {
@@ -128,7 +162,67 @@ class RepositoryController extends Controller
         return view('repository.show', compact('capstone', 'classroomId', 'backUrl'));
     }
 
-    private function prepareLegacyCapstone(OldCapstone $capstone): OldCapstone
+    public function edit(Request $request, int $capstoneId): View
+    {
+        $type = $request->validate([
+            'type' => ['required', 'in:old,modern'],
+        ])['type'];
+
+        $capstone = $type === 'old'
+            ? ArchivedCapstone::query()->where('status', 'approved')->findOrFail($capstoneId)
+            : CapstoneProject::query()->where('status', 'admin_approved')->findOrFail($capstoneId);
+
+        return view('repository.edit', compact('capstone', 'type'));
+    }
+
+    public function update(Request $request, int $capstoneId): RedirectResponse
+    {
+        $validated = $request->validate([
+            'type' => ['required', 'in:old,modern'],
+            'title' => ['required', 'string', 'max:255'],
+            'abstract' => ['nullable', 'string'],
+            'program' => ['nullable', 'string', 'max:255'],
+            'publication_date' => ['nullable', 'string', 'max:255'],
+            'adviser' => ['nullable', 'string', 'max:255'],
+            'department' => ['nullable', 'string', 'max:255'],
+            'institution' => ['nullable', 'string', 'max:255'],
+            'authors' => ['nullable', 'string'],
+        ]);
+
+        if ($validated['type'] === 'old') {
+            $capstone = ArchivedCapstone::query()
+                ->where('status', 'approved')
+                ->findOrFail($capstoneId);
+            $capstone->update([
+                'title' => $validated['title'],
+                'abstract' => $validated['abstract'] ?? null,
+                'program' => $validated['program'] ?? null,
+                'publication_date' => $validated['publication_date'] ?? null,
+                'adviser' => $validated['adviser'] ?? null,
+                'department' => $validated['department'] ?? null,
+                'institution' => $validated['institution'] ?? null,
+                'authors' => isset($validated['authors'])
+                    ? array_map('trim', explode(',', $validated['authors']))
+                    : null,
+            ]);
+        } else {
+            $capstone = CapstoneProject::query()
+                ->where('status', 'admin_approved')
+                ->findOrFail($capstoneId);
+            $capstone->update([
+                'title' => $validated['title'],
+                'abstract' => $validated['abstract'] ?? null,
+                'program' => $validated['program'] ?? null,
+                'publication_date' => $validated['publication_date'] ?? null,
+            ]);
+        }
+
+        return redirect()
+            ->route('repository.show', ['capstoneId' => $capstone->id, 'type' => $validated['type']])
+            ->with('success', 'Capstone metadata updated successfully.');
+    }
+
+    private function prepareLegacyCapstone(ArchivedCapstone $capstone): ArchivedCapstone
     {
         $capstone->source_type = 'old';
         $capstone->year_section = $capstone->publication_date;
