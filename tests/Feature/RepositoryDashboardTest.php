@@ -129,6 +129,31 @@ class RepositoryDashboardTest extends TestCase
             ]));
     }
 
+    public function test_instructor_study_detail_returns_to_instructor_repository_search_results(): void
+    {
+        $instructor = User::factory()->create([
+            'role' => 'instructor',
+            'is_approved' => true,
+        ]);
+        $study = $this->createStudy('Instructor Search Result Study');
+
+        $response = $this->actingAs($instructor)->get(route('instructor.repository.show', [
+            'capstoneId' => $study->id,
+            'type' => 'modern',
+            'return_to' => 'instructor_repository',
+            'search' => 'Instructor Search',
+            'year' => now()->year,
+            'page' => 2,
+        ]));
+
+        $response->assertOk()
+            ->assertViewHas('backUrl', route('instructor.repository.index', [
+                'search' => 'Instructor Search',
+                'year' => now()->year,
+                'page' => 2,
+            ]));
+    }
+
     private function createStudy(
         string $title,
         bool $isBest = false,

@@ -90,7 +90,7 @@ class RepositoryController extends Controller
         $showDashboardOverview = $isDashboard && ! $search && ! $year;
 
         // 4. Manually paginate the merged collection
-        $perPage = 10;
+        $perPage = 5;
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
         $currentPageItems = $mergedCollection->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
@@ -122,14 +122,16 @@ class RepositoryController extends Controller
     {
         $returnParameters = $request->validate([
             'type' => ['nullable', 'in:old,modern'],
-            'return_to' => ['nullable', 'in:dashboard,repository'],
+            'return_to' => ['nullable', 'in:dashboard,repository,instructor_repository'],
             'search' => ['nullable', 'string', 'max:255'],
             'year' => ['nullable', 'digits:4', 'integer', 'min:1900', 'max:'.(now()->year + 1)],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
-        $returnRoute = ($returnParameters['return_to'] ?? null) === 'dashboard'
-            ? 'dashboard'
-            : 'repository.index';
+        $returnRoute = match ($returnParameters['return_to'] ?? null) {
+            'dashboard' => 'dashboard',
+            'instructor_repository' => 'instructor.repository.index',
+            default => 'repository.index',
+        };
         $backUrl = route($returnRoute, array_filter([
             'search' => $returnParameters['search'] ?? null,
             'year' => $returnParameters['year'] ?? null,
@@ -184,7 +186,6 @@ class RepositoryController extends Controller
             'program' => ['nullable', 'string', 'max:255'],
             'publication_date' => ['nullable', 'string', 'max:255'],
             'adviser' => ['nullable', 'string', 'max:255'],
-            'department' => ['nullable', 'string', 'max:255'],
             'institution' => ['nullable', 'string', 'max:255'],
             'authors' => ['nullable', 'string'],
         ]);
@@ -199,7 +200,6 @@ class RepositoryController extends Controller
                 'program' => $validated['program'] ?? null,
                 'publication_date' => $validated['publication_date'] ?? null,
                 'adviser' => $validated['adviser'] ?? null,
-                'department' => $validated['department'] ?? null,
                 'institution' => $validated['institution'] ?? null,
                 'authors' => isset($validated['authors'])
                     ? array_map('trim', explode(',', $validated['authors']))

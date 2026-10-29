@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         if (Schema::hasColumn('users', 'name')) {
             Schema::table('users', function (Blueprint $table) {
                 $table->dropColumn('name');
@@ -60,17 +64,29 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('users')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn([
+            $columnsToDrop = [
                 'first_name',
                 'last_name',
                 'role',
                 'program',
                 'year_section',
                 'is_approved',
-            ]);
+            ];
 
-            $table->string('name')->after('id');
+            foreach ($columnsToDrop as $column) {
+                if (Schema::hasColumn('users', $column)) {
+                    $table->dropColumn($column);
+                }
+            }
+
+            if (! Schema::hasColumn('users', 'name')) {
+                $table->string('name')->after('id');
+            }
         });
     }
 };

@@ -3,54 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Classrooms · LogiTrack</title>
+    <title>My Classrooms &middot; LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
     
 </head>
 
 <body class="lt-body">
 
-    <header class="lt-nav lt-nav--landing">
-        <div class="lt-nav__inner">
-            <a href="{{ route('dashboard') }}" class="lt-brand">
-                <span class="lt-brand__mark">L</span>
-                LogiTrack
-            </a>
-
-            <button type="button" class="lt-nav__toggle" data-nav-toggle="#nav-menu" aria-label="Toggle menu" aria-expanded="false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-            </button>
-
-            <div class="lt-nav__menu" id="nav-menu">
-                <nav class="lt-nav__links lt-nav__links--app" aria-label="Instructor">
-                    <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
-                    <a href="{{ route('repository.index') }}" class="lt-nav__link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}">Repository</a>
-                    <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*', 'instructor.classroom.*') ? 'is-active' : '' }}">Classroom</a>
-                    <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*', 'instructor.capstone.*') ? 'is-active' : '' }}">Capstone Submissions</a>
-                </nav>
-
-                <div class="lt-nav__actions">
-                    <span class="lt-user-chip">
-                        <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
-                        {{ auth()->user()->first_name }}
-                    </span>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
-                    </form>
-                    <a href="{{ route('profile.edit') }}" class="lt-btn lt-btn--outline-light lt-btn--sm">Profile</a>
-                </div>
-            </div>
-        </div>
-    </header>
+    @include('components.site-navigation')
 
     <main class="lt-container lt-animate">
 
         <div class="lt-page-head">
             <div class="lt-page-head__row">
                 <div>
-                    <span class="lt-eyebrow">Instructor · {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
+                    <span class="lt-eyebrow">Instructor &middot; {{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
                     <h1>My Classrooms</h1>
                     <p class="lt-page-head__sub">Share the class code with your students so they can join.</p>
                 </div>
@@ -63,7 +30,7 @@
 
         @if(session('success'))
             <div class="lt-alert lt-alert--success" role="status" data-autohide="6000">
-                <span class="lt-alert__icon">✓</span>
+                <span class="lt-alert__icon">&#10003;</span>
                 <div>{{ session('success') }}</div>
             </div>
         @endif

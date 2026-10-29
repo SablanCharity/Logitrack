@@ -3,34 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Edit Capstone Metadata · LogiTrack</title>
+    <title>Edit Capstone Metadata &middot; LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
 </head>
 <body class="lt-body">
-    <header class="lt-nav lt-nav--landing">
-        <div class="lt-nav__inner">
-            <a href="{{ route('repository.index') }}" class="lt-brand">
-                <span class="lt-brand__mark">L</span>
-                LogiTrack
-            </a>
-            <nav class="lt-nav__links lt-nav__links--app lt-admin-nav" aria-label="Admin">
-                <a href="{{ route('dashboard') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Dashboard" aria-label="Dashboard"><span class="material-symbols-outlined">dashboard</span><span class="lt-admin-nav-label">Dashboard</span></a>
-                <a href="{{ route('repository.index') }}" class="lt-nav__link lt-admin-nav-link is-active" data-tooltip="Repository" aria-label="Repository"><span class="material-symbols-outlined">menu_book</span><span class="lt-admin-nav-label">Repository</span></a>
-                <a href="{{ route('admin.capstones') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Capstone Review" aria-label="Capstone Review"><span class="material-symbols-outlined">fact_check</span><span class="lt-admin-nav-label">Capstone Review</span></a>
-                <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Upload Archived" aria-label="Upload Archived"><span class="material-symbols-outlined">upload_file</span><span class="lt-admin-nav-label">Upload Archived</span></a>
-                <a href="{{ route('admin.accounts.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Staff Accounts" aria-label="Staff Accounts"><span class="material-symbols-outlined">manage_accounts</span><span class="lt-admin-nav-label">Staff Accounts</span></a>
-                <a href="{{ route('admin.students.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Student Accounts" aria-label="Student Accounts"><span class="material-symbols-outlined">school</span><span class="lt-admin-nav-label">Student Accounts</span></a>
-            </nav>
-            <div class="lt-nav__actions">
-                <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button></form>
-            </div>
-        </div>
-    </header>
+    @include('components.site-navigation')
 
     <main class="lt-container lt-animate" style="max-width: 760px;">
-        <a href="{{ route('repository.show', ['capstoneId' => $capstone->id, 'type' => $type]) }}" class="lt-back">⟵ Back to Capstone</a>
+        <a href="{{ route('repository.show', ['capstoneId' => $capstone->id, 'type' => $type]) }}" class="lt-back">&larr; Back to Capstone</a>
         <div class="lt-page-head">
-            <span class="lt-eyebrow">Admin · Repository</span>
+            <span class="lt-eyebrow">Admin &middot; Repository</span>
             <h1>Edit Capstone Metadata</h1>
             <p class="lt-page-head__sub">Changes apply directly to this approved repository record.</p>
         </div>
@@ -76,10 +58,6 @@
                             <label for="institution" class="lt-label">Institution</label>
                             <input id="institution" name="institution" class="lt-input" value="{{ old('institution', $capstone->institution) }}">
                         </div>
-                    </div>
-                    <div class="lt-field">
-                        <label for="department" class="lt-label">Department</label>
-                        <input id="department" name="department" class="lt-input" value="{{ old('department', $capstone->department) }}">
                     </div>
                 @endif
                 <button type="submit" class="lt-btn lt-btn--primary">Save Metadata</button>

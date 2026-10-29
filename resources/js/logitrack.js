@@ -525,7 +525,7 @@
         var backLink = document.createElement('a');
         backLink.className = 'lt-back';
         backLink.href = backUrl;
-        backLink.textContent = '⟵ Back';
+        backLink.textContent = '\u2190 Back';
         main.insertBefore(backLink, main.firstChild);
     }
 })();

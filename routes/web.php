@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminAccountController;
 use App\Http\Controllers\ArchivedCapstoneController;
+use App\Http\Controllers\CapstoneAuditController;
 use App\Http\Controllers\CapstoneProjectController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\GroupRoomController;
@@ -82,7 +83,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/instructor/classrooms/{classroomId}', [ClassroomController::class, 'show'])->name('instructor.classroom.show');
     Route::get('/instructor/classrooms/{classroomId}/students', [ClassroomController::class, 'students'])->name('instructor.classroom.students');
     Route::get('/instructor/classrooms/{classroomId}/group-rooms', [ClassroomController::class, 'groupRooms'])->name('instructor.classroom.group-rooms');
-
     /* Instructor Capstone Review */
     Route::get('/instructor/capstones', [CapstoneProjectController::class, 'instructorIndex'])->name('instructor.capstones');
     Route::get('/instructor/capstones/{capstoneId}', [CapstoneProjectController::class, 'instructorReview'])->name('instructor.capstone.review');
@@ -108,11 +108,14 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::put('/admin/accounts/{user}', [AdminAccountController::class, 'update'])->name('admin.accounts.update');
         Route::patch('/admin/accounts/{user}/toggle-active', [AdminAccountController::class, 'toggleActive'])->name('admin.accounts.toggle-active');
         Route::delete('/admin/accounts/{user}', [AdminAccountController::class, 'destroy'])->name('admin.accounts.destroy');
+        Route::get('/admin/capstone-audits', [CapstoneAuditController::class, 'index'])->name('admin.capstone-audits');
     });
 
     /* Repository */
     Route::get('/repository', [RepositoryController::class, 'index'])->name('repository.index');
     Route::get('/repository/{capstoneId}', [RepositoryController::class, 'show'])->name('repository.show');
+    Route::get('/instructor/repository', [RepositoryController::class, 'index'])->name('instructor.repository.index');
+    Route::get('/instructor/repository/{capstoneId}', [RepositoryController::class, 'show'])->name('instructor.repository.show');
 
     /* Similarity Checker */
     Route::get('/similarity-checker', [SimilarityController::class, 'index'])->name('similarity.index');

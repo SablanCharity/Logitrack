@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Review · LogiTrack</title>
+    <title>Admin Review &middot; LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
     
 </head>
@@ -20,46 +20,12 @@
         };
     @endphp
 
-    <header class="lt-nav lt-nav--landing">
-        <div class="lt-nav__inner">
-            <a href="{{ route('admin.capstones') }}" class="lt-brand">
-                <span class="lt-brand__mark">L</span>
-                LogiTrack
-            </a>
-
-            <button type="button" class="lt-nav__toggle" data-nav-toggle="#nav-menu" aria-label="Toggle menu" aria-expanded="false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-            </button>
-
-            <div class="lt-nav__menu" id="nav-menu">
-                <nav class="lt-nav__links lt-nav__links--app lt-admin-nav" aria-label="Admin">
-                    <a href="{{ route('dashboard') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Dashboard" aria-label="Dashboard"><span class="material-symbols-outlined">dashboard</span><span class="lt-admin-nav-label">Dashboard</span></a>
-                    <a href="{{ route('repository.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Repository" aria-label="Repository"><span class="material-symbols-outlined">menu_book</span><span class="lt-admin-nav-label">Repository</span></a>
-                    <a href="{{ route('admin.capstones') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.capstones*') ? 'is-active' : '' }}" data-tooltip="Capstone Review" aria-label="Capstone Review"><span class="material-symbols-outlined">fact_check</span><span class="lt-admin-nav-label">Capstone Review</span></a>
-                    <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Upload Archived" aria-label="Upload Archived"><span class="material-symbols-outlined">upload_file</span><span class="lt-admin-nav-label">Upload Archived</span></a>
-                    <a href="{{ route('admin.accounts.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Staff Accounts" aria-label="Staff Accounts"><span class="material-symbols-outlined">manage_accounts</span><span class="lt-admin-nav-label">Staff Accounts</span></a>
-                    <a href="{{ route('admin.students.index') }}" class="lt-nav__link lt-admin-nav-link" data-tooltip="Student Accounts" aria-label="Student Accounts"><span class="material-symbols-outlined">school</span><span class="lt-admin-nav-label">Student Accounts</span></a>
-                </nav>
-
-                <div class="lt-nav__actions">
-                    <a href="{{ route('profile.edit') }}" class="lt-user-chip lt-user-chip--link" aria-label="Edit profile">
-                        <span class="lt-avatar">{{ strtoupper(substr(auth()->user()->first_name, 0, 1)) }}</span>
-                        {{ auth()->user()->first_name }}
-                    </a>
-
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="lt-btn lt-btn--outline-light lt-btn--sm">Log Out</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </header>
+    @include('components.site-navigation')
 
     <main class="lt-container lt-animate">
 
         <a href="{{ route('admin.capstones') }}" class="lt-back">
-            ⟵ Back to Capstone Approval
+            &larr; Back to Capstone Approval
         </a>
 
         <div class="lt-page-head">
@@ -77,7 +43,7 @@
 
         @if(session('success'))
             <div class="lt-alert lt-alert--success" role="status" data-autohide="6000">
-                <span class="lt-alert__icon">✓</span>
+                <span class="lt-alert__icon">&#10003;</span>
                 <div>{{ session('success') }}</div>
             </div>
         @endif

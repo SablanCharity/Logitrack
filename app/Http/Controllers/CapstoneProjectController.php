@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CapstoneAudit;
 use App\Models\CapstoneProject;
 use App\Models\CapstoneSubmissionWindow;
 use App\Models\GroupRoom;
@@ -26,26 +27,9 @@ class CapstoneProjectController extends Controller
             'capstoneProject',
         ])->findOrFail($groupRoomId);
 
-        // Student must be an approved member of the classroom
-        $isClassroomMember = $groupRoom->classroom
-            ->members()
-            ->where('user_id', auth()->id())
-            ->where('status', 'approved')
-            ->exists();
+        $this->ensureStudentCanAccessGroup($groupRoom);
 
-        if (! $isClassroomMember) {
-            abort(403, 'You are not an approved student in this classroom.');
-        }
-
-        // Student must be a member of this group
-        $isGroupMember = $groupRoom->members
-            ->contains('user_id', auth()->id());
-
-        if (! $isGroupMember) {
-            abort(403, 'You are not a member of this group.');
-        }
-
-        // Only one capstone submission per group
+        // Only one capstone submission per group.
         if ($groupRoom->capstoneProject) {
             return redirect()
                 ->route('student.group-room.show', $groupRoom->id)
@@ -69,69 +53,56 @@ class CapstoneProjectController extends Controller
             'capstoneProject',
         ])->findOrFail($groupRoomId);
 
-        // Student must be an approved classroom member
-        $isClassroomMember = $groupRoom->classroom
-            ->members()
-            ->where('user_id', auth()->id())
-            ->where('status', 'approved')
-            ->exists();
+        $this->ensureStudentCanAccessGroup($groupRoom);
 
-        if (! $isClassroomMember) {
-            abort(403, 'You are not an approved student in this classroom.');
-        }
-
-        // Student must belong to this group
-        $isGroupMember = $groupRoom->members
-            ->contains('user_id', auth()->id());
-
-        if (! $isGroupMember) {
-            abort(403, 'You are not a member of this group.');
-        }
-
-        // Prevent duplicate submission
+        // Prevent duplicate submission.
         if ($groupRoom->capstoneProject) {
-            return back()->with('error', 'This group already has a capstone submission.');
+            return back()->with(
+                'error',
+                'This group already has a capstone submission.'
+            );
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => [
                 'required',
                 'string',
                 'max:255',
             ],
-
             'abstract' => [
                 'required',
                 'string',
             ],
-
             'publication_date' => [
                 'required',
                 'date',
             ],
         ]);
 
-        CapstoneProject::create([
+        $capstone = CapstoneProject::create([
             'group_room_id' => $groupRoom->id,
-
-            // Student who submitted
             'submitted_by' => auth()->id(),
-
-            // Automatically obtained from the classroom/student
             'program' => auth()->user()->program,
             'year_section' => auth()->user()->year_section,
-
-            'title' => $request->title,
-            'abstract' => $request->abstract,
-            'publication_date' => $request->publication_date,
-
+            'title' => $validated['title'],
+            'abstract' => $validated['abstract'],
+            'publication_date' => $validated['publication_date'],
             'status' => 'submitted',
             'submitted_at' => now(),
         ]);
 
+        $this->logCapstoneAudit(
+            $capstone,
+            'submitted',
+            'Student submitted a capstone for instructor review.'
+        );
+
         return redirect()
             ->route('student.group-room.show', $groupRoom->id)
-            ->with('success', 'Capstone submitted successfully. Your adviser will review the metadata.');
+            ->with(
+                'success',
+                'Capstone submitted successfully. Your adviser will review the metadata.'
+            );
     }
 
     public function instructorIndex(): View
@@ -151,11 +122,10 @@ class CapstoneProjectController extends Controller
             ->get();
 
         $years = $capstones
-            ->pluck('publication_date')
+            ->pluck('year_section')
             ->filter()
-            ->map(fn ($publicationDate) => $publicationDate->year)
             ->unique()
-            ->sortDesc()
+            ->sort()
             ->values();
 
         return view('instructor.capstones', compact('capstones', 'years'));
@@ -184,13 +154,12 @@ class CapstoneProjectController extends Controller
 
         // Only the instructor assigned to this classroom can verify it.
         if (
-            $capstone->groupRoom->classroom->instructor_id
-            !== auth()->id()
+            (int) $capstone->groupRoom->classroom->instructor_id
+            !== (int) auth()->id()
         ) {
             abort(403, 'You are not authorized to verify this capstone.');
         }
 
-        // Only submitted capstones can be verified.
         if ($capstone->status !== 'submitted') {
             return back()->with(
                 'error',
@@ -203,6 +172,12 @@ class CapstoneProjectController extends Controller
             'verified_by' => auth()->id(),
             'verified_at' => now(),
         ]);
+
+        $this->logCapstoneAudit(
+            $capstone,
+            'instructor_verified',
+            'Instructor verified the capstone metadata.'
+        );
 
         return redirect()
             ->route('instructor.capstones')
@@ -218,13 +193,12 @@ class CapstoneProjectController extends Controller
 
         // Only the instructor assigned to this classroom can return it.
         if (
-            $capstone->groupRoom->classroom->instructor_id
-            !== auth()->id()
+            (int) $capstone->groupRoom->classroom->instructor_id
+            !== (int) auth()->id()
         ) {
             abort(403, 'You are not authorized to return this capstone.');
         }
 
-        // Only submitted capstones can be returned.
         if ($capstone->status !== 'submitted') {
             return back()->with(
                 'error',
@@ -232,7 +206,7 @@ class CapstoneProjectController extends Controller
             );
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'return_reason' => [
                 'required',
                 'string',
@@ -242,8 +216,15 @@ class CapstoneProjectController extends Controller
 
         $capstone->update([
             'status' => 'returned_by_instructor',
-            'return_reason' => $request->return_reason,
+            'return_reason' => $validated['return_reason'],
         ]);
+
+        $this->logCapstoneAudit(
+            $capstone,
+            'returned_by_instructor',
+            'Instructor returned the capstone. Reason: '
+                .$validated['return_reason']
+        );
 
         return redirect()
             ->route('instructor.capstones')
@@ -305,7 +286,6 @@ class CapstoneProjectController extends Controller
             'verifier',
         ])->findOrFail($capstoneId);
 
-        // Only instructor-verified capstones should be reviewed by admin
         if ($capstone->status !== 'instructor_verified') {
             abort(404, 'This capstone is not waiting for admin approval.');
         }
@@ -317,7 +297,6 @@ class CapstoneProjectController extends Controller
     {
         $capstone = CapstoneProject::findOrFail($capstoneId);
 
-        // Only instructor-verified capstones can be approved
         if ($capstone->status !== 'instructor_verified') {
             return back()->with(
                 'error',
@@ -330,6 +309,12 @@ class CapstoneProjectController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        $this->logCapstoneAudit(
+            $capstone,
+            'admin_approved',
+            'Administrator approved the capstone for the repository.'
+        );
 
         return redirect()
             ->route('admin.capstones')
@@ -346,7 +331,6 @@ class CapstoneProjectController extends Controller
         $capstone = CapstoneProject::with('groupRoom.classroom')
             ->findOrFail($capstoneId);
 
-        // Only instructor-verified capstones can be returned by admin
         if ($capstone->status !== 'instructor_verified') {
             return back()->with(
                 'error',
@@ -354,7 +338,7 @@ class CapstoneProjectController extends Controller
             );
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'return_reason' => [
                 'required',
                 'string',
@@ -364,15 +348,19 @@ class CapstoneProjectController extends Controller
 
         $capstone->update([
             'status' => 'returned_by_admin',
-            'return_reason' => $request->return_reason,
+            'return_reason' => $validated['return_reason'],
         ]);
+
+        $this->logCapstoneAudit(
+            $capstone,
+            'returned_by_admin',
+            'Administrator returned the capstone. Reason: '
+                .$validated['return_reason']
+        );
 
         return redirect()
             ->route('admin.capstones')
-            ->with(
-                'success',
-                'Capstone returned for correction.'
-            );
+            ->with('success', 'Capstone returned for correction.');
     }
 
     public function edit(int $groupRoomId): View
@@ -383,35 +371,17 @@ class CapstoneProjectController extends Controller
             'capstoneProject',
         ])->findOrFail($groupRoomId);
 
-        // Student must be an approved member of the classroom
-        $isClassroomMember = $groupRoom->classroom
-            ->members()
-            ->where('user_id', auth()->id())
-            ->where('status', 'approved')
-            ->exists();
+        $this->ensureStudentCanAccessGroup($groupRoom);
 
-        if (! $isClassroomMember) {
-            abort(403, 'You are not an approved student in this classroom.');
-        }
-
-        // Student must be a member of this group
-        $isGroupMember = $groupRoom->members
-            ->contains('user_id', auth()->id());
-
-        if (! $isGroupMember) {
-            abort(403, 'You are not a member of this group.');
-        }
-
-        // A capstone must exist
         if (! $groupRoom->capstoneProject) {
             abort(404, 'No capstone submission found.');
         }
 
-        // Only returned capstones can be edited
+        // Only returned capstones can be edited.
         if (! in_array($groupRoom->capstoneProject->status, [
             'returned_by_instructor',
             'returned_by_admin',
-        ])) {
+        ], true)) {
             abort(403, 'This capstone is not available for correction.');
         }
 
@@ -431,55 +401,35 @@ class CapstoneProjectController extends Controller
             'capstoneProject',
         ])->findOrFail($groupRoomId);
 
-        // Student must be an approved member of the classroom
-        $isClassroomMember = $groupRoom->classroom
-            ->members()
-            ->where('user_id', auth()->id())
-            ->where('status', 'approved')
-            ->exists();
+        $this->ensureStudentCanAccessGroup($groupRoom);
 
-        if (! $isClassroomMember) {
-            abort(403, 'You are not an approved student in this classroom.');
-        }
-
-        // Student must be a member of this group
-        $isGroupMember = $groupRoom->members
-            ->contains('user_id', auth()->id());
-
-        if (! $isGroupMember) {
-            abort(403, 'You are not a member of this group.');
-        }
-
-        // Capstone must exist
         $capstone = $groupRoom->capstoneProject;
 
         if (! $capstone) {
             abort(404, 'No capstone submission found.');
         }
 
-        // Only returned capstones can be resubmitted
+        // Only returned capstones can be resubmitted.
         if (! in_array($capstone->status, [
             'returned_by_instructor',
             'returned_by_admin',
-        ])) {
+        ], true)) {
             return back()->with(
                 'error',
                 'This capstone is not currently available for resubmission.'
             );
         }
 
-        $request->validate([
+        $validated = $request->validate([
             'title' => [
                 'required',
                 'string',
                 'max:255',
             ],
-
             'abstract' => [
                 'required',
                 'string',
             ],
-
             'publication_date' => [
                 'required',
                 'date',
@@ -487,20 +437,25 @@ class CapstoneProjectController extends Controller
         ]);
 
         $capstone->update([
-            'title' => $request->title,
-            'abstract' => $request->abstract,
-            'publication_date' => $request->publication_date,
+            'title' => $validated['title'],
+            'abstract' => $validated['abstract'],
+            'publication_date' => $validated['publication_date'],
 
-            // Send it back to instructor review
+            // Send it back to instructor review.
             'status' => 'submitted',
-
             'submitted_by' => auth()->id(),
             'submitted_at' => now(),
 
-            // Admin/instructor approval is no longer current
+            // Previous admin approval is no longer current.
             'approved_by' => null,
             'approved_at' => null,
         ]);
+
+        $this->logCapstoneAudit(
+            $capstone,
+            'resubmitted',
+            'Student corrected and resubmitted the capstone.'
+        );
 
         return redirect()
             ->route('student.group-room.show', $groupRoom->id)
@@ -508,5 +463,52 @@ class CapstoneProjectController extends Controller
                 'success',
                 'Capstone corrected and resubmitted successfully. Your instructor/adviser will review it again.'
             );
+    }
+
+    /**
+     * Record an action in the capstone audit log.
+     */
+    private function logCapstoneAudit(
+        CapstoneProject $capstone,
+        string $action,
+        ?string $description = null
+    ): void {
+        CapstoneAudit::create([
+            'user_id' => auth()->id(),
+            'capstone_project_id' => $capstone->id,
+            'action' => $action,
+            'description' => $description,
+        ]);
+    }
+
+    /**
+     * Ensure the current user is a student, an approved classroom member,
+     * and a member of the requested group.
+     */
+    private function ensureStudentCanAccessGroup(GroupRoom $groupRoom): void
+    {
+        $user = auth()->user();
+
+        if (! $user || $user->role !== 'student') {
+            abort(403, 'Only students are authorized to access this group.');
+        }
+
+        $isClassroomMember = $groupRoom->classroom
+            ->members()
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->exists();
+
+        if (! $isClassroomMember) {
+            abort(403, 'You are not an approved student in this classroom.');
+        }
+
+        $isGroupMember = $groupRoom->members()
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if (! $isGroupMember) {
+            abort(403, 'You are not a member of this group.');
+        }
     }
 }
