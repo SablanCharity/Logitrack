@@ -224,7 +224,7 @@
                                     @endif
                                 </div>
                                 <div class="lt-repo-card__foot">
-                                    <a href="{{ route('repository.show', ['capstoneId' => $feature['study']->id, 'return_to' => 'dashboard']) }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
+                                    <a href="{{ route('repository.show', ['capstoneId' => $feature['study']->id, 'type' => $feature['study']->source_type, 'return_to' => 'dashboard']) }}" class="lt-btn lt-btn--primary lt-btn--sm">View Details</a>
                                 </div>
                             @else
                                 <p class="lt-dashboard-feature__empty">
@@ -283,7 +283,7 @@
                                     </span>
                                 @endif
 
-                                @if(! $isOld && $capstone->is_best)
+                                @if($capstone->is_best)
                                     <span class="lt-badge lt-badge--approved">Best Study</span>
                                 @endif
 
@@ -361,8 +361,8 @@
                         </div>
 
                         <div class="lt-repo-card__foot">
-                            @if(! $isOld && auth()->user()?->role === 'admin')
-                                <form method="POST" action="{{ route('admin.capstone.set-best', $capstone->id) }}">
+                            @if(auth()->user()?->role === 'admin')
+                                <form method="POST" action="{{ route('admin.capstone.set-best', ['capstoneId' => $capstone->id, 'type' => $capstone->source_type]) }}">
                                     @csrf
                                     @method('PATCH')
                                     <button

@@ -90,10 +90,13 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::patch('/instructor/capstones/{capstoneId}/return', [CapstoneProjectController::class, 'instructorReturn'])->name('instructor.capstone.return');
 
     /* Admin Capstone Review and Account Management */
-    Route::middleware('admin')->group(function () {
+    Route::middleware('admin.review')->group(function () {
         Route::get('/admin/capstones', [CapstoneProjectController::class, 'adminIndex'])->name('admin.capstones');
-        Route::patch('/admin/capstones/submission-window', [CapstoneProjectController::class, 'toggleSubmissionWindow'])->name('admin.capstones.submission-window');
         Route::get('/admin/capstones/{capstoneId}', [CapstoneProjectController::class, 'adminReview'])->name('admin.capstone.review');
+    });
+
+    Route::middleware('admin')->group(function () {
+        Route::patch('/admin/capstones/submission-window', [CapstoneProjectController::class, 'toggleSubmissionWindow'])->name('admin.capstones.submission-window');
         Route::patch('/admin/capstones/{capstoneId}/approve', [CapstoneProjectController::class, 'adminApprove'])->name('admin.capstone.approve');
         Route::patch('/admin/capstones/{capstoneId}/return', [CapstoneProjectController::class, 'adminReturn'])->name('admin.capstone.return');
         Route::patch('/admin/repository/{capstoneId}/best', [CapstoneProjectController::class, 'setBestStudy'])
@@ -127,6 +130,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('admin')->group(function () {
+        Route::get('/admin/archived-capstones', [ArchivedCapstoneController::class, 'index'])->name('ocr.index');
+    });
+    Route::middleware('admin.ocr')->group(function () {
         Route::get('/admin/archived-capstones/create', [ArchivedCapstoneController::class, 'create'])->name('ocr.upload');
         Route::post('/admin/archived-capstones', [ArchivedCapstoneController::class, 'store'])->name('ocr.store');
     });

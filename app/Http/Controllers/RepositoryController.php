@@ -83,8 +83,8 @@ class RepositoryController extends Controller
             ->values();
 
         $dashboardStudies = [
-            'best' => $modernCapstones->firstWhere('is_best', true),
-            'most_viewed' => $modernCapstones->sortByDesc('views_count')->first(),
+            'best' => $allCapstones->firstWhere('is_best', true),
+            'most_viewed' => $allCapstones->sortByDesc('views_count')->first(),
         ];
         $totalCapstoneStudies = $allCapstones->count();
         $showDashboardOverview = $isDashboard && ! $search && ! $year;
@@ -150,6 +150,7 @@ class RepositoryController extends Controller
                 ->where('status', 'approved')
                 ->findOrFail($capstoneId);
             $capstone = $this->prepareLegacyCapstone($capstone);
+            $capstone->increment('views_count');
         } else {
             $capstone = CapstoneProject::with([
                 'groupRoom.classroom.instructor',

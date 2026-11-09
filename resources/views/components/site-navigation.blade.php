@@ -2,6 +2,7 @@
     $user = auth()->user();
     $role = $user->role;
     $isAdmin = $role === 'admin';
+    $isOjt = $role === 'ojt';
     $isInstructor = $role === 'instructor';
     $isStudent = $role === 'student';
 @endphp
@@ -27,7 +28,7 @@
 
         <div class="lt-nav__menu" id="nav-menu">
             <nav class="lt-nav__links lt-nav__links--app {{ $isAdmin ? 'lt-admin-nav' : '' }}" aria-label="{{ ucfirst($role) }}">
-                @if($isAdmin)
+                @if($isAdmin || $isOjt)
                     <a href="{{ route('dashboard') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}" data-tooltip="Dashboard" aria-label="Dashboard">
                         <span class="material-symbols-outlined">dashboard</span>
                         <span class="lt-admin-nav-label">Dashboard</span>
@@ -40,18 +41,28 @@
                         <span class="material-symbols-outlined">fact_check</span>
                         <span class="lt-admin-nav-label">Capstone Review</span>
                     </a>
-                    <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('ocr.*') ? 'is-active' : '' }}" data-tooltip="Upload Archived" aria-label="Upload Archived">
-                        <span class="material-symbols-outlined">upload_file</span>
-                        <span class="lt-admin-nav-label">Upload Archived</span>
-                    </a>
-                    <a href="{{ route('admin.accounts.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.accounts.*') ? 'is-active' : '' }}" data-tooltip="Staff Accounts" aria-label="Staff Accounts">
-                        <span class="material-symbols-outlined">manage_accounts</span>
-                        <span class="lt-admin-nav-label">Staff Accounts</span>
-                    </a>
-                    <a href="{{ route('admin.students.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.students.*') ? 'is-active' : '' }}" data-tooltip="Student Accounts" aria-label="Student Accounts">
-                        <span class="material-symbols-outlined">school</span>
-                        <span class="lt-admin-nav-label">Student Accounts</span>
-                    </a>
+                    @if($isAdmin || $isOjt)
+                        <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('ocr.upload') ? 'is-active' : '' }}" data-tooltip="Upload Archived" aria-label="Upload Archived">
+                            <span class="material-symbols-outlined">upload_file</span>
+                            <span class="lt-admin-nav-label">Upload Archived</span>
+                        </a>
+                        @if($isAdmin)
+                            <a href="{{ route('ocr.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('ocr.index') ? 'is-active' : '' }}" data-tooltip="Saved Corrections" aria-label="Saved Corrections">
+                                <span class="material-symbols-outlined">fact_check</span>
+                                <span class="lt-admin-nav-label">Saved Corrections</span>
+                            </a>
+                        @endif
+                    @endif
+                    @if($isAdmin)
+                        <a href="{{ route('admin.accounts.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.accounts.*') ? 'is-active' : '' }}" data-tooltip="Staff Accounts" aria-label="Staff Accounts">
+                            <span class="material-symbols-outlined">manage_accounts</span>
+                            <span class="lt-admin-nav-label">Staff Accounts</span>
+                        </a>
+                        <a href="{{ route('admin.students.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.students.*') ? 'is-active' : '' }}" data-tooltip="Student Accounts" aria-label="Student Accounts">
+                            <span class="material-symbols-outlined">school</span>
+                            <span class="lt-admin-nav-label">Student Accounts</span>
+                        </a>
+                    @endif
                 @elseif($isInstructor)
                     <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
                     <a href="{{ route('instructor.repository.index') }}" class="lt-nav__link {{ request()->routeIs('instructor.repository.*') ? 'is-active' : '' }}">Repository</a>

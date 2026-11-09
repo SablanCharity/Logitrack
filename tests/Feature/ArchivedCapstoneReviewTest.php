@@ -28,6 +28,72 @@ class ArchivedCapstoneReviewTest extends TestCase
             ->assertViewHas('archivedCapstone', $archivedCapstone);
     }
 
+    public function test_admin_can_view_saved_unapproved_archived_capstones(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $reviewedCapstone = ArchivedCapstone::create([
+            'title' => 'Corrected Archived Study',
+            'status' => 'reviewed',
+        ]);
+        ArchivedCapstone::create([
+            'title' => 'Pending Archived Study',
+            'status' => 'pending',
+        ]);
+        ArchivedCapstone::create([
+            'title' => 'Already Published Study',
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('ocr.index'))
+            ->assertOk()
+            ->assertSee('Corrected Archived Study')
+            ->assertSee('Review & Approve')
+            ->assertDontSee('Pending Archived Study')
+            ->assertDontSee('Already Published Study')
+            ->assertViewHas('archivedCapstones', function ($capstones) use ($reviewedCapstone): bool {
+                return $capstones->contains($reviewedCapstone);
+            });
+    }
+
+    public function test_ojt_cannot_view_the_admin_archived_capstone_queue(): void
+    {
+        $ojt = User::factory()->create(['role' => 'ojt']);
+
+        $this->actingAs($ojt)
+            ->get(route('ocr.index'))
+            ->assertForbidden();
+    }
+
+    public function test_ojt_navigation_does_not_show_saved_corrections(): void
+    {
+        $ojt = User::factory()->create(['role' => 'ojt']);
+
+        $this->actingAs($ojt)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('Saved Corrections');
+    }
+
+    public function test_ojt_can_open_archived_capstone_upload_form(): void
+    {
+        $ojt = User::factory()->create(['role' => 'ojt']);
+
+        $this->actingAs($ojt)
+            ->get(route('ocr.upload'))
+            ->assertOk()
+            ->assertSee('Upload Archived');
+    }
+
+    public function test_students_cannot_open_archived_capstone_upload_form(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+
+        $this->actingAs($student)
+            ->get(route('ocr.upload'))
+            ->assertForbidden();
+    }
+
     public function test_admin_update_redirects_to_archived_capstone_review(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
@@ -65,6 +131,39 @@ class ArchivedCapstoneReviewTest extends TestCase
             'id' => $archivedCapstone->id,
             'status' => 'approved',
             'approved_by' => $admin->id,
+        ]);
+    }
+
+    public function test_admin_cannot_approve_an_archived_duplicate_of_a_published_study(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        ArchivedCapstone::create([
+            'title' => 'Published Study',
+            'abstract' => 'A study about repository duplication.',
+            'program' => 'BSIT',
+            'publication_date' => 'June 2022',
+            'status' => 'approved',
+        ]);
+        $duplicate = ArchivedCapstone::create([
+            'title' => ' published   study ',
+            'abstract' => 'A study about repository duplication.',
+            'program' => 'bsit',
+            'publication_date' => '2022-06-01',
+            'status' => 'reviewed',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('ocr.approve', $duplicate))
+            ->assertRedirect(route('ocr.review', $duplicate))
+            ->assertSessionHas(
+                'error',
+                'This capstone duplicates a study already published in the repository. It cannot be approved.'
+            );
+
+        $this->assertDatabaseHas('archived_capstones', [
+            'id' => $duplicate->id,
+            'status' => 'reviewed',
+            'approved_by' => null,
         ]);
     }
 

@@ -17,7 +17,7 @@
         <div class="lt-page-head">
             <span class="lt-eyebrow">OCR Scanner &amp; Import</span>
             <h1>Upload Legacy Capstone Document</h1>
-            <p class="lt-page-head__sub">Upload a scanned document, image, or PDF of an old capstone paper to automatically extract its metadata using Tesseract OCR.</p>
+            <p class="lt-page-head__sub">Upload a scanned document, image of an old capstone paper to automatically extract its metadata using Tesseract OCR.</p>
         </div>
 
         @if($errors->any())
@@ -39,7 +39,7 @@
                 @csrf
 
                 <div class="lt-field">
-                    <label for="image" class="lt-label">Document File (JPEG, PNG, JPG, PDF)</label>
+                    <label for="image" class="lt-label">Document File (JPEG, PNG, JPG)</label>
                     <input type="file" id="image" name="image" class="lt-input" accept=".jpeg,.png,.jpg,.pdf" required>
                     <span class="lt-hint">Maximum file size: 10MB. Ensure the title page or abstract is clearly visible for accurate scanning.</span>
                 </div>

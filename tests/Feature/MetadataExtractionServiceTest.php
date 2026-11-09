@@ -7,7 +7,7 @@ class MetadataExtractionServiceTest extends TestCase
 {
     public function test_extracts_metadata_from_ocr_text_with_the_sample_hardbound_layout(): void
     {
-        $service = new MetadataExtractionService();
+        $service = new MetadataExtractionService;
 
         $text = <<<'OCR'
 ABSTRACT
@@ -53,7 +53,7 @@ OCR;
 
     public function test_returns_empty_metadata_when_ocr_text_is_empty(): void
     {
-        $service = new MetadataExtractionService();
+        $service = new MetadataExtractionService;
 
         $result = $service->extract('');
 
@@ -65,7 +65,7 @@ OCR;
 
     public function test_extracts_an_adviser_name_without_including_the_abstract(): void
     {
-        $service = new MetadataExtractionService();
+        $service = new MetadataExtractionService;
 
         $text = <<<'OCR'
 ABSTRACT
@@ -85,7 +85,7 @@ OCR;
 
     public function test_extracts_an_adviser_whose_name_wraps_across_lines(): void
     {
-        $service = new MetadataExtractionService();
+        $service = new MetadataExtractionService;
 
         $text = <<<'OCR'
 ABSTRACT
@@ -101,6 +101,57 @@ OCR;
         $this->assertSame(
             'Mr. Rhoel Joseph R. Sarino',
             $result['adviser']
+        );
+    }
+
+    public function test_extracts_comma_separated_surname_first_authors(): void
+    {
+        $service = new MetadataExtractionService;
+
+        $result = $service->extract(
+            "CABRERA, EMERSON STEVENS, PANES, JOYCE P. Development of a system.\n\n"
+            .'Undergraduate Thesis.'
+        );
+
+        $this->assertSame([
+            'CABRERA, EMERSON STEVENS',
+            'PANES, JOYCE P',
+        ], $result['authors']);
+    }
+
+    public function test_keeps_multi_word_surnames_with_their_given_names(): void
+    {
+        $service = new MetadataExtractionService;
+
+        $result = $service->extract(
+            "SANTOS, JUAN P., DELA CRUZ, MARIA L. Development of a system.\n\n"
+            .'Undergraduate Thesis.'
+        );
+
+        $this->assertSame([
+            'SANTOS, JUAN P',
+            'DELA CRUZ, MARIA L',
+        ], $result['authors']);
+    }
+
+    public function test_extracts_institutions_from_additional_ocr_formats(): void
+    {
+        $service = new MetadataExtractionService;
+
+        $cityFormat = $service->extract(
+            'Cavite State University, Imus City, Cavite.'
+        );
+        $campusFormat = $service->extract(
+            'Cavite State University-Imus Campus, Imus, Cavite.'
+        );
+
+        $this->assertSame(
+            'Cavite State University, Imus City, Cavite',
+            $cityFormat['institution']
+        );
+        $this->assertSame(
+            'Cavite State University - Imus Campus',
+            $campusFormat['institution']
         );
     }
 }

@@ -10,7 +10,7 @@ use RuntimeException;
 class GoogleDocumentAiService
 {
     /**
-     * Send an image or PDF to Google Document AI and return its OCR text.
+     * Send an image to Google Document AI and return its OCR text.
      */
     public function extractText(string $filePath, string $mimeType): string
     {

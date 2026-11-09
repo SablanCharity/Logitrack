@@ -93,6 +93,28 @@ class MetadataExtractionService
 
         $header = trim($header);
 
+        // Additional fallback for surname-first author lists where the title
+        // starts with a normally capitalized word (e.g. Development, Healthy).
+        if (preg_match(
+            '/\b[A-Z][a-z][A-Za-z0-9&\'’()-]*(?=\s+(?:[a-z]|[A-Z][a-z]))/',
+            $header,
+            $matches,
+            PREG_OFFSET_CAPTURE
+        )) {
+            $titleStart = $matches[0][1];
+
+            $authorsText = trim(substr($header, 0, $titleStart));
+            $title = trim(substr($header, $titleStart));
+
+            if ($authorsText !== '' && $title !== '') {
+                return [
+                    'authors_text' => $authorsText,
+                    'title' => rtrim($title, " \t\n\r\0\x0B.,;"),
+                    'author_format' => 'surname_first',
+                ];
+            }
+        }
+
         if (preg_match(
             '/\b([A-Z][a-z][A-Za-z0-9-]*(?:\s+[A-Z][a-z][A-Za-z0-9-]*)*)\s*:/',
             $header,
@@ -162,6 +184,54 @@ class MetadataExtractionService
         $authors = [];
 
         if (($boundary['author_format'] ?? '') === 'surname_first') {
+            // Additional parser for comma-separated surname-first author lists.
+            // Supports both:
+            // CABRERA, EMERSON STEVENS, PANES, JOYCE P.
+            // PANGINDIAN JOLLIBEE E., PANIGBATAN, ANN VENICE V.
+            $parts = array_values(array_filter(
+                array_map('trim', explode(',', $authorsText)),
+                fn ($part) => $part !== ''
+            ));
+
+            $parsedAuthors = [];
+            $index = 0;
+
+            // Handle a first author whose surname and given names are in one part.
+            if (
+                count($parts) >= 3 &&
+                preg_match('/^[A-Z][A-Z\'-]+\s+[A-Z]/', $parts[0])
+            ) {
+                $firstParts = preg_split('/\s+/', $parts[0], 2);
+
+                if (count($firstParts) === 2) {
+                    $parsedAuthors[] = trim($firstParts[0]).', '.trim($firstParts[1]);
+                    $index = 1;
+                }
+            }
+
+            // Remaining authors are expected in surname, given-name pairs.
+            $allPairsParsed = true;
+
+            while ($index + 1 < count($parts)) {
+                $surname = trim($parts[$index]);
+                $givenNames = trim($parts[$index + 1]);
+
+                if (
+                    preg_match('/^[A-Z][A-Z\' -]+$/', $surname) &&
+                    preg_match('/^[A-Z][A-Z .\'-]+$/', $givenNames)
+                ) {
+                    $parsedAuthors[] = $surname.', '.rtrim($givenNames, ' .');
+                } else {
+                    $allPairsParsed = false;
+                }
+
+                $index += 2;
+            }
+
+            if ($index === count($parts) && $allPairsParsed && $parsedAuthors !== []) {
+                return array_values(array_unique($parsedAuthors));
+            }
+
             // Split between authors, preserving initials such as "T." and "D."
             $parts = preg_split(
                 '/\.\s*,\s*(?=[A-Z][A-Z\'-]+,\s*[A-Z])/',
@@ -186,7 +256,7 @@ class MetadataExtractionService
                     trim($matches[2])
                 ) ?? trim($matches[2]);
 
-                $name = $surname . ', ' . rtrim($givenNames, " \t\n\r\0\x0B,;.");
+                $name = $surname.', '.rtrim($givenNames, " \t\n\r\0\x0B,;.");
 
                 if ($name !== ', ' && ! in_array($name, $authors, true)) {
                     $authors[] = $name;
@@ -236,7 +306,6 @@ class MetadataExtractionService
         return rtrim($title, " \t\n\r\0\x0B.,;");
     }
 
-
     private function extractAdviser(string $text): ?string
     {
         /*
@@ -273,18 +342,13 @@ class MetadataExtractionService
         return trim($adviser) !== '' ? trim($adviser) : null;
     }
 
-
     private function extractProgram(string $text): ?string
     {
         $patterns = [
-            '/Bachelor\s+of\s+Science\s+in\s+Computer\s+Science/i'
-                => 'Bachelor of Science in Computer Science',
-            '/Bachelor\s+of\s+Science\s+in\s+Information\s+Technology/i'
-                => 'Bachelor of Science in Information Technology',
-            '/BS\s*CS\b/i'
-                => 'BSCS',
-            '/BS\s*IT\b/i'
-                => 'BSIT',
+            '/Bachelor\s+of\s+Science\s+in\s+Computer\s+Science/i' => 'Bachelor of Science in Computer Science',
+            '/Bachelor\s+of\s+Science\s+in\s+Information\s+Technology/i' => 'Bachelor of Science in Information Technology',
+            '/BS\s*CS\b/i' => 'BSCS',
+            '/BS\s*IT\b/i' => 'BSIT',
         ];
 
         foreach ($patterns as $pattern => $canonicalName) {
@@ -310,8 +374,25 @@ class MetadataExtractionService
 
     private function extractInstitution(string $text): ?string
     {
+        // Existing format: Cavite State University - Imus Campus
         if (preg_match(
             '/\bCavite\s+State\s+University\s*-\s*Imus\s+Campus\b/i',
+            $text
+        )) {
+            return 'Cavite State University - Imus Campus';
+        }
+
+        // Additional format: Cavite State University, Imus City, Cavite
+        if (preg_match(
+            '/\bCavite\s+State\s+University\s*,\s*Imus\s+City\s*,\s*Cavite\b/i',
+            $text
+        )) {
+            return 'Cavite State University, Imus City, Cavite';
+        }
+
+        // Additional format: Cavite State University-Imus Campus, Imus, Cavite
+        if (preg_match(
+            '/\bCavite\s+State\s+University\s*-\s*Imus\s+Campus\s*,\s*Imus\s*,\s*Cavite\b/i',
             $text
         )) {
             return 'Cavite State University - Imus Campus';
@@ -325,11 +406,11 @@ class MetadataExtractionService
         $months = 'January|February|March|April|May|June|July|August|September|October|November|December';
 
         if (preg_match(
-            '/\b(' . $months . ')\s+((?:19|20)\d{2})\b/i',
+            '/\b('.$months.')\s+((?:19|20)\d{2})\b/i',
             $text,
             $matches
         )) {
-            return ucfirst(strtolower($matches[1])) . ' ' . $matches[2];
+            return ucfirst(strtolower($matches[1])).' '.$matches[2];
         }
 
         // Also support dates written numerically, such as 06/2022.
@@ -345,7 +426,7 @@ class MetadataExtractionService
                 10 => 'October', 11 => 'November', 12 => 'December',
             ];
 
-            return $monthNames[(int) $matches[1]] . ' ' . $matches[2];
+            return $monthNames[(int) $matches[1]].' '.$matches[2];
         }
 
         return null;

@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'student.approved' => CheckStudentApproval::class,
             'admin' => CheckAdmin::class,
             'admin.ocr' => CheckAdminOrOjt::class,
+            'admin.review' => CheckAdminOrOjt::class,
             'active' => CheckActiveAccount::class,
             'student.role' => CheckStudentRole::class,
             'instructor' => CheckInstructorRole::class,

@@ -26,6 +26,8 @@ class ArchivedCapstone extends Model
         'approved_by',
         'approved_at',
         'return_reason',
+        'is_best',
+        'views_count',
     ];
 
     protected function casts(): array
@@ -34,6 +36,8 @@ class ArchivedCapstone extends Model
             'authors' => 'array',
             'reviewed_at' => 'datetime',
             'approved_at' => 'datetime',
+            'is_best' => 'boolean',
+            'views_count' => 'integer',
         ];
     }
 

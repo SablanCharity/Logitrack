@@ -342,13 +342,7 @@
 
                         <div class="lt-field">
                             <label for="landing-password" class="lt-label">{{ __('Password') }}</label>
-                            <div class="lt-input-wrap">
-                                <input id="landing-password" class="lt-input {{ old('_form') === 'register' && $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
-                                <button type="button" class="lt-eye" data-toggle-password="#landing-password" aria-pressed="false" aria-label="Show password">
-                                    <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
-                                </button>
-                            </div>
+                            <input id="landing-password" class="lt-input {{ old('_form') === 'register' && $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('password') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
@@ -358,13 +352,7 @@
 
                         <div class="lt-field lt-register-dialog__field--full">
                             <label for="landing-password-confirmation" class="lt-label">{{ __('Confirm Password') }}</label>
-                            <div class="lt-input-wrap">
-                                <input id="landing-password-confirmation" class="lt-input {{ old('_form') === 'register' && $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required autocomplete="new-password">
-                                <button type="button" class="lt-eye" data-toggle-password="#landing-password-confirmation" aria-pressed="false" aria-label="Show password">
-                                    <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
-                                </button>
-                            </div>
+                            <input id="landing-password-confirmation" class="lt-input {{ old('_form') === 'register' && $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required autocomplete="new-password">
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('password_confirmation') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
@@ -408,13 +396,7 @@
 
                         <div class="lt-field">
                             <label for="landing-login-password" class="lt-label">{{ __('Password') }}</label>
-                            <div class="lt-input-wrap">
-                                <input id="landing-login-password" class="lt-input {{ $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="current-password">
-                                <button type="button" class="lt-eye" data-toggle-password="#landing-login-password" aria-pressed="false" aria-label="Show password">
-                                    <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
-                                </button>
-                            </div>
+                            <input id="landing-login-password" class="lt-input {{ $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="current-password">
                             @if (old('_form') === 'login')
                                 @foreach($errors->get('password') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>

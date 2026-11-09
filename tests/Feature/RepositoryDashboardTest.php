@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CapstoneProject;
 use App\Models\Classroom;
 use App\Models\GroupRoom;
+use App\Models\ArchivedCapstone;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -30,6 +31,35 @@ class RepositoryDashboardTest extends TestCase
             ->assertSee('Most Viewed Study')
             ->assertSee('12 views')
             ->assertDontSee('Unapproved Study');
+    }
+
+    public function test_ojt_can_access_dashboard_repository_and_capstone_reviewer_pages(): void
+    {
+        $ojt = User::factory()->create(['role' => 'ojt']);
+        $study = $this->createStudy('Study Awaiting Review', status: 'instructor_verified');
+
+        $this->actingAs($ojt)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Dashboard')
+            ->assertSee('Repository')
+            ->assertSee('Capstone Review');
+
+        $this->actingAs($ojt)
+            ->get(route('repository.index'))
+            ->assertOk();
+
+        $this->actingAs($ojt)
+            ->get(route('admin.capstones'))
+            ->assertOk()
+            ->assertSee('Capstone Approval');
+
+        $this->actingAs($ojt)
+            ->get(route('admin.capstone.review', ['capstoneId' => $study->id]))
+            ->assertOk()
+            ->assertSee('Admin Review')
+            ->assertDontSee('Approve for Repository')
+            ->assertDontSee('Return for Correction');
     }
 
     public function test_dashboard_search_hides_overview_and_shows_five_results_per_page(): void
@@ -83,6 +113,40 @@ class RepositoryDashboardTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_set_an_archived_study_as_best_and_dashboard_detects_most_viewed_study(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $bestStudy = ArchivedCapstone::create([
+            'title' => 'Best Archived Study',
+            'status' => 'approved',
+        ]);
+        ArchivedCapstone::create([
+            'title' => 'Most Viewed Archived Study',
+            'status' => 'approved',
+            'views_count' => 15,
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.capstone.set-best', [
+                'capstoneId' => $bestStudy->id,
+                'type' => 'old',
+            ]))
+            ->assertRedirect(route('repository.index'))
+            ->assertSessionHas('success', 'Best capstone study updated.');
+
+        $this->assertDatabaseHas('archived_capstones', [
+            'id' => $bestStudy->id,
+            'is_best' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Best Archived Study')
+            ->assertSee('Most Viewed Archived Study')
+            ->assertSee('15 views');
+    }
+
     public function test_non_admin_cannot_set_best_study(): void
     {
         $student = User::factory()->create(['role' => 'student']);
@@ -90,6 +154,16 @@ class RepositoryDashboardTest extends TestCase
 
         $this->actingAs($student)
             ->patch(route('admin.capstone.set-best', ['capstoneId' => $study->id]))
+            ->assertForbidden();
+    }
+
+    public function test_ojt_cannot_approve_capstones(): void
+    {
+        $ojt = User::factory()->create(['role' => 'ojt']);
+        $study = $this->createStudy('Study Awaiting Review', status: 'instructor_verified');
+
+        $this->actingAs($ojt)
+            ->patch(route('admin.capstone.approve', ['capstoneId' => $study->id]))
             ->assertForbidden();
     }
 
@@ -103,6 +177,27 @@ class RepositoryDashboardTest extends TestCase
         $response->assertOk()
             ->assertViewHas('backUrl', route('repository.index'));
         $this->assertDatabaseHas('capstone_projects', [
+            'id' => $study->id,
+            'views_count' => 1,
+        ]);
+    }
+
+    public function test_opening_an_approved_archived_study_increments_its_view_count(): void
+    {
+        $user = User::factory()->create(['role' => 'student']);
+        $study = ArchivedCapstone::create([
+            'title' => 'Archived Study to View',
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('repository.show', [
+                'capstoneId' => $study->id,
+                'type' => 'old',
+            ]))
+            ->assertOk();
+
+        $this->assertDatabaseHas('archived_capstones', [
             'id' => $study->id,
             'views_count' => 1,
         ]);
@@ -184,6 +279,8 @@ class RepositoryDashboardTest extends TestCase
             'publication_date' => now()->toDateString(),
             'is_best' => $isBest,
             'views_count' => $viewsCount,
+            'verified_by' => $status === 'instructor_verified' ? $instructor->id : null,
+            'verified_at' => $status === 'instructor_verified' ? now() : null,
         ]);
     }
 }

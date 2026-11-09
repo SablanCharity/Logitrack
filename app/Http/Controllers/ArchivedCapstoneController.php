@@ -3,16 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\ArchivedCapstone;
+use App\Models\CapstoneProject;
 use App\Services\Ocr\MetadataExtractionService;
 use App\Services\Ocr\TesseractService;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ArchivedCapstoneController extends Controller
 {
+    public function index(): View
+    {
+        $archivedCapstones = ArchivedCapstone::query()
+            ->where('status', 'reviewed')
+            ->latest('updated_at')
+            ->get();
+
+        return view('ocr.index', compact('archivedCapstones'));
+    }
+
     // Show upload form for scanning old capstones
     public function create()
     {
-        if (auth()->user()?->role !== 'admin') {
+        if (! in_array(auth()->user()?->role, ['admin', 'ojt'], true)) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -22,7 +34,7 @@ class ArchivedCapstoneController extends Controller
     // Handle image upload, run Tesseract and Metadata Extraction
     public function store(Request $request, TesseractService $tesseract, MetadataExtractionService $extractor)
     {
-        if (auth()->user()?->role !== 'admin') {
+        if (! in_array(auth()->user()?->role, ['admin', 'ojt'], true)) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -118,6 +130,12 @@ class ArchivedCapstoneController extends Controller
             abort(403, 'Only administrators can approve capstones into the final repository.');
         }
 
+        if ($this->hasRepositoryDuplicate($archivedCapstone)) {
+            return redirect()
+                ->route('ocr.review', $archivedCapstone)
+                ->with('error', 'This capstone duplicates a study already published in the repository. It cannot be approved.');
+        }
+
         $archivedCapstone->update([
             'status' => 'approved',
             'approved_by' => auth()->id(),
@@ -126,5 +144,63 @@ class ArchivedCapstoneController extends Controller
 
         return redirect()->route('repository.index')
             ->with('success', 'Old capstone successfully approved and added to the repository.');
+    }
+
+    private function hasRepositoryDuplicate(ArchivedCapstone $archivedCapstone): bool
+    {
+        $archivedMetadata = [
+            'title' => $this->normalizeMetadataValue($archivedCapstone->title),
+            'abstract' => $this->normalizeMetadataValue($archivedCapstone->abstract),
+            'program' => $this->normalizeMetadataValue($archivedCapstone->program),
+            'publication_date' => $this->normalizePublicationDate($archivedCapstone->publication_date),
+        ];
+
+        $approvedArchivedCapstones = ArchivedCapstone::query()
+            ->where('status', 'approved')
+            ->where('id', '!=', $archivedCapstone->id)
+            ->get(['title', 'abstract', 'program', 'publication_date']);
+
+        foreach ($approvedArchivedCapstones as $approvedCapstone) {
+            if ($archivedMetadata === [
+                'title' => $this->normalizeMetadataValue($approvedCapstone->title),
+                'abstract' => $this->normalizeMetadataValue($approvedCapstone->abstract),
+                'program' => $this->normalizeMetadataValue($approvedCapstone->program),
+                'publication_date' => $this->normalizePublicationDate($approvedCapstone->publication_date),
+            ]) {
+                return true;
+            }
+        }
+
+        $approvedModernCapstones = CapstoneProject::query()
+            ->where('status', 'admin_approved')
+            ->get(['title', 'abstract', 'program', 'publication_date']);
+
+        foreach ($approvedModernCapstones as $approvedCapstone) {
+            if ($archivedMetadata === [
+                'title' => $this->normalizeMetadataValue($approvedCapstone->title),
+                'abstract' => $this->normalizeMetadataValue($approvedCapstone->abstract),
+                'program' => $this->normalizeMetadataValue($approvedCapstone->program),
+                'publication_date' => $this->normalizePublicationDate($approvedCapstone->publication_date),
+            ]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function normalizeMetadataValue(?string $value): string
+    {
+        return strtolower(trim(preg_replace('/\s+/', ' ', $value ?? '') ?? ''));
+    }
+
+    private function normalizePublicationDate(mixed $value): string
+    {
+        $normalizedValue = $this->normalizeMetadataValue((string) $value);
+        $timestamp = strtotime($normalizedValue);
+
+        return $timestamp === false
+            ? $normalizedValue
+            : date('Y-m-d', $timestamp);
     }
 }

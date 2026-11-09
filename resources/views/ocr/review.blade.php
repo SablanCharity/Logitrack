@@ -32,6 +32,13 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="lt-alert lt-alert--error" role="alert">
+                <span class="lt-alert__icon">!</span>
+                <div>{{ session('error') }}</div>
+            </div>
+        @endif
+
         <div class="lt-review">
             <!-- Left Column: Form to Edit Extracted Metadata -->
             <div class="lt-review__stack">

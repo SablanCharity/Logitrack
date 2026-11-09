@@ -173,7 +173,8 @@
 
             <aside class="lt-panel-sticky">
 
-                <section class="lt-card lt-review-forms">
+                @if(auth()->user()->role === 'admin')
+                    <section class="lt-card lt-review-forms">
 
                     <div>
                         <h2 class="lt-card__title">Admin Action</h2>
@@ -248,7 +249,8 @@
 
                     </form>
 
-                </section>
+                    </section>
+                @endif
 
             </aside>
 

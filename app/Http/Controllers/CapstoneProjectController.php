@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ArchivedCapstone;
 use App\Models\CapstoneAudit;
 use App\Models\CapstoneProject;
 use App\Models\CapstoneSubmissionWindow;
@@ -231,15 +232,23 @@ class CapstoneProjectController extends Controller
             ->with('success', 'Capstone returned to the student for correction.');
     }
 
-    public function setBestStudy(int $capstoneId): RedirectResponse
+    public function setBestStudy(Request $request, int $capstoneId): RedirectResponse
     {
-        DB::transaction(function () use ($capstoneId): void {
-            $capstone = CapstoneProject::query()
-                ->where('status', 'admin_approved')
+        $type = $request->validate([
+            'type' => ['nullable', 'in:modern,old'],
+        ])['type'] ?? 'modern';
+
+        DB::transaction(function () use ($capstoneId, $type): void {
+            $model = $type === 'old' ? ArchivedCapstone::class : CapstoneProject::class;
+            $capstone = $model::query()
+                ->where('status', $type === 'old' ? 'approved' : 'admin_approved')
                 ->lockForUpdate()
                 ->findOrFail($capstoneId);
 
             CapstoneProject::query()
+                ->where('is_best', true)
+                ->update(['is_best' => false]);
+            ArchivedCapstone::query()
                 ->where('is_best', true)
                 ->update(['is_best' => false]);
 
