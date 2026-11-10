@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['first_name', 'last_name', 'email', 'password', 'role', 'program', 'year_section', 'is_approved', 'is_active', 'must_change_password'])]
+#[Fillable(['student_number', 'first_name', 'last_name', 'email', 'password', 'role', 'program', 'year_section', 'is_approved', 'is_active', 'must_change_password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -48,5 +48,15 @@ class User extends Authenticatable
     public function groupMemberships(): HasMany
     {
         return $this->hasMany(GroupMember::class);
+    }
+
+    public function studentCapstoneSubmissions(): HasMany
+    {
+        return $this->hasMany(StudentCapstoneSubmission::class, 'submitted_by');
+    }
+
+    public function groupCapstoneSubmissions(): HasMany
+    {
+        return $this->hasMany(GroupCapstoneSubmission::class, 'submitted_by');
     }
 }

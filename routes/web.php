@@ -5,11 +5,14 @@ use App\Http\Controllers\ArchivedCapstoneController;
 use App\Http\Controllers\CapstoneAuditController;
 use App\Http\Controllers\CapstoneProjectController;
 use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\GroupCapstoneSubmissionController;
 use App\Http\Controllers\GroupRoomController;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\SimilarityController;
+use App\Http\Controllers\StudentCapstoneSubmissionController;
+use App\Http\Controllers\StudentMasterlistController;
 use App\Models\ClassroomMember;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -68,6 +71,22 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/student/group-rooms/{groupRoomId}', [GroupRoomController::class, 'show'])->name('student.group-room.show');
     Route::post('/student/group-rooms/{groupRoomId}/members', [GroupRoomController::class, 'addMember'])->name('student.group-room.add-member');
 
+    Route::get('/student/submissions/create', [StudentCapstoneSubmissionController::class, 'create'])
+        ->middleware('student.role')
+        ->name('student.submissions.create');
+    Route::post('/student/submissions', [StudentCapstoneSubmissionController::class, 'store'])
+        ->middleware('student.role')
+        ->name('student.submissions.store');
+    Route::get('/student/group-submissions/create', [GroupCapstoneSubmissionController::class, 'create'])
+        ->middleware('student.role')
+        ->name('student.group-submissions.create');
+    Route::post('/student/group-submissions', [GroupCapstoneSubmissionController::class, 'store'])
+        ->middleware('student.role')
+        ->name('student.group-submissions.store');
+    Route::get('/admin/group-submissions', [GroupCapstoneSubmissionController::class, 'index'])
+        ->middleware('admin')
+        ->name('admin.group-submissions.index');
+
     /* Student Capstone Routes */
     Route::get('/student/group-rooms/{groupRoomId}/capstone/create', [CapstoneProjectController::class, 'create'])->name('student.capstone.create');
     Route::post('/student/group-rooms/{groupRoomId}/capstone', [CapstoneProjectController::class, 'store'])->name('student.capstone.store');
@@ -106,12 +125,31 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/admin/accounts/create', [AdminAccountController::class, 'create'])->name('admin.accounts.create');
         Route::get('/admin/accounts', [AdminAccountController::class, 'index'])->name('admin.accounts.index');
         Route::get('/admin/students', [AdminAccountController::class, 'students'])->name('admin.students.index');
+        Route::get('/admin/student-masterlist', [StudentMasterlistController::class, 'index'])->name('admin.student-masterlist.index');
+        Route::post('/admin/student-masterlist', [StudentMasterlistController::class, 'upload'])->name('admin.student-masterlist.upload');
         Route::post('/admin/accounts', [AdminAccountController::class, 'store'])->name('admin.accounts.store');
         Route::get('/admin/accounts/{user}/edit', [AdminAccountController::class, 'edit'])->name('admin.accounts.edit');
         Route::put('/admin/accounts/{user}', [AdminAccountController::class, 'update'])->name('admin.accounts.update');
         Route::patch('/admin/accounts/{user}/toggle-active', [AdminAccountController::class, 'toggleActive'])->name('admin.accounts.toggle-active');
         Route::delete('/admin/accounts/{user}', [AdminAccountController::class, 'destroy'])->name('admin.accounts.destroy');
         Route::get('/admin/capstone-audits', [CapstoneAuditController::class, 'index'])->name('admin.capstone-audits');
+    });
+
+    Route::middleware('instructor')->group(function () {
+        Route::get('/instructor/student-submissions', [StudentCapstoneSubmissionController::class, 'instructorIndex'])
+            ->name('instructor.student-submissions.index');
+        Route::get('/instructor/student-submissions/{submission}', [StudentCapstoneSubmissionController::class, 'show'])
+            ->name('instructor.student-submissions.show');
+        Route::get('/instructor/student-submissions/{submission}/files/{file}/preview', [StudentCapstoneSubmissionController::class, 'preview'])
+            ->name('instructor.student-submissions.preview');
+    });
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/student-submissions', [StudentCapstoneSubmissionController::class, 'adminIndex'])
+            ->name('admin.student-submissions.index');
+        Route::get('/admin/student-submissions/{submission}', [StudentCapstoneSubmissionController::class, 'show'])
+            ->name('admin.student-submissions.show');
+        Route::get('/admin/student-submissions/{submission}/files/{file}', [StudentCapstoneSubmissionController::class, 'download'])
+            ->name('admin.student-submissions.download');
     });
 
     /* Repository */

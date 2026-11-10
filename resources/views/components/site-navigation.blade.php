@@ -39,8 +39,18 @@
                     </a>
                     <a href="{{ route('admin.capstones') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.capstones*', 'admin.capstone.*') ? 'is-active' : '' }}" data-tooltip="Capstone Review" aria-label="Capstone Review">
                         <span class="material-symbols-outlined">fact_check</span>
+                        <span class="lt-admin-nav-label">Capstone Projects</span>
+                    </a>
+                    <a href="{{ route('admin.student-submissions.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.student-submissions.*') ? 'is-active' : '' }}" data-tooltip="Capstone Review" aria-label="Capstone Review">
+                        <span class="material-symbols-outlined">fact_check</span>
                         <span class="lt-admin-nav-label">Capstone Review</span>
                     </a>
+                    @if($isAdmin)
+                        <a href="{{ route('admin.group-submissions.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.group-submissions.*') ? 'is-active' : '' }}" data-tooltip="Submission Monitoring" aria-label="Submission Monitoring">
+                            <span class="material-symbols-outlined">monitoring</span>
+                            <span class="lt-admin-nav-label">Submission Monitoring</span>
+                        </a>
+                    @endif
                     @if($isAdmin || $isOjt)
                         <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('ocr.upload') ? 'is-active' : '' }}" data-tooltip="Upload Archived" aria-label="Upload Archived">
                             <span class="material-symbols-outlined">upload_file</span>
