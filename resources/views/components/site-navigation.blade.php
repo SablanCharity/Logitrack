@@ -37,13 +37,9 @@
                         <span class="material-symbols-outlined">menu_book</span>
                         <span class="lt-admin-nav-label">Repository</span>
                     </a>
-                    <a href="{{ route('admin.student-submissions.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.student-submissions.*') ? 'is-active' : '' }}" data-tooltip="Capstone Review" aria-label="Capstone Review">
+                    <a href="{{ route('admin.capstones') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.capstones*', 'admin.capstone.*') ? 'is-active' : '' }}" data-tooltip="Capstone Review" aria-label="Capstone Review">
                         <span class="material-symbols-outlined">fact_check</span>
                         <span class="lt-admin-nav-label">Capstone Review</span>
-                    </a>
-                    <a href="{{ route('admin.group-submissions.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.group-submissions.*') ? 'is-active' : '' }}" data-tooltip="Submission Monitoring" aria-label="Submission Monitoring">
-                        <span class="material-symbols-outlined">monitoring</span>
-                        <span class="lt-admin-nav-label">Submission Monitoring</span>
                     </a>
                     @if($isAdmin || $isOjt)
                         <a href="{{ route('ocr.upload') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('ocr.upload') ? 'is-active' : '' }}" data-tooltip="Upload Archived" aria-label="Upload Archived">
@@ -66,20 +62,17 @@
                             <span class="material-symbols-outlined">school</span>
                             <span class="lt-admin-nav-label">Student Accounts</span>
                         </a>
-                        <a href="{{ route('admin.student-masterlist.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.student-masterlist.*') ? 'is-active' : '' }}" data-tooltip="Student Masterlist" aria-label="Student Masterlist">
-                            <span class="material-symbols-outlined">fact_check</span>
-                            <span class="lt-admin-nav-label">Student Masterlist</span>
-                        </a>
                     @endif
                 @elseif($isInstructor)
                     <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
                     <a href="{{ route('instructor.repository.index') }}" class="lt-nav__link {{ request()->routeIs('instructor.repository.*') ? 'is-active' : '' }}">Repository</a>
-                    <a href="{{ route('instructor.student-submissions.index') }}" class="lt-nav__link {{ request()->routeIs('instructor.student-submissions.*') ? 'is-active' : '' }}">Capstone Submissions</a>
+                    <a href="{{ route('instructor.classrooms') }}" class="lt-nav__link {{ request()->routeIs('instructor.classrooms*', 'instructor.classroom.*') ? 'is-active' : '' }}">Classroom</a>
+                    <a href="{{ route('instructor.capstones') }}" class="lt-nav__link {{ request()->routeIs('instructor.capstones*', 'instructor.capstone.*') ? 'is-active' : '' }}">Capstone Submissions</a>
                     <a href="{{ route('instructor.students') }}" class="lt-nav__link {{ request()->routeIs('instructor.students*') ? 'is-active' : '' }}">Pending Students</a>
                 @elseif($isStudent)
                     <a href="{{ route('dashboard') }}" class="lt-nav__link {{ request()->routeIs('dashboard') ? 'is-active' : '' }}">Dashboard</a>
                     <a href="{{ route('repository.index') }}" class="lt-nav__link {{ request()->routeIs('repository.*') ? 'is-active' : '' }}">Repository</a>
-                    <a href="{{ route('student.submissions.create') }}" class="lt-nav__link {{ request()->routeIs('student.submissions.*') ? 'is-active' : '' }}">Submit Capstone</a>
+                    <a href="{{ route('student.classroom.redirect') }}" class="lt-nav__link {{ request()->routeIs('student.group-rooms.*', 'student.group-room.*', 'student.capstone.*', 'student.pending') ? 'is-active' : '' }}">Classroom</a>
                     <a href="{{ route('similarity.index') }}" class="lt-nav__link {{ request()->routeIs('similarity.*') ? 'is-active' : '' }}">Similarity Checker</a>
                 @endif
             </nav>

@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\StudentMasterlistRecord;
+use App\Models\Classroom;
+use App\Models\ClassroomMember;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class RegisteredUserController extends Controller
 {
@@ -39,19 +39,45 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'student_number' => ['required', 'string', 'max:50'],
+        $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
+
             'last_name' => ['required', 'string', 'max:255'],
-            'program' => ['required', 'string', 'in:BSCS,BSIT'],
+
             'email' => [
                 'required',
                 'string',
                 'lowercase',
                 'email',
                 'max:255',
-                'unique:'.User::class,
+                'unique:' . User::class,
             ],
+
+            'program' => [
+                'required',
+                'string',
+                'in:BSIT,BSCS',
+            ],
+
+            'year_section' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+
+            'instructor_id' => [
+                'required',
+                'integer',
+                'exists:users,id',
+            ],
+
+            'class_code' => [
+                'required',
+                'string',
+                'max:50',
+                'exists:classrooms,class_code',
+            ],
+
             'password' => [
                 'required',
                 'confirmed',
@@ -59,112 +85,52 @@ class RegisteredUserController extends Controller
             ],
         ]);
 
-        $validated['student_number'] = trim($validated['student_number']);
-
-        $masterlistRecord = StudentMasterlistRecord::query()
-            ->where('student_number', $validated['student_number'])
-            ->where('program', $validated['program'])
+        // Find the classroom using the student's class code.
+        $classroom = Classroom::where('class_code', $request->class_code)
+            ->where('instructor_id', $request->instructor_id)
             ->first();
 
-        if (! $masterlistRecord) {
-            return back()->withInput()->withErrors([
-                'student_number' => 'Your student number or program does not match the confirmed student masterlist.',
-            ]);
+        if (! $classroom) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'class_code' => 'The selected instructor does not match the class code.',
+                ]);
         }
 
-        if (User::where('student_number', $validated['student_number'])->exists()) {
-            return back()->withInput()->withErrors([
-                'student_number' => 'This student number already has a registered account.',
-            ]);
-        }
+        // Create the student and classroom membership together.
+        $user = DB::transaction(function () use ($request, $classroom) {
 
-        $user = User::create([
-            'student_number' => $validated['student_number'],
-            'first_name' => $validated['first_name'],
-            'last_name' => $validated['last_name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'student',
-            'program' => $validated['program'],
-            'is_approved' => true,
-            'is_active' => true,
-        ]);
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
 
-        $otp = random_int(100000, 999999);
-        $user->forceFill([
-            'registration_otp_hash' => Hash::make((string) $otp),
-            'registration_otp_expires_at' => now()->addMinutes(10),
-            'registration_otp_attempts' => 0,
-        ])->save();
+                // Public registration creates a student account.
+                'role' => 'student',
 
-        try {
-            Mail::raw(
-                "Your LogiTrack verification code is {$otp}. It expires in 10 minutes.",
-                fn ($message) => $message->to($user->email)->subject('LogiTrack email verification code')
-            );
-        } catch (TransportExceptionInterface $exception) {
-            $user->delete();
+                'program' => $request->program,
+                'year_section' => $request->year_section,
 
-            Log::error('Registration OTP email could not be sent.', [
-                'email' => $validated['email'],
-                'exception' => $exception,
+                // Account still needs approval.
+                'is_approved' => false,
             ]);
 
-            return back()->withInput()->withErrors([
-                'email' => 'We could not send the verification code to this email address. Please check the email configuration or try again later.',
+            // Add the student to the classroom as pending.
+            ClassroomMember::create([
+                'classroom_id' => $classroom->id,
+                'user_id' => $user->id,
+                'status' => 'pending',
             ]);
-        }
 
-        return redirect()->route('registration.otp')->with('registration_user_id', $user->id);
-    }
+            return $user;
+        });
 
-    public function showOtp(Request $request): View|RedirectResponse
-    {
-        if (! $request->session()->has('registration_user_id')) {
-            return redirect()->route('register');
-        }
-
-        return view('auth.registration-otp');
-    }
-
-    public function verifyOtp(Request $request): RedirectResponse
-    {
-        $user = User::find($request->session()->get('registration_user_id'));
-
-        if (! $user || $user->email_verified_at) {
-            return redirect()->route('register');
-        }
-
-        $validated = $request->validate([
-            'otp' => ['required', 'digits:6'],
-        ]);
-
-        if ($user->registration_otp_attempts >= 5) {
-            return back()->withErrors(['otp' => 'Too many incorrect attempts. Please register again.']);
-        }
-
-        if (! $user->registration_otp_expires_at || $user->registration_otp_expires_at->isPast()) {
-            return back()->withErrors(['otp' => 'This verification code has expired. Please register again.']);
-        }
-
-        if (! Hash::check($validated['otp'], $user->registration_otp_hash)) {
-            $user->increment('registration_otp_attempts');
-
-            return back()->withErrors(['otp' => 'The verification code is incorrect.']);
-        }
-
-        $user->forceFill([
-            'is_active' => true,
-            'email_verified_at' => now(),
-            'registration_otp_hash' => null,
-            'registration_otp_expires_at' => null,
-            'registration_otp_attempts' => 0,
-        ])->save();
-
-        $request->session()->forget('registration_user_id');
+        event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect()->route('dashboard');
+        return redirect(route('dashboard', absolute: false));
     }
 }
