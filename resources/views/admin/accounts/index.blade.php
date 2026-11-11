@@ -35,7 +35,7 @@
                     <input id="file" type="file" name="file" accept=".csv,.txt,.xls,.xlsx" class="lt-input" required>
                     <span class="lt-hint">Each imported instructor receives a temporary password by email and must change it after signing in.</span>
                 </div>
-                <button type="submit" class="lt-btn lt-btn--primary">Import</button>
+                <button type="submit" class="lt-btn lt-btn--primary">Importgit ad</button>
             </form>
         </section>
         <section class="lt-card">

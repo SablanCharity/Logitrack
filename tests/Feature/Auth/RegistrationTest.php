@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
-use App\Models\Classroom;
-use App\Models\ClassroomMember;
-use App\Models\User;
+use App\Models\StudentMasterlistRecord;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -21,27 +19,18 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
-        $instructor = User::factory()->create([
-            'role' => 'instructor',
-            'is_approved' => true,
-        ]);
-
-        $classroom = Classroom::create([
-            'instructor_id' => $instructor->id,
-            'classroom_name' => 'Registration Test Class',
-            'class_code' => 'REG-TEST-001',
+        StudentMasterlistRecord::create([
+            'student_number' => '202600001',
+            'name' => 'Test Student',
+            'program' => 'BSIT',
         ]);
 
         $response = $this->post('/register', [
+            'student_number' => '202600001',
             'first_name' => 'Test',
             'last_name' => 'Student',
             'email' => 'test@example.com',
-            'program' => 'BSIT',
-            'year_section' => '1-A',
-            'instructor_id' => $instructor->id,
-            'class_code' => $classroom->class_code,
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'password123',
         ]);
 
         $this->assertAuthenticated();
@@ -50,16 +39,26 @@ class RegistrationTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'test@example.com',
+            'student_number' => '202600001',
             'first_name' => 'Test',
             'last_name' => 'Student',
             'role' => 'student',
             'is_approved' => false,
+            'program' => 'BSIT',
+        ]);
+    }
+
+    public function test_registration_requires_a_masterlist_student_number(): void
+    {
+        $response = $this->from('/register')->post('/register', [
+            'student_number' => 'missing',
+            'first_name' => 'Test',
+            'last_name' => 'Student',
+            'email' => 'test@example.com',
+            'password' => 'password123',
         ]);
 
-        $this->assertDatabaseHas('classroom_members', [
-            'classroom_id' => $classroom->id,
-            'user_id' => User::where('email', 'test@example.com')->value('id'),
-            'status' => 'pending',
-        ]);
+        $response->assertRedirect('/register')->assertSessionHasErrors('student_number');
+        $this->assertGuest();
     }
 }

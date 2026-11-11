@@ -13,7 +13,6 @@ use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\SimilarityController;
 use App\Http\Controllers\StudentCapstoneSubmissionController;
 use App\Http\Controllers\StudentMasterlistController;
-use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,14 +25,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    $instructors = User::query()
-        ->where('role', 'instructor')
-        ->where('is_approved', true)
-        ->orderBy('last_name')
-        ->orderBy('first_name')
-        ->get();
-
-    return view('welcome', compact('instructors'));
+    return view('welcome');
 });
 
 Route::middleware(['auth', 'active'])->group(function () {

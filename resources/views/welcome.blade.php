@@ -262,6 +262,16 @@
                         <input type="hidden" name="_form" value="register">
 
                         <div class="lt-field">
+                            <label for="landing-student-number" class="lt-label">{{ __('Student Number') }}</label>
+                            <input id="landing-student-number" class="lt-input {{ old('_form') === 'register' && $errors->has('student_number') ? 'is-invalid' : '' }}" type="text" name="student_number" value="{{ old('_form') === 'register' ? old('student_number') : '' }}" required autocomplete="off">
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('student_number') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
+                        <div class="lt-field">
                             <label for="landing-first-name" class="lt-label">{{ __('First Name') }}</label>
                             <input id="landing-first-name" class="lt-input {{ old('_form') === 'register' && $errors->has('first_name') ? 'is-invalid' : '' }}" type="text" name="first_name" value="{{ old('_form') === 'register' ? old('first_name') : '' }}" required autocomplete="given-name">
                             @if (old('_form') === 'register')
@@ -292,69 +302,10 @@
                         </div>
 
                         <div class="lt-field">
-                            <label for="landing-program" class="lt-label">{{ __('Program') }}</label>
-                            <select id="landing-program" name="program" class="lt-select {{ old('_form') === 'register' && $errors->has('program') ? 'is-invalid' : '' }}" required>
-                                <option value="" disabled @selected(old('_form') !== 'register' || ! old('program'))>Select Program</option>
-                                <option value="BSIT" @selected(old('_form') === 'register' && old('program') === 'BSIT')>BSIT</option>
-                                <option value="BSCS" @selected(old('_form') === 'register' && old('program') === 'BSCS')>BSCS</option>
-                            </select>
-                            @if (old('_form') === 'register')
-                                @foreach($errors->get('program') as $message)
-                                    <p class="lt-field-error">{{ $message }}</p>
-                                @endforeach
-                            @endif
-                        </div>
-
-                        <div class="lt-field">
-                            <label for="landing-year-section" class="lt-label">{{ __('Year & Section') }}</label>
-                            <input id="landing-year-section" class="lt-input {{ old('_form') === 'register' && $errors->has('year_section') ? 'is-invalid' : '' }}" type="text" name="year_section" value="{{ old('_form') === 'register' ? old('year_section') : '' }}" placeholder="Example: 4-D" required>
-                            @if (old('_form') === 'register')
-                                @foreach($errors->get('year_section') as $message)
-                                    <p class="lt-field-error">{{ $message }}</p>
-                                @endforeach
-                            @endif
-                        </div>
-
-                        <div class="lt-field">
-                            <label for="landing-instructor" class="lt-label">{{ __('Instructor / Adviser') }}</label>
-                            <select id="landing-instructor" name="instructor_id" class="lt-select {{ old('_form') === 'register' && $errors->has('instructor_id') ? 'is-invalid' : '' }}" required>
-                                <option value="" disabled @selected(old('_form') !== 'register' || ! old('instructor_id'))>-- Select Instructor / Adviser --</option>
-                                @foreach($instructors as $instructor)
-                                    <option value="{{ $instructor->id }}" @selected(old('_form') === 'register' && old('instructor_id') == $instructor->id)>{{ $instructor->first_name }} {{ $instructor->last_name }}</option>
-                                @endforeach
-                            </select>
-                            @if (old('_form') === 'register')
-                                @foreach($errors->get('instructor_id') as $message)
-                                    <p class="lt-field-error">{{ $message }}</p>
-                                @endforeach
-                            @endif
-                        </div>
-
-                        <div class="lt-field">
-                            <label for="landing-class-code" class="lt-label">{{ __('Class Code') }}</label>
-                            <input id="landing-class-code" class="lt-input {{ old('_form') === 'register' && $errors->has('class_code') ? 'is-invalid' : '' }}" type="text" name="class_code" value="{{ old('_form') === 'register' ? old('class_code') : '' }}" required>
-                            @if (old('_form') === 'register')
-                                @foreach($errors->get('class_code') as $message)
-                                    <p class="lt-field-error">{{ $message }}</p>
-                                @endforeach
-                            @endif
-                        </div>
-
-                        <div class="lt-field">
-                            <label for="landing-password" class="lt-label">{{ __('Password') }}</label>
+                            <label for="landing-password" class="lt-label">{{ __('Create Password') }}</label>
                             <input id="landing-password" class="lt-input {{ old('_form') === 'register' && $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('password') as $message)
-                                    <p class="lt-field-error">{{ $message }}</p>
-                                @endforeach
-                            @endif
-                        </div>
-
-                        <div class="lt-field lt-register-dialog__field--full">
-                            <label for="landing-password-confirmation" class="lt-label">{{ __('Confirm Password') }}</label>
-                            <input id="landing-password-confirmation" class="lt-input {{ old('_form') === 'register' && $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required autocomplete="new-password">
-                            @if (old('_form') === 'register')
-                                @foreach($errors->get('password_confirmation') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
                                 @endforeach
                             @endif
