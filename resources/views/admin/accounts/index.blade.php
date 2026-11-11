@@ -23,8 +23,7 @@
         @endif
         <section class="lt-card">
             <div class="lt-card__head">
-                <h2>Upload instructor/adviser list</h2>
-                <p class="lt-page-head__sub">Use a CSV, XLS, or XLSX file with <code>name</code> and <code>email</code> columns, or separate <code>first_name</code> and <code>last_name</code> columns.</p>
+                <h2>Upload Instructors list</h2>
             </div>
             @if($errors->any())
                 <div class="lt-alert lt-alert--error" role="alert"><span class="lt-alert__icon">!</span><div>{{ $errors->first() }}</div></div>
@@ -36,7 +35,7 @@
                     <input id="file" type="file" name="file" accept=".csv,.txt,.xls,.xlsx" class="lt-input" required>
                     <span class="lt-hint">Each imported instructor receives a temporary password by email and must change it after signing in.</span>
                 </div>
-                <button type="submit" class="lt-btn lt-btn--primary">Import Instructors</button>
+                <button type="submit" class="lt-btn lt-btn--primary">Import</button>
             </form>
         </section>
         <section class="lt-card">
