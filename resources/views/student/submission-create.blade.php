@@ -29,9 +29,10 @@
             </div>
         @endif
 
-        @if(session()->has('success') && $submission)
-            <div class="lt-alert lt-alert--success" role="status">
-                Your latest submission is currently <strong>{{ ucfirst($submission->status) }}</strong>.
+        @if($submission)
+            <div class="lt-alert {{ $submission->status === 'returned' ? 'lt-alert--error' : 'lt-alert--success' }}" role="status">
+                You have already been included in a capstone submission. Each student may participate in only one submission.
+                Its current status is <strong>{{ ucfirst($submission->status) }}</strong>.
             </div>
         @endif
         @if($submission?->status === 'returned' && $submission->return_reason)
@@ -40,25 +41,35 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('student.submissions.store') }}" enctype="multipart/form-data" class="lt-form" data-submit-guard>
-            @csrf
+        @if($canEditReturnedSubmission)
+            <form method="POST" action="{{ route('student.submissions.update', $submission) }}" enctype="multipart/form-data" class="lt-form" data-submit-guard>
+                @csrf
+                @method('PUT')
+        @endif
+
+        @if(!$submission)
+            <form method="POST" action="{{ route('student.submissions.store') }}" enctype="multipart/form-data" class="lt-form" data-submit-guard>
+                @csrf
+        @endif
+
+        @if(!$submission || $canEditReturnedSubmission)
             <section class="lt-card">
                 <h2 class="lt-card__title">Submission details</h2>
                 <div class="lt-form">
                     <div class="lt-field">
                         <label for="title" class="lt-label">Capstone Title</label>
-                        <input id="title" name="title" class="lt-input" maxlength="255" value="{{ old('title') }}" required>
+                        <input id="title" name="title" class="lt-input" maxlength="255" value="{{ old('title', $submission?->title) }}" required>
                     </div>
                     <div class="lt-field">
                         <label for="abstract" class="lt-label">Abstract</label>
-                        <textarea id="abstract" name="abstract" class="lt-textarea" rows="10" required>{{ old('abstract') }}</textarea>
+                        <textarea id="abstract" name="abstract" class="lt-textarea" rows="10" required>{{ old('abstract', $submission?->abstract) }}</textarea>
                     </div>
                     <div class="lt-field">
                         <label for="adviser" class="lt-label">Adviser</label>
                         <select id="adviser" name="adviser" class="lt-select" required>
                             <option value="">Select an instructor</option>
                             @foreach($instructors as $instructor)
-                                <option value="{{ $instructor->id }}" @selected(old('adviser') == $instructor->id)>
+                                <option value="{{ $instructor->id }}" @selected(old('adviser', $submission?->adviser) == $instructor->id)>
                                     {{ trim($instructor->first_name.' '.$instructor->last_name) }}
                                 </option>
                             @endforeach
@@ -66,7 +77,7 @@
                     </div>
                     <div class="lt-field">
                         <label for="submitted_date" class="lt-label">Date Submitted</label>
-                        <input id="submitted_date" name="submitted_date" type="date" class="lt-input" value="{{ old('submitted_date', now()->format('Y-m-d')) }}" required>
+                        <input id="submitted_date" name="submitted_date" type="date" class="lt-input" value="{{ old('submitted_date', $submission?->submitted_date?->format('Y-m-d') ?? now()->format('Y-m-d')) }}" required>
                     </div>
                 </div>
             </section>
@@ -76,23 +87,28 @@
                 <div class="lt-form">
                     <div class="lt-field">
                         <label for="study" class="lt-label">Full Study (PDF)</label>
-                        <input id="study" name="study" type="file" accept=".pdf,application/pdf" class="lt-input" required>
+                        <input id="study" name="study" type="file" accept=".pdf,application/pdf" class="lt-input" @required(!$submission)>
+                        @if($submission)<span class="lt-hint">Current file: {{ basename($submission->study_path) }}. Leave blank to keep it.</span>@endif
                     </div>
                     <div class="lt-field">
                         <label for="manual" class="lt-label">System Manual (PDF)</label>
-                        <input id="manual" name="manual" type="file" accept=".pdf,application/pdf" class="lt-input" required>
+                        <input id="manual" name="manual" type="file" accept=".pdf,application/pdf" class="lt-input" @required(!$submission)>
+                        @if($submission)<span class="lt-hint">Current file: {{ basename($submission->manual_path) }}. Leave blank to keep it.</span>@endif
                     </div>
                     <div class="lt-field">
                         <label for="system" class="lt-label">System Files (ZIP)</label>
-                        <input id="system" name="system" type="file" accept=".zip,application/zip" class="lt-input" required>
+                        <input id="system" name="system" type="file" accept=".zip,application/zip" class="lt-input" @required(!$submission)>
+                        @if($submission)<span class="lt-hint">Current file: {{ basename($submission->system_path) }}. Leave blank to keep it.</span>@endif
                     </div>
                     <div class="lt-field">
                         <label for="mentee_form" class="lt-label">Mentee Form</label>
-                        <input id="mentee_form" name="mentee_form" type="file" accept=".pdf,.doc,.docx" class="lt-input" required>
+                        <input id="mentee_form" name="mentee_form" type="file" accept=".pdf,.doc,.docx" class="lt-input" @required(!$submission)>
+                        @if($submission)<span class="lt-hint">Current file: {{ basename($submission->mentee_form_path) }}. Leave blank to keep it.</span>@endif
                     </div>
                 </div>
             </section>
 
+            @if(!$submission)
             <section class="lt-card">
                 <h2 class="lt-card__title">Authors</h2>
                 <p class="lt-card__desc">Search and select every student who is part of this capstone. Selected students will be marked as having submitted a capstone.</p>
@@ -124,10 +140,17 @@
                 </div>
                 @error('authors')<p class="lt-field-error">{{ $message }}</p>@enderror
             </section>
+            @endif
 
-            <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="Uploading...">Submit complete requirements</button>
+            <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="{{ $submission ? 'Resubmitting...' : 'Uploading...' }}">{{ $submission ? 'Save changes and resubmit' : 'Submit complete requirements' }}</button>
         </form>
+        @elseif($submission)
+            @if($submission->status === 'returned')
+                <p class="lt-card__desc">Only the student who submitted this capstone can edit and resubmit it.</p>
+            @endif
+        @endif
     </main>
+    @if(!$submission)
     <script>
         (() => {
             const fields = document.getElementById('submission-author-fields');
@@ -339,5 +362,6 @@
             });
         })();
     </script>
+    @endif
 </body>
 </html>

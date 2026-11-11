@@ -861,13 +861,17 @@ html { scroll-behavior: smooth; }
 
 .lt-nav__link:hover { color: #fff !important; background: rgba(255, 255, 255, .08); }
 
-.lt-admin-nav { flex: 1; justify-content: center; }
+.lt-admin-nav { flex: 1; flex-wrap: wrap; justify-content: center; gap: 2px; }
 
 .lt-admin-nav-link {
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    font-size: .84rem;
+    white-space: nowrap;
 }
 
 .lt-admin-nav-link .material-symbols-outlined {
@@ -880,14 +884,14 @@ html { scroll-behavior: smooth; }
 .lt-admin-nav-link::after {
     content: attr(data-tooltip);
     position: absolute;
-    z-index: 10;
+    z-index: 50;
     top: calc(100% + 9px);
     left: 50%;
-    padding: 5px 8px;
-    border-radius: 5px;
+    padding: 6px 9px;
+    border-radius: 6px;
     background: var(--navy);
     color: var(--bone);
-    font-size: .75rem;
+    font-size: .78rem;
     font-weight: 500;
     white-space: nowrap;
     pointer-events: none;
@@ -1487,7 +1491,7 @@ html { scroll-behavior: smooth; }
 .lt-auth__main { display: grid; place-items: center; padding: 48px 24px; }
 
 .lt-auth__card { width: 100%; max-width: 440px; }
-.lt-auth__card--wide { max-width: 580px; }
+.lt-auth__card--wide { max-width: 440px; }
 
 .lt-auth__head { margin-bottom: 28px; }
 .lt-auth__head h1 { font-size: clamp(1.6rem, 3vw, 2rem); font-weight: 700; }

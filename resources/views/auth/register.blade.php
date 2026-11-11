@@ -52,9 +52,24 @@
                     @endforeach
 
                     <div class="lt-field">
-                        <label for="password" class="lt-label">{{ __('Create Password') }}</label>
-                        <input id="password" class="lt-input {{ $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
+                        <label for="password" class="lt-label">{{ __('Password') }}</label>
+                        <div class="lt-input-wrap">
+                            <input id="password" class="lt-input {{ $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
+                            <button type="button" class="lt-eye" data-toggle-password="#password" aria-pressed="false" aria-label="Show password">
+                                <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                                <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                            </button>
+                        </div>
                         @foreach($errors->get('password') as $message)
+                            <p class="lt-field-error">{{ $message }}</p>
+                        @endforeach
+                    </div>
+
+                    <div class="lt-field">
+                        <label for="password_confirmation" class="lt-label">{{ __('Confirm Password') }}</label>
+                        <input id="password_confirmation" class="lt-input {{ $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required autocomplete="new-password" data-match="#password" data-match-msg="#password-match-msg">
+                        <p id="password-match-msg" class="lt-match" aria-live="polite"></p>
+                        @foreach($errors->get('password_confirmation') as $message)
                             <p class="lt-field-error">{{ $message }}</p>
                         @endforeach
                     </div>

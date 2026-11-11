@@ -294,6 +294,7 @@
                         <div class="lt-field lt-register-dialog__field--full">
                             <label for="landing-email" class="lt-label">{{ __('School Email') }}</label>
                             <input id="landing-email" class="lt-input {{ old('_form') === 'register' && $errors->has('email') ? 'is-invalid' : '' }}" type="email" name="email" value="{{ old('_form') === 'register' ? old('email') : '' }}" required autocomplete="username">
+                            <span class="lt-hint">We will send a verification code to this email before creating your account.</span>
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('email') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
@@ -302,7 +303,7 @@
                         </div>
 
                         <div class="lt-field">
-                            <label for="landing-password" class="lt-label">{{ __('Create Password') }}</label>
+                            <label for="landing-password" class="lt-label">{{ __('Password') }}</label>
                             <input id="landing-password" class="lt-input {{ old('_form') === 'register' && $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('password') as $message)
@@ -311,9 +312,20 @@
                             @endif
                         </div>
 
+                        <div class="lt-field">
+                            <label for="landing-password-confirmation" class="lt-label">{{ __('Confirm Password') }}</label>
+                            <input id="landing-password-confirmation" class="lt-input {{ old('_form') === 'register' && $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required autocomplete="new-password" data-match="#landing-password" data-match-msg="#landing-password-match-msg">
+                            <p id="landing-password-match-msg" class="lt-match" aria-live="polite"></p>
+                            @if (old('_form') === 'register')
+                                @foreach($errors->get('password_confirmation') as $message)
+                                    <p class="lt-field-error">{{ $message }}</p>
+                                @endforeach
+                            @endif
+                        </div>
+
                         <div class="lt-register-dialog__actions">
                             <a class="lt-link" href="{{ route('login') }}">{{ __('Already registered?') }}</a>
-                            <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="Creating account...">{{ __('Register') }}</button>
+                            <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="Sending code...">{{ __('Register') }}</button>
                         </div>
                     </form>
                 </div>

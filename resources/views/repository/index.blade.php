@@ -236,10 +236,13 @@
             }
 
             .lt-repo-search__box > svg {
+                position: static;
                 flex: 0 0 18px;
                 width: 18px;
                 height: 18px;
+                transform: none;
                 color: #7a8498;
+                pointer-events: none;
             }
 
             .lt-repo-search__box > .lt-input {

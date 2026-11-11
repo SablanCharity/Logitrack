@@ -68,7 +68,7 @@
             <div class="lt-card__head">
                 <div>
                     <h2 class="lt-card__title">Student submission requests</h2>
-                    <p class="lt-card__desc">Review individual capstone studies submitted by students.</p>
+                    <p class="lt-card__desc">Review capstone studies submitted by students.</p>
                 </div>
             </div>
             <div class="lt-table-wrap">

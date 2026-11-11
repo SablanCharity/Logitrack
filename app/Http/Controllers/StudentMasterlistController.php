@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GroupCapstoneMember;
-use App\Models\StudentCapstoneAuthor;
-use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,26 +19,34 @@ class StudentMasterlistController extends Controller
         $search = trim((string) ($validated['search'] ?? ''));
         $programFilter = $validated['program_filter'] ?? null;
 
-        $submittedStudentNumbers = GroupCapstoneMember::query()
-            ->join('student_masterlist_records', 'student_masterlist_records.id', '=', 'group_capstone_members.student_masterlist_record_id')
-            ->pluck('student_masterlist_records.student_number')
+        $capstoneStatuses = DB::table('group_capstone_members')
+            ->join('group_capstone_submissions', 'group_capstone_submissions.id', '=', 'group_capstone_members.group_capstone_submission_id')
+            ->leftJoin('student_masterlist_records', 'student_masterlist_records.id', '=', 'group_capstone_members.student_masterlist_record_id')
+            ->leftJoin('users', 'users.id', '=', 'group_capstone_members.student_id')
+            ->where(function ($query): void {
+                $query->whereNotNull('group_capstone_members.student_id')
+                    ->orWhereNotNull('group_capstone_members.student_masterlist_record_id');
+            })
+            ->selectRaw('COALESCE(student_masterlist_records.student_number, users.student_number) as student_number')
+            ->addSelect('group_capstone_submissions.status', 'group_capstone_submissions.updated_at')
+            ->get()
             ->merge(
-                StudentCapstoneAuthor::query()
+                DB::table('student_capstone_authors')
+                    ->join('student_capstone_submissions', 'student_capstone_submissions.id', '=', 'student_capstone_authors.student_capstone_submission_id')
                     ->join('student_masterlist_records', 'student_masterlist_records.id', '=', 'student_capstone_authors.student_masterlist_record_id')
-                    ->pluck('student_masterlist_records.student_number'),
+                    ->select('student_masterlist_records.student_number', 'student_capstone_submissions.status', 'student_capstone_submissions.updated_at')
+                    ->get(),
             )
             ->merge(
-                GroupCapstoneMember::query()
-                    ->join('users', 'users.id', '=', 'group_capstone_members.student_id')
-                    ->pluck('users.student_number'),
-            )
-            ->merge(
-                StudentCapstoneSubmission::query()
+                DB::table('student_capstone_submissions')
                     ->join('users', 'users.id', '=', 'student_capstone_submissions.submitted_by')
-                    ->pluck('users.student_number'),
+                    ->select('users.student_number', 'student_capstone_submissions.status', 'student_capstone_submissions.updated_at')
+                    ->get(),
             )
-            ->unique()
-            ->flip();
+            ->filter(fn (object $submission): bool => $submission->student_number !== null)
+            ->sortByDesc('updated_at')
+            ->groupBy('student_number')
+            ->map(fn ($submissions): string => $submissions->first()->status);
 
         return view('admin.student-masterlist', [
             'records' => StudentMasterlistRecord::query()
@@ -56,7 +61,7 @@ class StudentMasterlistController extends Controller
                 ->when($programFilter, fn ($query) => $query->where('program', $programFilter))
                 ->latest()
                 ->get(),
-            'submittedStudentNumbers' => $submittedStudentNumbers,
+            'capstoneStatuses' => $capstoneStatuses,
             'search' => $search,
             'programFilter' => $programFilter,
         ]);

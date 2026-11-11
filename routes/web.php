@@ -62,6 +62,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/student/submissions', [StudentCapstoneSubmissionController::class, 'store'])
         ->middleware('student.role')
         ->name('student.submissions.store');
+    Route::put('/student/submissions/{submission}', [StudentCapstoneSubmissionController::class, 'update'])
+        ->middleware('student.role')
+        ->name('student.submissions.update');
     Route::get('/student/group-submissions/create', [GroupCapstoneSubmissionController::class, 'create'])
         ->middleware('student.role')
         ->name('student.group-submissions.create');

@@ -76,8 +76,11 @@
                             <td>{{ $record->name ?: trim($record->first_name.' '.$record->last_name) ?: '—' }}</td>
                             <td>{{ $record->program ?: '—' }}</td>
                             <td>
-                                @if($submittedStudentNumbers->has($record->student_number))
-                                    <span class="lt-badge lt-badge--approved">Submitted Capstone</span>
+                                @if($capstoneStatuses->has($record->student_number))
+                                    @php($status = $capstoneStatuses->get($record->student_number))
+                                    <span class="lt-badge {{ $status === 'returned' ? 'lt-badge--rejected' : ($status === 'approved' ? 'lt-badge--approved' : 'lt-badge--submitted') }}">
+                                        {{ ucfirst($status) }} Capstone
+                                    </span>
                                 @else
                                     <span class="lt-muted">--</span>
                                 @endif
