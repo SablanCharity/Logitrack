@@ -23,7 +23,7 @@
                 </div>
                 <div class="lt-page-head__actions">
                     <span class="lt-badge lt-badge--approved">Approved</span>
-                    @if(auth()->user()->role === 'admin')
+                    @if(auth()->user()->role === 'admin' && $capstone->source_type !== 'student')
                         <a href="{{ route('admin.repository.edit', ['capstoneId' => $capstone->id, 'type' => $capstone->source_type]) }}" class="lt-btn lt-btn--outline">Edit Metadata</a>
                     @endif
                 </div>
@@ -83,8 +83,7 @@
                         <div class="lt-auto__item">
                             <div class="lt-auto__key">Instructor / Adviser</div>
                             <div class="lt-auto__val">
-                                {{ $capstone->groupRoom->classroom->instructor->first_name }}
-                                {{ $capstone->groupRoom->classroom->instructor->last_name }}
+                                {{ $capstone->source_type === 'student' ? 'Student submission' : trim(($capstone->groupRoom->classroom->instructor->first_name ?? '').' '.($capstone->groupRoom->classroom->instructor->last_name ?? '')) }}
                             </div>
                         </div>
 

@@ -34,6 +34,11 @@
                 Your latest submission is currently <strong>{{ ucfirst($submission->status) }}</strong>.
             </div>
         @endif
+        @if($submission?->status === 'returned' && $submission->return_reason)
+            <div class="lt-alert lt-alert--error" role="alert">
+                <strong>Return reason:</strong> {{ $submission->return_reason }}
+            </div>
+        @endif
 
         <form method="POST" action="{{ route('student.submissions.store') }}" enctype="multipart/form-data" class="lt-form" data-submit-guard>
             @csrf
@@ -47,6 +52,17 @@
                     <div class="lt-field">
                         <label for="abstract" class="lt-label">Abstract</label>
                         <textarea id="abstract" name="abstract" class="lt-textarea" rows="10" required>{{ old('abstract') }}</textarea>
+                    </div>
+                    <div class="lt-field">
+                        <label for="adviser" class="lt-label">Adviser</label>
+                        <select id="adviser" name="adviser" class="lt-select" required>
+                            <option value="">Select an instructor</option>
+                            @foreach($instructors as $instructor)
+                                <option value="{{ $instructor->id }}" @selected(old('adviser') == $instructor->id)>
+                                    {{ trim($instructor->first_name.' '.$instructor->last_name) }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="lt-field">
                         <label for="submitted_date" class="lt-label">Date Submitted</label>
@@ -96,7 +112,7 @@
                                     <select class="lt-select submission-author-select" name="authors[]" aria-label="Capstone member" required>
                                         <option value="">Select an author</option>
                                         @foreach($masterlistRecords as $record)
-                                            <option value="{{ $record->id }}" data-search="{{ strtolower($record->name.' '.$record->student_number) }}" @selected(old('authors.0') == $record->id)>{{ $record->name ?: 'Unnamed student' }} ({{ $record->student_number }})</option>
+                                            <option value="{{ $record->id }}" data-search="{{ strtolower($record->name.' '.$record->student_number) }}" @selected(old('authors.0', $submitterMasterlistRecord?->id) == $record->id)>{{ $record->name ?: 'Unnamed student' }} ({{ $record->student_number }}) @if($submitterMasterlistRecord?->id === $record->id) - Submitting student @endif</option>
                                         @endforeach
                                     </select>
                                     <button type="button" class="lt-btn lt-btn--ghost submission-author-remove" hidden>Remove</button>
@@ -116,7 +132,7 @@
         (() => {
             const fields = document.getElementById('submission-author-fields');
             const addButton = document.getElementById('add-submission-author');
-            const maxAuthors = 2;
+            const maxAuthors = 3;
             let nextAuthorIndex = fields.children.length;
             const closeOptions = (row) => {
                 const search = row.querySelector('.submission-author-search');

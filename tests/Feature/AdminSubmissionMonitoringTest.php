@@ -49,11 +49,15 @@ class AdminSubmissionMonitoringTest extends TestCase
         $this->actingAs($admin)
             ->get(route('admin.group-submissions.index'))
             ->assertOk()
+            ->assertViewHas('counts', fn (array $counts): bool => $counts['submitted'] === 1)
+            ->assertDontSee('Submissions displayed')
             ->assertSee('Student submission requests')
             ->assertSee('Student Monitoring Capstone')
             ->assertSee('Alex Submitter')
             ->assertSee('202600101')
             ->assertSee('Nov 10, 2026')
+            ->assertSee('Students submitted')
+            ->assertDontSee('Group submissions')
             ->assertSee(route('admin.student-submissions.show', $submission), false);
     }
 
@@ -111,5 +115,43 @@ class AdminSubmissionMonitoringTest extends TestCase
             ->assertSee('Casey Coauthor')
             ->assertSee('202600202')
             ->assertSee('Submitted by');
+    }
+
+    public function test_admin_can_add_student_submission_to_repository(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $submitter = User::factory()->create([
+            'program' => 'BSCS',
+            'student_number' => '202600301',
+        ]);
+        $submission = StudentCapstoneSubmission::create([
+            'submitted_by' => $submitter->id,
+            'title' => 'Repository Ready Capstone',
+            'abstract' => 'A completed study ready for repository publication.',
+            'content_hash' => hash('sha256', 'repository ready capstone'),
+            'submitted_date' => '2026-11-11',
+            'study_path' => 'repository/study.pdf',
+            'manual_path' => 'repository/manual.pdf',
+            'system_path' => 'repository/system.zip',
+            'mentee_form_path' => 'repository/mentee.pdf',
+            'status' => 'submitted',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.student-submissions.add-to-repository', $submission))
+            ->assertRedirect(route('repository.show', [
+                'capstoneId' => $submission->id,
+                'type' => 'student',
+            ]));
+
+        $this->assertDatabaseHas('student_capstone_submissions', [
+            'id' => $submission->id,
+            'status' => 'approved',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('repository.index'))
+            ->assertOk()
+            ->assertSee('Repository Ready Capstone');
     }
 }

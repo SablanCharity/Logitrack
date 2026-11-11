@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
+use App\Models\StudentCapstoneSubmission;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,9 +54,19 @@ class RepositoryController extends Controller
                 return $this->prepareLegacyCapstone($item);
             });
 
-        // Combine both repository sources.
+        $studentCapstones = StudentCapstoneSubmission::with([
+            'authors.masterlistRecord',
+            'authors.user',
+            'submitter',
+        ])
+            ->where('status', 'approved')
+            ->get()
+            ->map(fn (StudentCapstoneSubmission $item) => $this->prepareStudentCapstone($item));
+
+        // Combine all repository sources.
         $allCapstones = $modernCapstones
             ->concat($archivedCapstones)
+            ->concat($studentCapstones)
             ->values();
 
         // Build available filter options.
@@ -199,7 +210,7 @@ class RepositoryController extends Controller
     public function show(Request $request, int $capstoneId): View
     {
         $returnParameters = $request->validate([
-            'type' => ['nullable', 'in:old,modern'],
+            'type' => ['nullable', 'in:old,modern,student'],
             'return_to' => ['nullable', 'in:dashboard,repository,instructor_repository'],
             'search' => ['nullable', 'string', 'max:255'],
             'year' => ['nullable', 'digits:4', 'integer', 'min:1900', 'max:'.(now()->year + 1)],
@@ -244,6 +255,16 @@ class RepositoryController extends Controller
 
             $capstone = $this->prepareLegacyCapstone($capstone);
             $capstone->increment('views_count');
+        } elseif ($type === 'student') {
+            $capstone = StudentCapstoneSubmission::with([
+                'authors.masterlistRecord',
+                'authors.user',
+                'submitter',
+            ])
+                ->where('status', 'approved')
+                ->findOrFail($capstoneId);
+
+            $capstone = $this->prepareStudentCapstone($capstone);
         } else {
             $capstone = CapstoneProject::with([
                 'groupRoom.classroom.instructor',
@@ -343,6 +364,34 @@ class RepositoryController extends Controller
                 'is_leader' => false,
                 'user' => (object) [
                     'first_name' => $author,
+                    'last_name' => '',
+                ],
+            ]),
+        ];
+
+        return $capstone;
+    }
+
+    private function prepareStudentCapstone(StudentCapstoneSubmission $capstone): StudentCapstoneSubmission
+    {
+        $capstone->source_type = 'student';
+        $capstone->program = $capstone->submitter?->program;
+        $capstone->publication_date = $capstone->submitted_date;
+        $capstone->study_year = $this->publicationYear($capstone->submitted_date);
+        $capstone->is_best = false;
+        $capstone->views_count = (int) ($capstone->views_count ?? 0);
+        $capstone->groupRoom = (object) [
+            'group_name' => 'Student Submission',
+            'classroom' => (object) [
+                'instructor' => (object) [
+                    'first_name' => '',
+                    'last_name' => '',
+                ],
+            ],
+            'members' => $capstone->authors->map(fn ($author) => (object) [
+                'is_leader' => (bool) $author->is_leader,
+                'user' => $author->user ?? (object) [
+                    'first_name' => $author->masterlistRecord?->name ?? 'Unnamed student',
                     'last_name' => '',
                 ],
             ]),

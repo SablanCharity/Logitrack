@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Staff Accounts &middot; LogiTrack</title>
+    <title>Instructor Accounts &middot; LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
 </head>
 <body class="lt-body">
     @include('components.site-navigation')
     <main class="lt-container lt-animate">
         <div class="lt-page-head">
-            <span class="lt-eyebrow">Admin &middot; Staff Management</span>
+            <span class="lt-eyebrow">Admin &middot; Instructor Management</span>
             <div class="lt-page-head__row">
                 <div>
-                    <h1>Staff Accounts</h1>
-                    <p class="lt-page-head__sub">Manage administrator, instructor, and OJT accounts.</p>
+                    <h1>Instructor Accounts</h1>
+                    <p class="lt-page-head__sub">Upload an instructor/adviser list and manage existing administrator or instructor accounts.</p>
                 </div>
-                <a href="{{ route('admin.accounts.create') }}" class="lt-btn lt-btn--primary">Create Account</a>
             </div>
         </div>
         @if(session('success'))
@@ -24,23 +23,41 @@
         @endif
         <section class="lt-card">
             <div class="lt-card__head">
+                <h2>Upload instructor/adviser list</h2>
+                <p class="lt-page-head__sub">Use a CSV, XLS, or XLSX file with <code>name</code> and <code>email</code> columns, or separate <code>first_name</code> and <code>last_name</code> columns.</p>
+            </div>
+            @if($errors->any())
+                <div class="lt-alert lt-alert--error" role="alert"><span class="lt-alert__icon">!</span><div>{{ $errors->first() }}</div></div>
+            @endif
+            <form method="POST" action="{{ route('admin.accounts.import') }}" enctype="multipart/form-data" class="lt-form">
+                @csrf
+                <div class="lt-field">
+                    <label for="file" class="lt-label">Instructor file</label>
+                    <input id="file" type="file" name="file" accept=".csv,.txt,.xls,.xlsx" class="lt-input" required>
+                    <span class="lt-hint">Each imported instructor receives a temporary password by email and must change it after signing in.</span>
+                </div>
+                <button type="submit" class="lt-btn lt-btn--primary">Import Instructors</button>
+            </form>
+        </section>
+        <section class="lt-card">
+            <div class="lt-card__head">
                 <form method="GET" action="{{ route('admin.accounts.index') }}" class="lt-input-wrap" style="max-width: 360px;">
                     <span class="material-symbols-outlined lt-input-icon" aria-hidden="true">search</span>
-                    <input type="search" name="q" value="{{ $search }}" class="lt-input" placeholder="Search staff accounts..." aria-label="Search staff accounts">
+                    <input type="search" name="q" value="{{ $search }}" class="lt-input" placeholder="Search instructor accounts..." aria-label="Search instructor accounts">
                 </form>
                 @if($search !== '' && $accounts->isEmpty())
-                    <div class="lt-empty lt-mt"><div class="lt-empty__title">No match found</div><p>No staff account matches your search.</p></div>
+                    <div class="lt-empty lt-mt"><div class="lt-empty__title">No match found</div><p>No instructor account matches your search.</p></div>
                 @endif
             </div>
             <div class="lt-table-wrap">
-                <table class="lt-table" id="staff-accounts-table">
+                <table class="lt-table" id="instructor-accounts-table">
                     <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
                     <tbody>
                         @foreach($accounts as $account)
                             <tr>
                                 <td>{{ $account->first_name }} {{ $account->last_name }}</td>
                                 <td>{{ $account->email }}</td>
-                                <td>{{ $account->role === 'ojt' ? 'OJT Metadata Reviewer' : ucfirst($account->role) }}</td>
+                                <td>{{ ucfirst($account->role) }}</td>
                                 <td><span class="lt-badge {{ $account->is_active ? 'lt-badge--approved' : 'lt-badge--rejected' }}">{{ $account->is_active ? 'Active' : 'Disabled' }}</span></td>
                                 <td>
                                     <div class="lt-actions">

@@ -13,7 +13,6 @@ use App\Http\Controllers\RepositoryController;
 use App\Http\Controllers\SimilarityController;
 use App\Http\Controllers\StudentCapstoneSubmissionController;
 use App\Http\Controllers\StudentMasterlistController;
-use App\Models\ClassroomMember;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
@@ -56,13 +55,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     })->name('student.pending');
 
     Route::get('/student/classroom-redirect', function () {
-        $membership = ClassroomMember::where('user_id', auth()->id())->first();
-
-        if (! $membership) {
-            return redirect()->route('dashboard')->with('error', 'You are not assigned to any classroom yet.');
-        }
-
-        return redirect()->route('student.group-rooms.index', ['classroomId' => $membership->classroom_id]);
+        return redirect()->route('student.submissions.create');
     })->name('student.classroom.redirect');
 
     Route::get('/student/classrooms/{classroomId}/groups', [GroupRoomController::class, 'index'])->name('student.group-rooms.index');
@@ -122,12 +115,11 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->name('admin.capstone.set-best');
         Route::get('/admin/repository/{capstoneId}/edit', [RepositoryController::class, 'edit'])->name('admin.repository.edit');
         Route::put('/admin/repository/{capstoneId}', [RepositoryController::class, 'update'])->name('admin.repository.update');
-        Route::get('/admin/accounts/create', [AdminAccountController::class, 'create'])->name('admin.accounts.create');
         Route::get('/admin/accounts', [AdminAccountController::class, 'index'])->name('admin.accounts.index');
         Route::get('/admin/students', [AdminAccountController::class, 'students'])->name('admin.students.index');
         Route::get('/admin/student-masterlist', [StudentMasterlistController::class, 'index'])->name('admin.student-masterlist.index');
         Route::post('/admin/student-masterlist', [StudentMasterlistController::class, 'upload'])->name('admin.student-masterlist.upload');
-        Route::post('/admin/accounts', [AdminAccountController::class, 'store'])->name('admin.accounts.store');
+        Route::post('/admin/accounts/import', [AdminAccountController::class, 'import'])->name('admin.accounts.import');
         Route::get('/admin/accounts/{user}/edit', [AdminAccountController::class, 'edit'])->name('admin.accounts.edit');
         Route::put('/admin/accounts/{user}', [AdminAccountController::class, 'update'])->name('admin.accounts.update');
         Route::patch('/admin/accounts/{user}/toggle-active', [AdminAccountController::class, 'toggleActive'])->name('admin.accounts.toggle-active');
@@ -148,8 +140,12 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->name('admin.student-submissions.index');
         Route::get('/admin/student-submissions/{submission}', [StudentCapstoneSubmissionController::class, 'show'])
             ->name('admin.student-submissions.show');
-        Route::get('/admin/student-submissions/{submission}/files/{file}', [StudentCapstoneSubmissionController::class, 'download'])
-            ->name('admin.student-submissions.download');
+        Route::get('/admin/student-submissions/{submission}/files/{file}/preview', [StudentCapstoneSubmissionController::class, 'preview'])
+            ->name('admin.student-submissions.preview');
+        Route::patch('/admin/student-submissions/{submission}/return', [StudentCapstoneSubmissionController::class, 'returnSubmission'])
+            ->name('admin.student-submissions.return');
+        Route::patch('/admin/student-submissions/{submission}/add-to-repository', [StudentCapstoneSubmissionController::class, 'addToRepository'])
+            ->name('admin.student-submissions.add-to-repository');
     });
 
     /* Repository */
@@ -167,9 +163,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     | Legacy OCR Capstone Routes (Old Capstones)
     |--------------------------------------------------------------------------
     */
-    Route::middleware('admin')->group(function () {
-        Route::get('/admin/archived-capstones', [ArchivedCapstoneController::class, 'index'])->name('ocr.index');
-    });
     Route::middleware('admin.ocr')->group(function () {
         Route::get('/admin/archived-capstones/create', [ArchivedCapstoneController::class, 'create'])->name('ocr.upload');
         Route::post('/admin/archived-capstones', [ArchivedCapstoneController::class, 'store'])->name('ocr.store');

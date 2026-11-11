@@ -8,6 +8,7 @@ use App\Models\Classroom;
 use App\Models\ClassroomMember;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -15,25 +16,22 @@ class AdminAccountTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_can_create_an_instructor_account(): void
+    public function test_admin_can_import_instructor_accounts_from_a_csv(): void
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $response = $this->actingAs($admin)->post(route('admin.accounts.store'), [
-            'first_name' => 'Jane',
-            'last_name' => 'Instructor',
-            'email' => 'jane.instructor@example.com',
-            'role' => 'instructor',
-            'program' => 'BSCS',
+        $response = $this->actingAs($admin)->post(route('admin.accounts.import'), [
+            'file' => UploadedFile::fake()->createWithContent('instructors.csv', "name,email\nJane Instructor,jane.instructor@example.com\n"),
         ]);
 
         $response->assertRedirect(route('admin.accounts.index'))
-            ->assertSessionHas('success', 'Instructor account created and credentials emailed successfully.');
+            ->assertSessionHas('success', '1 instructor account(s) imported and credentials emailed successfully.');
         $this->assertDatabaseHas('users', [
             'email' => 'jane.instructor@example.com',
             'role' => 'instructor',
             'is_approved' => true,
+            'is_active' => true,
             'must_change_password' => true,
         ]);
         Mail::assertSent(StaffAccountCreated::class, fn (StaffAccountCreated $mail): bool => $mail->email === 'jane.instructor@example.com'
@@ -41,42 +39,32 @@ class AdminAccountTest extends TestCase
             && strlen($mail->temporaryPassword) === 24);
     }
 
-    public function test_admin_can_create_an_ojt_account(): void
+    public function test_admin_cannot_import_duplicate_or_invalid_instructor_rows(): void
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => 'admin']);
+        User::factory()->create(['email' => 'existing@example.com']);
 
-        $this->actingAs($admin)->post(route('admin.accounts.store'), [
-            'first_name' => 'John',
-            'last_name' => 'OJT',
-            'email' => 'john.ojt@example.com',
-            'role' => 'ojt',
-        ])->assertRedirect(route('admin.accounts.index'));
+        $this->actingAs($admin)->post(route('admin.accounts.import'), [
+            'file' => UploadedFile::fake()->createWithContent('instructors.csv', "name,email\nJane Instructor,existing@example.com\n"),
+        ])->assertSessionHasErrors('file');
 
-        $this->assertDatabaseHas('users', [
-            'email' => 'john.ojt@example.com',
-            'role' => 'ojt',
-            'is_approved' => true,
+        $this->assertDatabaseMissing('users', [
+            'email' => 'jane.instructor@example.com',
         ]);
+        Mail::assertNothingSent();
     }
 
-    public function test_admin_cannot_create_an_admin_account(): void
+    public function test_imported_accounts_are_always_instructor_accounts(): void
     {
         Mail::fake();
         $admin = User::factory()->create(['role' => 'admin']);
 
-        $this->actingAs($admin)
-            ->from(route('admin.accounts.create'))
-            ->post(route('admin.accounts.store'), [
-                'first_name' => 'New',
-                'last_name' => 'Administrator',
-                'email' => 'new.admin@example.com',
-                'role' => 'admin',
-            ])->assertRedirect(route('admin.accounts.create'))
-            ->assertSessionHasErrors('role');
+        $this->actingAs($admin)->post(route('admin.accounts.import'), [
+            'file' => UploadedFile::fake()->createWithContent('instructors.csv', "name,email\nNew Administrator,new.admin@example.com\n"),
+        ])->assertRedirect(route('admin.accounts.index'));
 
-        $this->assertDatabaseMissing('users', ['email' => 'new.admin@example.com']);
-        Mail::assertNothingSent();
+        $this->assertDatabaseHas('users', ['email' => 'new.admin@example.com', 'role' => 'instructor']);
     }
 
     public function test_admin_is_warned_when_email_domain_cannot_receive_mail(): void
@@ -85,15 +73,10 @@ class AdminAccountTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($admin)
-            ->from(route('admin.accounts.create'))
-            ->post(route('admin.accounts.store'), [
-                'first_name' => 'Invalid',
-                'last_name' => 'Mailbox',
-                'email' => 'invalid@definitely-no-such-domain.invalid',
-                'role' => 'ojt',
+            ->post(route('admin.accounts.import'), [
+                'file' => UploadedFile::fake()->createWithContent('instructors.csv', "name,email\nInvalid Mailbox,invalid@definitely-no-such-domain.invalid\n"),
             ])
-            ->assertRedirect(route('admin.accounts.create'))
-            ->assertSessionHasErrors('email');
+            ->assertSessionHasErrors('file');
 
         Mail::assertNothingSent();
         $this->assertDatabaseMissing('users', ['email' => 'invalid@definitely-no-such-domain.invalid']);
@@ -180,7 +163,7 @@ class AdminAccountTest extends TestCase
             ->get(route('admin.accounts.index'))
             ->assertOk()
             ->assertSee('name="q"', false)
-            ->assertSee('Search staff accounts...');
+            ->assertSee('Search instructor accounts...');
 
         $this->actingAs($admin)
             ->patch(route('admin.accounts.toggle-active', $student))
@@ -261,7 +244,7 @@ class AdminAccountTest extends TestCase
         $ojt = User::factory()->create(['role' => 'ojt']);
 
         $this->actingAs($ojt)
-            ->get(route('admin.accounts.create'))
+            ->get(route('admin.accounts.index'))
             ->assertForbidden();
     }
 

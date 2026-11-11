@@ -28,61 +28,13 @@ class ArchivedCapstoneReviewTest extends TestCase
             ->assertViewHas('archivedCapstone', $archivedCapstone);
     }
 
-    public function test_admin_can_view_saved_unapproved_archived_capstones(): void
-    {
-        $admin = User::factory()->create(['role' => 'admin']);
-        $reviewedCapstone = ArchivedCapstone::create([
-            'title' => 'Corrected Archived Study',
-            'status' => 'reviewed',
-        ]);
-        ArchivedCapstone::create([
-            'title' => 'Pending Archived Study',
-            'status' => 'pending',
-        ]);
-        ArchivedCapstone::create([
-            'title' => 'Already Published Study',
-            'status' => 'approved',
-        ]);
-
-        $this->actingAs($admin)
-            ->get(route('ocr.index'))
-            ->assertOk()
-            ->assertSee('Corrected Archived Study')
-            ->assertSee('Review & Approve')
-            ->assertDontSee('Pending Archived Study')
-            ->assertDontSee('Already Published Study')
-            ->assertViewHas('archivedCapstones', function ($capstones) use ($reviewedCapstone): bool {
-                return $capstones->contains($reviewedCapstone);
-            });
-    }
-
-    public function test_ojt_cannot_view_the_admin_archived_capstone_queue(): void
-    {
-        $ojt = User::factory()->create(['role' => 'ojt']);
-
-        $this->actingAs($ojt)
-            ->get(route('ocr.index'))
-            ->assertForbidden();
-    }
-
-    public function test_ojt_navigation_does_not_show_saved_corrections(): void
-    {
-        $ojt = User::factory()->create(['role' => 'ojt']);
-
-        $this->actingAs($ojt)
-            ->get(route('dashboard'))
-            ->assertOk()
-            ->assertDontSee('Saved Corrections');
-    }
-
-    public function test_ojt_can_open_archived_capstone_upload_form(): void
+    public function test_ojt_cannot_open_archived_capstone_upload_form(): void
     {
         $ojt = User::factory()->create(['role' => 'ojt']);
 
         $this->actingAs($ojt)
             ->get(route('ocr.upload'))
-            ->assertOk()
-            ->assertSee('Upload Archived');
+            ->assertForbidden();
     }
 
     public function test_students_cannot_open_archived_capstone_upload_form(): void

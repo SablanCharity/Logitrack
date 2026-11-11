@@ -7,24 +7,13 @@ use App\Models\CapstoneProject;
 use App\Services\Ocr\MetadataExtractionService;
 use App\Services\Ocr\TesseractService;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class ArchivedCapstoneController extends Controller
 {
-    public function index(): View
-    {
-        $archivedCapstones = ArchivedCapstone::query()
-            ->where('status', 'reviewed')
-            ->latest('updated_at')
-            ->get();
-
-        return view('ocr.index', compact('archivedCapstones'));
-    }
-
     // Show upload form for scanning old capstones
     public function create()
     {
-        if (! in_array(auth()->user()?->role, ['admin', 'ojt'], true)) {
+        if (auth()->user()?->role !== 'admin') {
             abort(403, 'Unauthorized action.');
         }
 
@@ -34,7 +23,7 @@ class ArchivedCapstoneController extends Controller
     // Handle image upload, run Tesseract and Metadata Extraction
     public function store(Request $request, TesseractService $tesseract, MetadataExtractionService $extractor)
     {
-        if (! in_array(auth()->user()?->role, ['admin', 'ojt'], true)) {
+        if (auth()->user()?->role !== 'admin') {
             abort(403, 'Unauthorized action.');
         }
 

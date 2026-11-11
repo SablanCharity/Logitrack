@@ -35,6 +35,11 @@ class GroupCapstoneSubmissionTest extends TestCase
             'program' => 'BSIT',
             'status' => 'listed',
         ]);
+        $adviser = User::factory()->create([
+            'role' => 'instructor',
+            'is_approved' => true,
+            'is_active' => true,
+        ]);
 
         $response = $this->actingAs($leader)->post(route('student.group-submissions.store'), [
             'program' => 'BSIT',
@@ -88,6 +93,11 @@ class GroupCapstoneSubmissionTest extends TestCase
             'program' => 'BSCS',
             'status' => 'listed',
         ]);
+        $adviser = User::factory()->create([
+            'role' => 'instructor',
+            'is_approved' => true,
+            'is_active' => true,
+        ]);
 
         $this->actingAs($leader)
             ->get(route('student.submissions.create'))
@@ -97,6 +107,7 @@ class GroupCapstoneSubmissionTest extends TestCase
         $response = $this->actingAs($leader)->post(route('student.submissions.store'), [
             'title' => 'An Individual Capstone Study',
             'abstract' => 'An individual abstract for the selected author.',
+            'adviser' => $adviser->id,
             'submitted_date' => '2026-11-11',
             'authors' => [$record->id, $memberRecord->id],
             'study' => UploadedFile::fake()->create('study.pdf', 10, 'application/pdf'),
@@ -114,17 +125,23 @@ class GroupCapstoneSubmissionTest extends TestCase
         $this->assertCount(2, StudentCapstoneAuthor::query()->get());
     }
 
-    public function test_individual_submission_rejects_more_than_two_authors(): void
+    public function test_individual_submission_rejects_more_than_three_authors(): void
     {
         Storage::fake('local');
         $student = User::factory()->create([
             'student_number' => '202626600',
             'program' => 'BSCS',
         ]);
+        $adviser = User::factory()->create([
+            'role' => 'instructor',
+            'is_approved' => true,
+            'is_active' => true,
+        ]);
         $authors = collect([
             ['202626601', 'First Student'],
             ['202626602', 'Second Student'],
             ['202626603', 'Third Student'],
+            ['202626604', 'Fourth Student'],
         ])->map(fn (array $author): int => StudentMasterlistRecord::create([
             'student_number' => $author[0],
             'name' => $author[1],
@@ -135,6 +152,7 @@ class GroupCapstoneSubmissionTest extends TestCase
         $response = $this->actingAs($student)->post(route('student.submissions.store'), [
             'title' => 'A Capstone With Too Many Authors',
             'abstract' => 'An abstract for three authors.',
+            'adviser' => $adviser->id,
             'submitted_date' => '2026-11-11',
             'authors' => $authors,
             'study' => UploadedFile::fake()->create('study.pdf', 10, 'application/pdf'),
@@ -144,9 +162,56 @@ class GroupCapstoneSubmissionTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors([
-            'authors' => 'The authors field must not have more than 2 items.',
+            'authors' => 'The authors field must not have more than 3 items.',
         ]);
         $this->assertDatabaseCount('student_capstone_submissions', 0);
         $this->assertDatabaseCount('student_capstone_authors', 0);
+    }
+
+    public function test_submitting_student_is_added_as_an_author_when_not_selected(): void
+    {
+        Storage::fake('local');
+        $student = User::factory()->create([
+            'student_number' => '202626604',
+            'program' => 'BSCS',
+        ]);
+        $studentRecord = StudentMasterlistRecord::create([
+            'student_number' => '202626604',
+            'name' => 'Submitting Student',
+            'program' => 'BSCS',
+            'status' => 'listed',
+        ]);
+        $otherRecord = StudentMasterlistRecord::create([
+            'student_number' => '202626605',
+            'name' => 'Selected Student',
+            'program' => 'BSCS',
+            'status' => 'listed',
+        ]);
+        $adviser = User::factory()->create([
+            'role' => 'instructor',
+            'is_approved' => true,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($student)->post(route('student.submissions.store'), [
+            'title' => 'Automatic Submitting Author Study',
+            'abstract' => 'The submitting student is always an author.',
+            'adviser' => $adviser->id,
+            'submitted_date' => '2026-11-11',
+            'authors' => [$otherRecord->id],
+            'study' => UploadedFile::fake()->create('study.pdf', 10, 'application/pdf'),
+            'manual' => UploadedFile::fake()->create('manual.pdf', 10, 'application/pdf'),
+            'system' => UploadedFile::fake()->create('system.zip', 10, 'application/zip'),
+            'mentee_form' => UploadedFile::fake()->create('mentee.pdf', 10, 'application/pdf'),
+        ])->assertRedirect(route('student.submissions.create'));
+
+        $this->assertDatabaseHas('student_capstone_authors', [
+            'student_masterlist_record_id' => $studentRecord->id,
+            'user_id' => $student->id,
+            'is_leader' => true,
+        ]);
+        $this->assertDatabaseHas('student_capstone_authors', [
+            'student_masterlist_record_id' => $otherRecord->id,
+        ]);
     }
 }

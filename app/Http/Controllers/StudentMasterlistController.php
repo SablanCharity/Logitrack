@@ -13,8 +13,15 @@ use Illuminate\View\View;
 
 class StudentMasterlistController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'program_filter' => ['nullable', 'in:BSCS,BSIT'],
+        ]);
+        $search = trim((string) ($validated['search'] ?? ''));
+        $programFilter = $validated['program_filter'] ?? null;
+
         $submittedStudentNumbers = GroupCapstoneMember::query()
             ->join('student_masterlist_records', 'student_masterlist_records.id', '=', 'group_capstone_members.student_masterlist_record_id')
             ->pluck('student_masterlist_records.student_number')
@@ -37,8 +44,21 @@ class StudentMasterlistController extends Controller
             ->flip();
 
         return view('admin.student-masterlist', [
-            'records' => StudentMasterlistRecord::latest()->get(),
+            'records' => StudentMasterlistRecord::query()
+                ->when($search !== '', function ($query) use ($search): void {
+                    $query->where(function ($query) use ($search): void {
+                        $query->where('student_number', 'like', "%{$search}%")
+                            ->orWhere('name', 'like', "%{$search}%")
+                            ->orWhere('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+                })
+                ->when($programFilter, fn ($query) => $query->where('program', $programFilter))
+                ->latest()
+                ->get(),
             'submittedStudentNumbers' => $submittedStudentNumbers,
+            'search' => $search,
+            'programFilter' => $programFilter,
         ]);
     }
 

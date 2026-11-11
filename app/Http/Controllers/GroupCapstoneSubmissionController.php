@@ -99,32 +99,49 @@ class GroupCapstoneSubmissionController extends Controller
         $this->ensureAdmin();
         $program = request('program');
 
-        $allSubmissions = GroupCapstoneSubmission::with('members.student', 'members.masterlistRecord', 'submitter')
-            ->latest()
-            ->get();
-        $submissions = $allSubmissions
-            ->when(in_array($program, ['BSCS', 'BSIT'], true), fn ($query) => $query->where('program', $program))
+        $allStudentSubmissions = StudentCapstoneSubmission::with([
+            'submitter',
+            'adviserUser',
+            'authors.masterlistRecord',
+        ])->latest()->get();
+        $studentSubmissions = $allStudentSubmissions
+            ->when(
+                in_array($program, ['BSCS', 'BSIT'], true),
+                fn ($submissions) => $submissions->filter(
+                    fn (StudentCapstoneSubmission $submission): bool => $submission->submitter?->program === $program
+                )
+            )
+            ->values();
+
+        $submittedStudentNumbers = $allStudentSubmissions
+            ->flatMap(function (StudentCapstoneSubmission $submission): array {
+                $authorNumbers = $submission->authors
+                    ->map(fn ($author): ?string => $author->masterlistRecord?->student_number)
+                    ->filter()
+                    ->all();
+
+                return array_values(array_filter([
+                    $submission->submitter?->student_number,
+                    ...$authorNumbers,
+                ]));
+            })
+            ->filter()
+            ->unique()
             ->values();
 
         $counts = [
             'enrolled_cscs' => StudentMasterlistRecord::where('program', 'BSCS')->count(),
             'enrolled_it' => StudentMasterlistRecord::where('program', 'BSIT')->count(),
-            'submitted_cscs' => $allSubmissions->where('program', 'BSCS')->pluck('members')->flatten()->unique('student_masterlist_record_id')->count(),
-            'submitted_it' => $allSubmissions->where('program', 'BSIT')->pluck('members')->flatten()->unique('student_masterlist_record_id')->count(),
-            'pending' => $allSubmissions->where('status', 'pending')->count(),
-            'approved' => $allSubmissions->where('status', 'approved')->count(),
+            'submitted' => $submittedStudentNumbers->count(),
+            'pending' => $allStudentSubmissions->where('status', 'submitted')->count(),
+            'approved' => $allStudentSubmissions->where('status', 'approved')->count(),
         ];
-        $counts['not_submitted_cscs'] = max(0, $counts['enrolled_cscs'] - $counts['submitted_cscs']);
-        $counts['not_submitted_it'] = max(0, $counts['enrolled_it'] - $counts['submitted_it']);
-        $studentSubmissions = StudentCapstoneSubmission::with(['submitter', 'authors.masterlistRecord'])
-            ->when(
-                in_array($program, ['BSCS', 'BSIT'], true),
-                fn ($query) => $query->whereHas('submitter', fn ($submitterQuery) => $submitterQuery->where('program', $program))
-            )
-            ->latest()
-            ->get();
+        $counts['not_submitted'] = max(
+            0,
+            $counts['enrolled_cscs'] + $counts['enrolled_it'] - $counts['submitted']
+        );
 
-        return view('admin.group-submissions', compact('submissions', 'studentSubmissions', 'counts', 'program'));
+        return view('admin.group-submissions', compact('studentSubmissions', 'counts', 'program'));
     }
 
     private function ensureAdmin(): void

@@ -18,22 +18,53 @@
         @if(session('success')) <div class="lt-alert lt-alert--success" role="status">{{ session('success') }}</div> @endif
         @if($errors->any()) <div class="lt-alert lt-alert--error" role="alert">{{ $errors->first() }}</div> @endif
 
-        <form method="POST" action="{{ route('admin.student-masterlist.upload') }}" enctype="multipart/form-data" class="lt-form">
-            @csrf
-            <div class="lt-field">
-                <label for="program" class="lt-label">Program</label>
-                <select id="program" name="program" class="lt-select" required>
-                    <option value="">Select program</option>
-                    <option value="BSCS">Computer Science (CS)</option>
-                    <option value="BSIT">Information Technology (IT)</option>
-                </select>
+        <div class="lt-card lt-mt-lg">
+            <div class="lt-card__head">
+                <div>
+                    <h2 class="lt-card__title">Upload student masterlist</h2>
+                    <p class="lt-card__desc">Choose the program and CSV file together. Extracted students are enrolled immediately.</p>
+                </div>
             </div>
-            <div class="lt-field">
-                <label for="masterlist" class="lt-label">CSV file</label>
-                <input id="masterlist" name="masterlist" type="file" accept=".csv,.txt" class="lt-input" required>
+            <form method="POST" action="{{ route('admin.student-masterlist.upload') }}" enctype="multipart/form-data" class="lt-form">
+                @csrf
+                <div class="lt-field">
+                    <label for="program" class="lt-label">Program</label>
+                    <select id="program" name="program" class="lt-select" required>
+                        <option value="">Select program</option>
+                        <option value="BSCS">Computer Science (CS)</option>
+                        <option value="BSIT">Information Technology (IT)</option>
+                    </select>
+                </div>
+                <div class="lt-field">
+                    <label for="masterlist" class="lt-label">CSV file</label>
+                    <input id="masterlist" name="masterlist" type="file" accept=".csv,.txt" class="lt-input" required>
+                </div>
+                <button type="submit" class="lt-btn lt-btn--primary">Upload masterlist</button>
+            </form>
+        </div>
+
+        <div class="lt-card lt-mt-lg">
+            <div class="lt-card__head">
+                <div>
+                    <h2 class="lt-card__title">Enrolled students</h2>
+                    <p class="lt-card__desc">Search by student number or name and filter by program.</p>
+                </div>
+                <form method="GET" action="{{ route('admin.student-masterlist.index') }}" class="lt-inline-form">
+                    <label for="search" class="lt-sr-only">Search student number or name</label>
+                    <input id="search" name="search" type="search" class="lt-input" value="{{ $search }}" placeholder="Search number or name">
+                    <label for="program-filter" class="lt-sr-only">Filter by program</label>
+                    <select id="program-filter" name="program_filter" class="lt-select">
+                        <option value="">All programs</option>
+                        <option value="BSCS" @selected($programFilter === 'BSCS')>Computer Science (CS)</option>
+                        <option value="BSIT" @selected($programFilter === 'BSIT')>Information Technology (IT)</option>
+                    </select>
+                    <button type="submit" class="lt-btn lt-btn--ghost">Search</button>
+                    @if($search !== '' || $programFilter)
+                        <a href="{{ route('admin.student-masterlist.index') }}" class="lt-btn lt-btn--ghost">Clear</a>
+                    @endif
+                </form>
             </div>
-            <button type="submit" class="lt-btn lt-btn--primary">Upload masterlist</button>
-        </form>
+        </div>
 
         <div class="lt-table-wrap lt-mt-lg">
             <table class="lt-table">

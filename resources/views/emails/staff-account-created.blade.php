@@ -2,7 +2,7 @@
 <html lang="en">
 <body>
     <h1>Welcome to LogiTrack, {{ $firstName }}.</h1>
-    <p>An administrator created your {{ $role === 'ojt' ? 'OJT metadata reviewer' : $role }} account.</p>
+    <p>An administrator created your LogiTrack instructor/adviser account.</p>
     <p>Use these credentials to sign in:</p>
     <ul>
         <li>Email: {{ $email }}</li>

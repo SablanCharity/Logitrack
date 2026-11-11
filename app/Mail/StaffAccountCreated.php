@@ -25,7 +25,7 @@ class StaffAccountCreated extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your LogiTrack staff account',
+            subject: 'Your LogiTrack instructor account',
         );
     }
 

@@ -517,11 +517,13 @@
                     @foreach($capstones as $capstone)
 
                         @php
-                            $isOld = isset($capstone->source_type) && $capstone->source_type === 'old';
+                            $sourceType = $capstone->source_type ?? 'modern';
+                            $isOld = $sourceType === 'old';
+                            $isStudent = $sourceType === 'student';
 
                             $showRoute = route($repositoryShowRoute, array_filter([
                                 'capstoneId' => $capstone->id,
-                                'type' => $isOld ? 'old' : 'modern',
+                                'type' => $sourceType,
                                 'return_to' => $isDashboard
                                     ? 'dashboard'
                                     : ($user?->role === 'instructor' ? 'instructor_repository' : 'repository'),
@@ -574,6 +576,8 @@
                                     <dd>
                                         @if($isOld)
                                             {{ $capstone->adviser ?? 'N/A' }}
+                                        @elseif($isStudent)
+                                            Student submission
                                         @else
                                             {{ $capstone->groupRoom?->classroom?->instructor?->first_name ?? '' }}
                                             {{ $capstone->groupRoom?->classroom?->instructor?->last_name ?? '' }}
@@ -632,7 +636,7 @@
 
                             <div class="lt-repo-card__foot">
 
-                                @if(auth()->user()?->role === 'admin')
+                                @if(auth()->user()?->role === 'admin' && ! $isStudent)
                                     <form method="POST" action="{{ route('admin.capstone.set-best', ['capstoneId' => $capstone->id, 'type' => $capstone->source_type]) }}">
                                         @csrf
                                         @method('PATCH')

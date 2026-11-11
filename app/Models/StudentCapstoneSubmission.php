@@ -12,6 +12,7 @@ class StudentCapstoneSubmission extends Model
         'submitted_by',
         'title',
         'abstract',
+        'adviser',
         'content_hash',
         'submitted_date',
         'study_path',
@@ -30,6 +31,11 @@ class StudentCapstoneSubmission extends Model
     public function submitter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'submitted_by');
+    }
+
+    public function adviserUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'adviser');
     }
 
     public function authors(): HasMany

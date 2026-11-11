@@ -23,4 +23,9 @@ class StudentCapstoneAuthor extends Model
     {
         return $this->belongsTo(StudentMasterlistRecord::class, 'student_masterlist_record_id');
     }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }

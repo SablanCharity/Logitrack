@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Edit Staff Account &middot; LogiTrack</title>
+    <title>Edit Instructor Account &middot; LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
 </head>
 <body class="lt-body">
     @include('components.site-navigation')
     <main class="lt-container lt-animate" style="max-width: 760px;">
-        <a href="{{ route('admin.accounts.index') }}" class="lt-back">&larr; Back to Staff Accounts</a>
+        <a href="{{ route('admin.accounts.index') }}" class="lt-back">&larr; Back to Instructor Accounts</a>
         <div class="lt-page-head">
-            <span class="lt-eyebrow">Admin &middot; Staff Management</span>
-            <h1>Edit Staff Account</h1>
-            <p class="lt-page-head__sub">Update the staff member's name, email, or program.</p>
+            <span class="lt-eyebrow">Admin &middot; Instructor Management</span>
+            <h1>Edit Instructor Account</h1>
+            <p class="lt-page-head__sub">Update the instructor's name, email, or program.</p>
         </div>
         @if($errors->any())
             <div class="lt-alert lt-alert--error" role="alert"><span class="lt-alert__icon">!</span><div>{{ $errors->first() }}</div></div>
