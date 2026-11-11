@@ -13,14 +13,30 @@
     @php
         $user = auth()->user();
 
+        $isDashboard = $isDashboard ?? false;
+        $showDashboardOverview = $showDashboardOverview ?? false;
+
         $search = $search ?? request('search', '');
         $year = $year ?? request('year', '');
         $program = $program ?? request('program', '');
         $programs = $programs ?? collect();
+        $adviser = $adviser ?? request('adviser', '');
+        $advisers = $advisers ?? collect();
         $sort = $sort ?? request('sort', 'newest');
         $perPage = $perPage ?? (int) request('per_page', 5);
         $years = $years ?? collect();
         $capstones = $capstones ?? collect();
+
+        // Dashboard metric fallbacks.
+        // These values should be calculated and passed by RepositoryController.
+        $totalCapstoneStudies = $totalCapstoneStudies ?? 0;
+        $totalBsitCapstones = $totalBsitCapstones ?? 0;
+        $totalCsTheses = $totalCsTheses ?? 0;
+
+        $dashboardStudies = $dashboardStudies ?? [
+            'best' => null,
+            'most_viewed' => null,
+        ];
 
         $repositoryIndexRoute = $user && $user->role === 'instructor'
             ? 'instructor.repository.index'
@@ -43,6 +59,7 @@
             @unless($isDashboard)
                 <span class="lt-eyebrow">Repository</span>
             @endunless
+
             <h1>{{ $isDashboard ? 'LogiTrack Capstone Repository' : 'LogiTrack Repository' }}</h1>
             <p class="lt-page-head__sub">Browse approved capstone projects in the repository.</p>
         </div>
@@ -98,11 +115,13 @@
                             <span>Program</span>
                             <select name="program" class="lt-input">
                                 <option value="">All programs</option>
-                    
 
                                 @foreach($programs as $programOption)
-                                    @if(!in_array(strtoupper(trim((string) $programOption)), ['IT', 'CS'], true))
-                                        <option value="{{ $programOption }}" @selected((string) $program === (string) $programOption)>
+                                    @if(!in_array(strtoupper(trim((string) $programOption)), ['BSIT', 'IT', 'CS'], true))
+                                        <option
+                                            value="{{ $programOption }}"
+                                            @selected((string) $program === (string) $programOption)
+                                        >
                                             {{ $programOption }}
                                         </option>
                                     @endif
@@ -111,11 +130,31 @@
                         </label>
 
                         <label class="lt-filter-field">
+                            <span>Adviser</span>
+                            <select name="adviser" class="lt-input">
+                                <option value="">All advisers</option>
+
+                                @foreach($advisers as $adviserOption)
+                                    <option
+                                        value="{{ $adviserOption }}"
+                                        @selected((string) $adviser === (string) $adviserOption)
+                                    >
+                                        {{ $adviserOption }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label class="lt-filter-field">
                             <span>Publication Year</span>
                             <select name="year" class="lt-input">
                                 <option value="">All years</option>
+
                                 @foreach($years as $studyYear)
-                                    <option value="{{ $studyYear }}" @selected((string) $year === (string) $studyYear)>
+                                    <option
+                                        value="{{ $studyYear }}"
+                                        @selected((string) $year === (string) $studyYear)
+                                    >
                                         {{ $studyYear }}
                                     </option>
                                 @endforeach
@@ -137,7 +176,10 @@
                             <span>Results Per Page</span>
                             <select name="per_page" class="lt-input">
                                 @foreach([5, 10, 20, 50] as $pageSize)
-                                    <option value="{{ $pageSize }}" @selected((int) $perPage === $pageSize)>
+                                    <option
+                                        value="{{ $pageSize }}"
+                                        @selected((int) $perPage === $pageSize)
+                                    >
                                         {{ $pageSize }} results
                                     </option>
                                 @endforeach
@@ -148,6 +190,7 @@
                             <a href="{{ route($repositoryIndexRoute) }}" class="lt-filter-clear">
                                 Clear filters
                             </a>
+
                             <button
                                 type="submit"
                                 class="lt-btn lt-btn--primary lt-btn--sm"
@@ -317,6 +360,36 @@
                 text-decoration: underline;
             }
 
+            /* Dashboard Number 02 breakdown */
+            .lt-dashboard-stat__breakdown {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+                margin-top: 16px;
+                padding-top: 14px;
+                border-top: 1px solid #e8ebdf;
+            }
+
+            .lt-dashboard-stat__breakdown-item {
+                min-width: 0;
+            }
+
+            .lt-dashboard-stat__breakdown-value {
+                display: block;
+                color: #18254c;
+                font-size: 1.5rem;
+                font-weight: 800;
+                line-height: 1.2;
+            }
+
+            .lt-dashboard-stat__breakdown-label {
+                display: block;
+                margin-top: 5px;
+                color: #68738a;
+                font-size: .78rem;
+                line-height: 1.4;
+            }
+
             @media (max-width: 520px) {
                 .lt-repo-search__row > .lt-btn {
                     padding: 0 16px;
@@ -325,6 +398,10 @@
                 .lt-repo-search__box {
                     padding-left: 10px;
                     gap: 6px;
+                }
+
+                .lt-dashboard-stat__breakdown {
+                    gap: 10px;
                 }
             }
         </style>
@@ -376,35 +453,77 @@
         @if($showDashboardOverview)
             <section class="lt-dashboard-stats" aria-label="Repository metrics">
 
+                {{-- NUMBER 01: BEST CAPSTONE STUDY --}}
                 <article class="lt-card lt-dashboard-stat">
                     <div class="lt-dashboard-stat__head">
                         <span class="lt-dashboard-stat__label">Best Capstone Study</span>
                         <span class="lt-dashboard-stat__index" aria-hidden="true">01</span>
                     </div>
+
                     <strong class="lt-dashboard-stat__value">
                         {{ $dashboardStudies['best']?->title ?? 'Not selected' }}
                     </strong>
                 </article>
 
+                {{-- NUMBER 02: TOTAL APPROVED STUDIES --}}
                 <article class="lt-card lt-dashboard-stat">
                     <div class="lt-dashboard-stat__head">
-                        <span class="lt-dashboard-stat__label">Total Number of Capstone Studies</span>
+                        <span class="lt-dashboard-stat__label">
+                            Total Number of Capstone Studies
+                        </span>
                         <span class="lt-dashboard-stat__index" aria-hidden="true">02</span>
                     </div>
-                    <strong class="lt-dashboard-stat__value">
-                        {{ number_format($totalCapstoneStudies) }}
-                    </strong>
+
+                    <div class="lt-dashboard-stat__content">
+
+                        <div>
+                            <strong class="lt-dashboard-stat__value">
+                                {{ number_format($totalCapstoneStudies) }}
+                            </strong>
+
+                            <span style="display: block; font-size: .82rem; color: #68738a;">
+                                Combined Total Studies
+                            </span>
+                        </div>
+
+                        <div class="lt-dashboard-stat__breakdown">
+
+                            <div class="lt-dashboard-stat__breakdown-item">
+                                <strong class="lt-dashboard-stat__breakdown-value">
+                                    {{ number_format($totalBsitCapstones) }}
+                                </strong>
+
+                                <span class="lt-dashboard-stat__breakdown-label">
+                                    Total Capstone (BSIT)
+                                </span>
+                            </div>
+
+                            <div class="lt-dashboard-stat__breakdown-item">
+                                <strong class="lt-dashboard-stat__breakdown-value">
+                                    {{ number_format($totalCsTheses) }}
+                                </strong>
+
+                                <span class="lt-dashboard-stat__breakdown-label">
+                                    Total Thesis (CS)
+                                </span>
+                            </div>
+
+                        </div>
+                    </div>
                 </article>
 
+                {{-- NUMBER 03: MOST VIEWED CAPSTONE STUDY --}}
                 <article class="lt-card lt-dashboard-stat">
                     <div class="lt-dashboard-stat__head">
                         <span class="lt-dashboard-stat__label">Most Viewed Capstone Study</span>
                         <span class="lt-dashboard-stat__index" aria-hidden="true">03</span>
                     </div>
+
                     <div class="lt-dashboard-stat__content">
                         <strong class="lt-dashboard-stat__value">
                             {{ $dashboardStudies['most_viewed']?->title ?? 'No studies yet' }}
                         </strong>
+
                         @if($dashboardStudies['most_viewed'])
                             <span class="lt-dashboard-stat__views">
                                 {{ number_format($dashboardStudies['most_viewed']->views_count) }} views
@@ -442,6 +561,7 @@
                             <div class="lt-dashboard-feature__heading">
                                 <div>
                                     <span class="lt-eyebrow">Featured study 0{{ $index + 1 }} / 02</span>
+
                                     <h2 class="lt-dashboard-feature__label" id="dashboard-feature-title-{{ $feature['key'] }}">
                                         {{ $feature['label'] }}
                                     </h2>
@@ -482,7 +602,11 @@
 
                                 <div class="lt-repo-card__foot">
                                     <a
-                                        href="{{ route('repository.show', ['capstoneId' => $feature['study']->id, 'type' => $feature['study']->source_type, 'return_to' => 'dashboard']) }}"
+                                        href="{{ route('repository.show', [
+                                            'capstoneId' => $feature['study']->id,
+                                            'type' => $feature['study']->source_type,
+                                            'return_to' => 'dashboard'
+                                        ]) }}"
                                         class="lt-btn lt-btn--primary lt-btn--sm"
                                     >
                                         View Details
@@ -490,7 +614,9 @@
                                 </div>
                             @else
                                 <p class="lt-dashboard-feature__empty">
-                                    {{ $feature['key'] === 'best' ? 'An admin has not selected a best study yet.' : 'There are no approved capstone studies yet.' }}
+                                    {{ $feature['key'] === 'best'
+                                        ? 'An admin has not selected a best study yet.'
+                                        : 'There are no approved capstone studies yet.' }}
                                 </p>
                             @endif
                         </article>
@@ -517,19 +643,18 @@
                     @foreach($capstones as $capstone)
 
                         @php
-                            $sourceType = $capstone->source_type ?? 'modern';
-                            $isOld = $sourceType === 'old';
-                            $isStudent = $sourceType === 'student';
+                            $isOld = isset($capstone->source_type) && $capstone->source_type === 'old';
 
                             $showRoute = route($repositoryShowRoute, array_filter([
                                 'capstoneId' => $capstone->id,
-                                'type' => $sourceType,
+                                'type' => $isOld ? 'old' : 'modern',
                                 'return_to' => $isDashboard
                                     ? 'dashboard'
                                     : ($user?->role === 'instructor' ? 'instructor_repository' : 'repository'),
                                 'search' => $search,
                                 'year' => $year,
                                 'program' => $program,
+                                'adviser' => $adviser,
                                 'sort' => $sort,
                                 'per_page' => $perPage,
                                 'page' => request()->query('page'),
@@ -576,8 +701,6 @@
                                     <dd>
                                         @if($isOld)
                                             {{ $capstone->adviser ?? 'N/A' }}
-                                        @elseif($isStudent)
-                                            Student submission
                                         @else
                                             {{ $capstone->groupRoom?->classroom?->instructor?->first_name ?? '' }}
                                             {{ $capstone->groupRoom?->classroom?->instructor?->last_name ?? '' }}
@@ -636,8 +759,14 @@
 
                             <div class="lt-repo-card__foot">
 
-                                @if(auth()->user()?->role === 'admin' && ! $isStudent)
-                                    <form method="POST" action="{{ route('admin.capstone.set-best', ['capstoneId' => $capstone->id, 'type' => $capstone->source_type]) }}">
+                                @if(auth()->user()?->role === 'admin')
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.capstone.set-best', [
+                                            'capstoneId' => $capstone->id,
+                                            'type' => $capstone->source_type
+                                        ]) }}"
+                                    >
                                         @csrf
                                         @method('PATCH')
 
@@ -688,3 +817,4 @@
 
 </body>
 </html>
+

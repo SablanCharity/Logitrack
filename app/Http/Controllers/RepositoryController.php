@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
-use App\Models\StudentCapstoneSubmission;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,7 +30,12 @@ class RepositoryController extends Controller
 
         $isDashboard = $request->routeIs('dashboard');
 
-        // Modern approved capstones.
+        /*
+        |--------------------------------------------------------------------------
+        | LOAD MODERN APPROVED CAPSTONES
+        |--------------------------------------------------------------------------
+        */
+
         $modernCapstones = CapstoneProject::with([
             'groupRoom.classroom.instructor',
             'groupRoom.members.user',
@@ -40,6 +44,7 @@ class RepositoryController extends Controller
             ->get()
             ->map(function ($item) {
                 $item->source_type = 'modern';
+
                 $item->study_year = $item->publication_date
                     ? $this->publicationYear($item->publication_date)
                     : null;
@@ -47,35 +52,78 @@ class RepositoryController extends Controller
                 return $item;
             });
 
-        // Approved archived / OCR capstones.
+        /*
+        |--------------------------------------------------------------------------
+        | LOAD APPROVED ARCHIVED / OCR CAPSTONES
+        |--------------------------------------------------------------------------
+        */
+
         $archivedCapstones = ArchivedCapstone::where('status', 'approved')
             ->get()
             ->map(function ($item) {
                 return $this->prepareLegacyCapstone($item);
             });
 
-        $studentCapstones = StudentCapstoneSubmission::with([
-            'authors.masterlistRecord',
-            'authors.user',
-            'submitter',
-        ])
-            ->where('status', 'approved')
-            ->get()
-            ->map(fn (StudentCapstoneSubmission $item) => $this->prepareStudentCapstone($item));
+        /*
+        |--------------------------------------------------------------------------
+        | COMBINE MODERN AND ARCHIVED RECORDS
+        |--------------------------------------------------------------------------
+        */
 
-        // Combine all repository sources.
         $allCapstones = $modernCapstones
             ->concat($archivedCapstones)
-            ->concat($studentCapstones)
             ->values();
 
-        // Build available filter options.
+        /*
+        |--------------------------------------------------------------------------
+        | DASHBOARD TOTAL COUNTS
+        |--------------------------------------------------------------------------
+        |
+        | IMPORTANT:
+        | These counts use the complete approved collection, not the
+        | filtered or paginated results.
+        |
+        */
+
+        // Combined total of all approved modern and archived studies.
+        $totalCapstoneStudies = $allCapstones->count();
+
+        // Total approved BSIT / Information Technology capstones.
+        $totalBsitCapstones = $allCapstones->filter(function ($item) {
+            $programName = strtoupper(trim((string) ($item->program ?? '')));
+
+            return str_contains($programName, 'BSIT')
+                || str_contains($programName, 'INFORMATION TECHNOLOGY')
+                || preg_match('/\bIT\b/', $programName) === 1;
+        })->count();
+
+        // Total approved CS / Computer Science theses.
+        $totalCsTheses = $allCapstones->filter(function ($item) {
+            $programName = strtoupper(trim((string) ($item->program ?? '')));
+
+            return str_contains($programName, 'BSCS')
+                || str_contains($programName, 'COMPUTER SCIENCE')
+                || preg_match('/\bCS\b/', $programName) === 1;
+        })->count();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AVAILABLE PUBLICATION YEAR FILTERS
+        |--------------------------------------------------------------------------
+        */
+
         $years = $allCapstones
             ->pluck('study_year')
             ->filter()
             ->unique()
             ->sortDesc()
             ->values();
+
+        /*
+        |--------------------------------------------------------------------------
+        | AVAILABLE PROGRAM FILTERS
+        |--------------------------------------------------------------------------
+        */
 
         $programs = $allCapstones
             ->pluck('program')
@@ -85,6 +133,12 @@ class RepositoryController extends Controller
             ->sort()
             ->values();
 
+        /*
+        |--------------------------------------------------------------------------
+        | AVAILABLE ADVISER FILTERS
+        |--------------------------------------------------------------------------
+        */
+
         $advisers = $allCapstones
             ->map(fn ($item) => $this->getAdviserName($item))
             ->filter()
@@ -92,7 +146,12 @@ class RepositoryController extends Controller
             ->sort()
             ->values();
 
-        // Apply keyword search.
+        /*
+        |--------------------------------------------------------------------------
+        | KEYWORD SEARCH
+        |--------------------------------------------------------------------------
+        */
+
         $filteredCapstones = $allCapstones;
 
         if ($search !== '') {
@@ -101,6 +160,7 @@ class RepositoryController extends Controller
             )->unique()->values();
 
             $filteredCapstones = $filteredCapstones->filter(function ($item) use ($keywords) {
+
                 $searchableText = mb_strtolower(implode(' ', array_filter([
                     $item->title ?? '',
                     $item->abstract ?? '',
@@ -115,14 +175,24 @@ class RepositoryController extends Controller
             });
         }
 
-        // Publication year filter.
+        /*
+        |--------------------------------------------------------------------------
+        | PUBLICATION YEAR FILTER
+        |--------------------------------------------------------------------------
+        */
+
         if ($year !== null && $year !== '') {
             $filteredCapstones = $filteredCapstones->filter(
                 fn ($item) => (string) $item->study_year === (string) $year
             );
         }
 
-        // Program filter: match the actual selected program name.
+        /*
+        |--------------------------------------------------------------------------
+        | PROGRAM FILTER
+        |--------------------------------------------------------------------------
+        */
+
         if ($program !== null && $program !== '') {
             $filteredCapstones = $filteredCapstones->filter(
                 fn ($item) => mb_strtolower(trim((string) ($item->program ?? '')))
@@ -130,47 +200,99 @@ class RepositoryController extends Controller
             );
         }
 
-        // Adviser filter.
+        /*
+        |--------------------------------------------------------------------------
+        | ADVISER FILTER
+        |--------------------------------------------------------------------------
+        */
+
         if ($adviser !== '') {
             $filteredCapstones = $filteredCapstones->filter(
-                fn ($item) => mb_strtolower($this->getAdviserName($item)) === mb_strtolower($adviser)
+                fn ($item) => mb_strtolower($this->getAdviserName($item))
+                    === mb_strtolower($adviser)
             );
         }
 
-        // Sorting.
+        /*
+        |--------------------------------------------------------------------------
+        | SORTING USING PUBLICATION DATE
+        |--------------------------------------------------------------------------
+        |
+        | Newest: Latest publication date first.
+        | Oldest: Earliest publication date first.
+        | Missing dates are placed at the bottom.
+        |
+        | Both modern and archived capstones use publication_date.
+        |
+        */
+
         $filteredCapstones = match ($sort) {
-            'oldest' => $filteredCapstones->sortBy('created_at'),
+
+            // Oldest publication date first.
+            'oldest' => $filteredCapstones->sortBy(
+                fn ($item) => $this->publicationTimestamp(
+                    $item->publication_date ?? null
+                ) ?? PHP_INT_MAX
+            ),
+
+            // Alphabetical order.
             'title_asc' => $filteredCapstones->sortBy(
                 fn ($item) => mb_strtolower($item->title ?? '')
             ),
+
+            // Reverse alphabetical order.
             'title_desc' => $filteredCapstones->sortByDesc(
                 fn ($item) => mb_strtolower($item->title ?? '')
             ),
+
+            // Highest views first.
             'most_viewed' => $filteredCapstones->sortByDesc(
                 fn ($item) => (int) ($item->views_count ?? 0)
             ),
-            default => $filteredCapstones->sortByDesc('created_at'),
+
+            // Newest publication date first (default).
+            default => $filteredCapstones->sortByDesc(
+                fn ($item) => $this->publicationTimestamp(
+                    $item->publication_date ?? null
+                ) ?? PHP_INT_MIN
+            ),
         };
 
         $filteredCapstones = $filteredCapstones->values();
 
-        // Dashboard overview data.
+        /*
+        |--------------------------------------------------------------------------
+        | DASHBOARD FEATURED STUDIES
+        |--------------------------------------------------------------------------
+        */
+
         $dashboardStudies = [
             'best' => $allCapstones->firstWhere('is_best', true),
+
             'most_viewed' => $allCapstones
                 ->sortByDesc('views_count')
                 ->first(),
         ];
 
-        $totalCapstoneStudies = $allCapstones->count();
+        /*
+        |--------------------------------------------------------------------------
+        | DASHBOARD OVERVIEW VISIBILITY
+        |--------------------------------------------------------------------------
+        */
 
         $showDashboardOverview = $isDashboard
             && $search === ''
             && empty($year)
             && empty($program)
-            && $adviser === '';
+            && $adviser === ''
+            && $sort === 'newest';
 
-        // Manual pagination.
+        /*
+        |--------------------------------------------------------------------------
+        | MANUAL PAGINATION AFTER SORTING AND FILTERING
+        |--------------------------------------------------------------------------
+        */
+
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
 
         $currentPageItems = $filteredCapstones
@@ -188,8 +310,16 @@ class RepositoryController extends Controller
             ]
         );
 
+        /*
+        |--------------------------------------------------------------------------
+        | RETURN REPOSITORY VIEW
+        |--------------------------------------------------------------------------
+        */
+
         return view('repository.index', [
             'capstones' => $capstones,
+
+            // Search and filters.
             'search' => $search,
             'year' => $year,
             'years' => $years,
@@ -199,18 +329,31 @@ class RepositoryController extends Controller
             'advisers' => $advisers,
             'sort' => $sort,
             'perPage' => $perPage,
+
+            // Dashboard settings.
             'isDashboard' => $isDashboard,
             'showDashboardOverview' => $showDashboardOverview,
             'dashboardStudies' => $dashboardStudies,
+
+            // Dashboard Number 02 metrics.
             'totalCapstoneStudies' => $totalCapstoneStudies,
+            'totalBsitCapstones' => $totalBsitCapstones,
+            'totalCsTheses' => $totalCsTheses,
+
             'classroomId' => null,
         ]);
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | SHOW CAPSTONE DETAILS
+    |--------------------------------------------------------------------------
+    */
+
     public function show(Request $request, int $capstoneId): View
     {
         $returnParameters = $request->validate([
-            'type' => ['nullable', 'in:old,modern,student'],
+            'type' => ['nullable', 'in:old,modern'],
             'return_to' => ['nullable', 'in:dashboard,repository,instructor_repository'],
             'search' => ['nullable', 'string', 'max:255'],
             'year' => ['nullable', 'digits:4', 'integer', 'min:1900', 'max:'.(now()->year + 1)],
@@ -249,23 +392,17 @@ class RepositoryController extends Controller
             : null;
 
         if ($type === 'old') {
+
             $capstone = ArchivedCapstone::query()
                 ->where('status', 'approved')
                 ->findOrFail($capstoneId);
 
             $capstone = $this->prepareLegacyCapstone($capstone);
-            $capstone->increment('views_count');
-        } elseif ($type === 'student') {
-            $capstone = StudentCapstoneSubmission::with([
-                'authors.masterlistRecord',
-                'authors.user',
-                'submitter',
-            ])
-                ->where('status', 'approved')
-                ->findOrFail($capstoneId);
 
-            $capstone = $this->prepareStudentCapstone($capstone);
+            $capstone->increment('views_count');
+
         } else {
+
             $capstone = CapstoneProject::with([
                 'groupRoom.classroom.instructor',
                 'groupRoom.members.user',
@@ -274,11 +411,18 @@ class RepositoryController extends Controller
                 ->findOrFail($capstoneId);
 
             $capstone->source_type = 'modern';
+
             $capstone->increment('views_count');
         }
 
         return view('repository.show', compact('capstone', 'classroomId', 'backUrl'));
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | EDIT CAPSTONE
+    |--------------------------------------------------------------------------
+    */
 
     public function edit(Request $request, int $capstoneId): View
     {
@@ -292,6 +436,12 @@ class RepositoryController extends Controller
 
         return view('repository.edit', compact('capstone', 'type'));
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE CAPSTONE
+    |--------------------------------------------------------------------------
+    */
 
     public function update(Request $request, int $capstoneId): RedirectResponse
     {
@@ -307,6 +457,7 @@ class RepositoryController extends Controller
         ]);
 
         if ($validated['type'] === 'old') {
+
             $capstone = ArchivedCapstone::query()
                 ->where('status', 'approved')
                 ->findOrFail($capstoneId);
@@ -322,7 +473,9 @@ class RepositoryController extends Controller
                     ? array_map('trim', explode(',', $validated['authors']))
                     : null,
             ]);
+
         } else {
+
             $capstone = CapstoneProject::query()
                 ->where('status', 'admin_approved')
                 ->findOrFail($capstoneId);
@@ -343,25 +496,60 @@ class RepositoryController extends Controller
             ->with('success', 'Capstone metadata updated successfully.');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | PUBLICATION DATE TIMESTAMP
+    |--------------------------------------------------------------------------
+    |
+    | Converts modern Carbon dates and archived date strings into timestamps.
+    | Returns null when the date is empty or invalid.
+    |
+    */
+
+    private function publicationTimestamp(mixed $publicationDate): ?int
+    {
+        if ($publicationDate === null || trim((string) $publicationDate) === '') {
+            return null;
+        }
+
+        $timestamp = strtotime((string) $publicationDate);
+
+        return $timestamp === false ? null : $timestamp;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | LEGACY CAPSTONE PREPARATION
+    |--------------------------------------------------------------------------
+    */
+
     private function prepareLegacyCapstone(ArchivedCapstone $capstone): ArchivedCapstone
     {
         $capstone->source_type = 'old';
+
         $capstone->year_section = $capstone->publication_date;
-        $capstone->study_year = $this->publicationYear($capstone->publication_date);
+
+        $capstone->study_year = $this->publicationYear(
+            $capstone->publication_date
+        );
 
         $capstone->groupRoom = (object) [
             'id' => null,
             'group_name' => 'Legacy Record Group',
             'group_leader' => null,
+
             'classroom' => (object) [
                 'name' => 'Legacy Repository',
+
                 'instructor' => (object) [
                     'first_name' => $capstone->adviser,
                     'last_name' => '',
                 ],
             ],
+
             'members' => collect($capstone->authors ?? [])->map(fn ($author) => (object) [
                 'is_leader' => false,
+
                 'user' => (object) [
                     'first_name' => $author,
                     'last_name' => '',
@@ -372,33 +560,11 @@ class RepositoryController extends Controller
         return $capstone;
     }
 
-    private function prepareStudentCapstone(StudentCapstoneSubmission $capstone): StudentCapstoneSubmission
-    {
-        $capstone->source_type = 'student';
-        $capstone->program = $capstone->submitter?->program;
-        $capstone->publication_date = $capstone->submitted_date;
-        $capstone->study_year = $this->publicationYear($capstone->submitted_date);
-        $capstone->is_best = false;
-        $capstone->views_count = (int) ($capstone->views_count ?? 0);
-        $capstone->groupRoom = (object) [
-            'group_name' => 'Student Submission',
-            'classroom' => (object) [
-                'instructor' => (object) [
-                    'first_name' => '',
-                    'last_name' => '',
-                ],
-            ],
-            'members' => $capstone->authors->map(fn ($author) => (object) [
-                'is_leader' => (bool) $author->is_leader,
-                'user' => $author->user ?? (object) [
-                    'first_name' => $author->masterlistRecord?->name ?? 'Unnamed student',
-                    'last_name' => '',
-                ],
-            ]),
-        ];
-
-        return $capstone;
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | GET ADVISER NAME
+    |--------------------------------------------------------------------------
+    */
 
     private function getAdviserName($capstone): string
     {
@@ -413,6 +579,12 @@ class RepositoryController extends Controller
             $instructor?->last_name,
         ])));
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET AUTHORS TEXT
+    |--------------------------------------------------------------------------
+    */
 
     private function getAuthorsText($capstone): string
     {
@@ -433,6 +605,12 @@ class RepositoryController extends Controller
             ]))))
             ->implode(' ');
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | EXTRACT PUBLICATION YEAR
+    |--------------------------------------------------------------------------
+    */
 
     private function publicationYear(mixed $publicationDate): ?int
     {
