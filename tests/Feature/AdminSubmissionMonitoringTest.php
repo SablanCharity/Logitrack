@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Mail\StudentCapstoneSubmissionStatusUpdated;
 use App\Models\StudentCapstoneAuthor;
 use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class AdminSubmissionMonitoringTest extends TestCase
@@ -119,6 +121,7 @@ class AdminSubmissionMonitoringTest extends TestCase
 
     public function test_admin_can_add_student_submission_to_repository(): void
     {
+        Mail::fake();
         $admin = User::factory()->create(['role' => 'admin']);
         $submitter = User::factory()->create([
             'program' => 'BSCS',
@@ -168,6 +171,8 @@ class AdminSubmissionMonitoringTest extends TestCase
             'id' => $submission->id,
             'status' => 'approved',
         ]);
+        Mail::assertSent(StudentCapstoneSubmissionStatusUpdated::class, fn (StudentCapstoneSubmissionStatusUpdated $mail): bool => $mail->hasTo($submitter->email)
+            && $mail->submission->status === 'approved');
 
         $this->actingAs($admin)
             ->get(route('repository.index'))
@@ -190,5 +195,39 @@ class AdminSubmissionMonitoringTest extends TestCase
             ->assertSee('Repository Author')
             ->assertSee('Individual submission')
             ->assertDontSee('Submitted Files');
+    }
+
+    public function test_admin_returning_submission_emails_student_the_current_status_and_reason(): void
+    {
+        Mail::fake();
+        $admin = User::factory()->create(['role' => 'admin']);
+        $submitter = User::factory()->create();
+        $submission = StudentCapstoneSubmission::create([
+            'submitted_by' => $submitter->id,
+            'title' => 'Returned Capstone',
+            'abstract' => 'A capstone returned for corrections.',
+            'content_hash' => hash('sha256', 'returned capstone'),
+            'submitted_date' => '2026-11-11',
+            'study_path' => 'returned/study.pdf',
+            'manual_path' => 'returned/manual.pdf',
+            'system_path' => 'returned/system.zip',
+            'mentee_form_path' => 'returned/mentee.pdf',
+            'status' => 'submitted',
+        ]);
+
+        $this->actingAs($admin)
+            ->patch(route('admin.student-submissions.return', $submission), [
+                'return_reason' => 'Please clarify the methodology.',
+            ])
+            ->assertRedirect(route('admin.student-submissions.show', $submission));
+
+        $this->assertDatabaseHas('student_capstone_submissions', [
+            'id' => $submission->id,
+            'status' => 'returned',
+            'return_reason' => 'Please clarify the methodology.',
+        ]);
+        Mail::assertSent(StudentCapstoneSubmissionStatusUpdated::class, fn (StudentCapstoneSubmissionStatusUpdated $mail): bool => $mail->hasTo($submitter->email)
+            && $mail->submission->status === 'returned'
+            && $mail->submission->return_reason === 'Please clarify the methodology.');
     }
 }

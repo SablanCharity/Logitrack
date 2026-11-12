@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\StudentCapstoneSubmissionStatusUpdated;
 use App\Models\GroupCapstoneMember;
 use App\Models\StudentCapstoneAuthor;
 use App\Models\StudentCapstoneSubmission;
@@ -9,6 +10,7 @@ use App\Models\StudentMasterlistRecord;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -103,6 +105,7 @@ class GroupCapstoneSubmissionTest extends TestCase
     public function test_individual_submission_saves_authors_and_shows_latest_status_after_submit(): void
     {
         Storage::fake('local');
+        Mail::fake();
         $leader = User::factory()->create([
             'student_number' => '202626598',
             'program' => 'BSCS',
@@ -151,14 +154,18 @@ class GroupCapstoneSubmissionTest extends TestCase
         $this->get(route('student.submissions.create'))
             ->assertOk()
             ->assertSee('Each student may participate in only one submission.')
+            ->assertSee('Its current status is')
             ->assertDontSee('action="'.route('student.submissions.store').'"', false)
             ->assertSee('Submitted');
         $this->assertCount(2, StudentCapstoneAuthor::query()->get());
+        Mail::assertSent(StudentCapstoneSubmissionStatusUpdated::class, fn (StudentCapstoneSubmissionStatusUpdated $mail): bool => $mail->hasTo($leader->email)
+            && $mail->submission->status === 'submitted');
     }
 
     public function test_submitter_can_edit_and_resubmit_a_returned_capstone(): void
     {
         Storage::fake('local');
+        Mail::fake();
         $student = User::factory()->create([
             'student_number' => '202626615',
             'program' => 'BSCS',
@@ -206,6 +213,8 @@ class GroupCapstoneSubmissionTest extends TestCase
             'adviser' => $adviser->id,
         ]);
         $this->assertDatabaseCount('student_capstone_authors', 1);
+        Mail::assertSent(StudentCapstoneSubmissionStatusUpdated::class, fn (StudentCapstoneSubmissionStatusUpdated $mail): bool => $mail->hasTo($student->email)
+            && $mail->submission->status === 'submitted');
     }
 
     public function test_resubmission_rejects_a_duplicate_title_and_abstract(): void
@@ -429,6 +438,7 @@ class GroupCapstoneSubmissionTest extends TestCase
     public function test_duplicate_normalized_title_and_abstract_are_rejected(): void
     {
         Storage::fake('local');
+        Mail::fake();
         $firstStudent = User::factory()->create([
             'student_number' => '202626613',
             'program' => 'BSCS',
@@ -524,6 +534,7 @@ class GroupCapstoneSubmissionTest extends TestCase
     public function test_submitting_student_is_added_as_an_author_when_not_selected(): void
     {
         Storage::fake('local');
+        Mail::fake();
         $student = User::factory()->create([
             'student_number' => '202626604',
             'program' => 'BSCS',

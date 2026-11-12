@@ -1410,7 +1410,8 @@ html { scroll-behavior: smooth; }
 .lt-dialog__body--login .lt-auth__foot .lt-link {
     padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer;
 }
-.lt-register-dialog__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; }
+.lt-register-dialog__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 18px; }
+.lt-register-dialog__form > .lt-field { align-content: start; }
 .lt-register-dialog__form .lt-input,
 .lt-register-dialog__form .lt-select { border-radius: var(--radius-sm); }
 #landing-program:required:invalid { color: #98a0bd; }

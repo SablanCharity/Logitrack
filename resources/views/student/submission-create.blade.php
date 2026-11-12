@@ -31,8 +31,10 @@
 
         @if($submission)
             <div class="lt-alert {{ $submission->status === 'returned' ? 'lt-alert--error' : 'lt-alert--success' }}" role="status">
-                You have already been included in a capstone submission. Each student may participate in only one submission.
-                Its current status is <strong>{{ ucfirst($submission->status) }}</strong>.
+                <div>
+                    You have already been included in a capstone submission. Each student may participate in only one submission.
+                    Its current status is <strong>{{ ucfirst($submission->status) }}</strong>
+                </div>
             </div>
         @endif
         @if($submission?->status === 'returned' && $submission->return_reason)

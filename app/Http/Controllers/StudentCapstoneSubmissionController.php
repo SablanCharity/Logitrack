@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\StudentCapstoneSubmissionStatusUpdated;
 use App\Models\StudentCapstoneAuthor;
 use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
@@ -11,6 +12,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -208,6 +210,8 @@ class StudentCapstoneSubmissionController extends Controller
             return $submission;
         }
 
+        $this->emailStatusUpdate($submission);
+
         return redirect()->route('student.submissions.create')
             ->with('success', 'Your complete capstone submission was uploaded successfully.');
     }
@@ -323,6 +327,8 @@ class StudentCapstoneSubmissionController extends Controller
             Storage::disk('local')->delete($previousPaths);
         }
 
+        $this->emailStatusUpdate($submission->refresh());
+
         return redirect()->route('student.submissions.create')
             ->with('success', 'Your changes were resubmitted for review.');
     }
@@ -379,6 +385,7 @@ class StudentCapstoneSubmissionController extends Controller
             'status' => 'returned',
             'return_reason' => $validated['return_reason'],
         ]);
+        $this->emailStatusUpdate($submission);
 
         return redirect()
             ->route('admin.student-submissions.show', $submission)
@@ -397,6 +404,7 @@ class StudentCapstoneSubmissionController extends Controller
             'status' => 'approved',
             'return_reason' => null,
         ]);
+        $this->emailStatusUpdate($submission);
 
         return redirect()
             ->route('repository.show', [
@@ -409,6 +417,14 @@ class StudentCapstoneSubmissionController extends Controller
     private function ensureReviewer(): void
     {
         abort_unless(in_array(auth()->user()->role, ['admin', 'instructor'], true), 403);
+    }
+
+    private function emailStatusUpdate(StudentCapstoneSubmission $submission): void
+    {
+        $submission->loadMissing('submitter');
+
+        Mail::to($submission->submitter->email)
+            ->send(new StudentCapstoneSubmissionStatusUpdated($submission));
     }
 
     private function normalize(string $value): string
