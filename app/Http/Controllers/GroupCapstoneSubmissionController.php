@@ -7,6 +7,7 @@ use App\Models\GroupCapstoneSubmission;
 use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
 use App\Models\User;
+use App\Rules\ValidZipFile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ class GroupCapstoneSubmissionController extends Controller
             'authors' => ['required', 'array', 'min:1'],
             'authors.*' => ['required', 'integer', 'distinct'],
             'study' => ['required', 'file', 'mimes:pdf', 'max:51200'],
-            'system' => ['required', 'file', 'mimes:zip', 'max:204800'],
+            'system' => ['required', 'file', new ValidZipFile, 'max:204800'],
             'document' => ['required', 'file', 'mimes:docx', 'max:20480'],
             'mentee_form' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
         ]);

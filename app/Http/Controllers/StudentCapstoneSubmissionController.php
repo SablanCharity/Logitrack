@@ -6,6 +6,7 @@ use App\Models\StudentCapstoneAuthor;
 use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
 use App\Models\User;
+use App\Rules\ValidZipFile;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,7 +71,7 @@ class StudentCapstoneSubmissionController extends Controller
             'authors.*' => ['required', 'integer', 'distinct'],
             'study' => ['required', 'file', 'mimes:pdf', 'max:51200'],
             'manual' => ['required', 'file', 'mimes:pdf', 'max:51200'],
-            'system' => ['required', 'file', 'mimes:zip', 'max:204800'],
+            'system' => ['required', 'file', new ValidZipFile, 'max:204800'],
             'mentee_form' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
         ]);
 
@@ -223,7 +224,7 @@ class StudentCapstoneSubmissionController extends Controller
             'submitted_date' => ['required', 'date'],
             'study' => ['nullable', 'file', 'mimes:pdf', 'max:51200'],
             'manual' => ['nullable', 'file', 'mimes:pdf', 'max:51200'],
-            'system' => ['nullable', 'file', 'mimes:zip', 'max:204800'],
+            'system' => ['nullable', 'file', new ValidZipFile, 'max:204800'],
             'mentee_form' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:20480'],
         ]);
 

@@ -56,7 +56,7 @@
             <div class="lt-card">
                 <h2 class="lt-card__title">Required Files</h2>
                 <div class="lt-field"><label class="lt-label" for="study">Study PDF</label><input class="lt-input" id="study" name="study" type="file" accept=".pdf" required></div>
-                <div class="lt-field"><label class="lt-label" for="system">System ZIP</label><input class="lt-input" id="system" name="system" type="file" accept=".zip" required></div>
+                <div class="lt-field"><label class="lt-label" for="system">System ZIP</label><input class="lt-input" id="system" name="system" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream" required></div>
                 <div class="lt-field"><label class="lt-label" for="document">Word Document (.docx)</label><input class="lt-input" id="document" name="document" type="file" accept=".docx" required></div>
                 <div class="lt-field"><label class="lt-label" for="mentee_form">Mentee Form</label><input class="lt-input" id="mentee_form" name="mentee_form" type="file" accept=".pdf,.doc,.docx" required></div>
             </div>

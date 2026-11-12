@@ -62,6 +62,44 @@ class GroupCapstoneSubmissionTest extends TestCase
         ]);
     }
 
+    public function test_valid_zip_file_with_non_zip_mime_type_is_accepted(): void
+    {
+        Storage::fake('local');
+        $leader = User::factory()->create([
+            'student_number' => '202626600',
+            'program' => 'BSIT',
+        ]);
+        $leaderRecord = StudentMasterlistRecord::create([
+            'student_number' => '202626600',
+            'name' => 'ZIP Student',
+            'program' => 'BSIT',
+            'status' => 'listed',
+        ]);
+        $zipPath = tempnam(sys_get_temp_dir(), 'logitrack-zip-');
+        $archive = new \ZipArchive;
+        $archive->open($zipPath, \ZipArchive::CREATE);
+        $archive->addFromString('README.txt', 'Valid ZIP content');
+        $archive->close();
+        $zipContents = file_get_contents($zipPath);
+        unlink($zipPath);
+
+        $response = $this->actingAs($leader)->post(route('student.group-submissions.store'), [
+            'program' => 'BSIT',
+            'title' => 'A ZIP Validation Study',
+            'abstract' => 'An abstract for testing valid ZIP uploads.',
+            'adviser' => 'Mrs. Adviser',
+            'submitted_date' => '2026-11-11',
+            'authors' => [$leaderRecord->id],
+            'study' => UploadedFile::fake()->create('study.pdf', 10, 'application/pdf'),
+            'system' => UploadedFile::fake()->createWithContent('system.zip', $zipContents),
+            'document' => UploadedFile::fake()->create('document.docx', 10, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'),
+            'mentee_form' => UploadedFile::fake()->create('mentee.pdf', 10, 'application/pdf'),
+        ]);
+
+        $response->assertRedirect(route('student.group-submissions.create'));
+        $response->assertSessionDoesntHaveErrors('system');
+    }
+
     public function test_individual_submission_saves_authors_and_shows_latest_status_after_submit(): void
     {
         Storage::fake('local');

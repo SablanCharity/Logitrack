@@ -97,7 +97,7 @@
                     </div>
                     <div class="lt-field">
                         <label for="system" class="lt-label">System Files (ZIP)</label>
-                        <input id="system" name="system" type="file" accept=".zip,application/zip" class="lt-input" @required(!$submission)>
+                        <input id="system" name="system" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/octet-stream" class="lt-input" @required(!$submission)>
                         @if($submission)<span class="lt-hint">Current file: {{ basename($submission->system_path) }}. Leave blank to keep it.</span>@endif
                     </div>
                     <div class="lt-field">
