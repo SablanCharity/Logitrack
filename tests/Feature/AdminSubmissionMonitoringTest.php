@@ -124,10 +124,24 @@ class AdminSubmissionMonitoringTest extends TestCase
             'program' => 'BSCS',
             'student_number' => '202600301',
         ]);
+        $adviser = User::factory()->create([
+            'role' => 'instructor',
+            'first_name' => 'Repository',
+            'last_name' => 'Adviser',
+            'is_approved' => true,
+            'is_active' => true,
+        ]);
+        $author = StudentMasterlistRecord::create([
+            'student_number' => '202600301',
+            'name' => 'Repository Author',
+            'program' => 'BSCS',
+            'status' => 'listed',
+        ]);
         $submission = StudentCapstoneSubmission::create([
             'submitted_by' => $submitter->id,
             'title' => 'Repository Ready Capstone',
             'abstract' => 'A completed study ready for repository publication.',
+            'adviser' => $adviser->id,
             'content_hash' => hash('sha256', 'repository ready capstone'),
             'submitted_date' => '2026-11-11',
             'study_path' => 'repository/study.pdf',
@@ -135,6 +149,12 @@ class AdminSubmissionMonitoringTest extends TestCase
             'system_path' => 'repository/system.zip',
             'mentee_form_path' => 'repository/mentee.pdf',
             'status' => 'submitted',
+        ]);
+        StudentCapstoneAuthor::create([
+            'student_capstone_submission_id' => $submission->id,
+            'student_masterlist_record_id' => $author->id,
+            'user_id' => $submitter->id,
+            'is_leader' => true,
         ]);
 
         $this->actingAs($admin)
@@ -152,6 +172,23 @@ class AdminSubmissionMonitoringTest extends TestCase
         $this->actingAs($admin)
             ->get(route('repository.index'))
             ->assertOk()
-            ->assertSee('Repository Ready Capstone');
+            ->assertSee('Repository Ready Capstone')
+            ->assertSee('A completed study ready for repository publication.')
+            ->assertSee('Repository Adviser')
+            ->assertSee('November 11, 2026')
+            ->assertSee('Repository Author');
+
+        $this->actingAs($admin)
+            ->get(route('repository.show', [
+                'capstoneId' => $submission->id,
+                'type' => 'student',
+            ]))
+            ->assertOk()
+            ->assertSee('Repository Ready Capstone')
+            ->assertSee('A completed study ready for repository publication.')
+            ->assertSee('Repository Adviser')
+            ->assertSee('Repository Author')
+            ->assertSee('Individual submission')
+            ->assertDontSee('Submitted Files');
     }
 }

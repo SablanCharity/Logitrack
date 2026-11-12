@@ -21,11 +21,15 @@ class StudentCapstoneSubmission extends Model
         'mentee_form_path',
         'status',
         'return_reason',
+        'views_count',
     ];
 
     protected function casts(): array
     {
-        return ['submitted_date' => 'date'];
+        return [
+            'submitted_date' => 'date',
+            'views_count' => 'integer',
+        ];
     }
 
     public function submitter(): BelongsTo

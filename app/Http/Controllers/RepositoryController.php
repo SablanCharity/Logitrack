@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
+use App\Models\StudentCapstoneSubmission;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -64,6 +65,22 @@ class RepositoryController extends Controller
                 return $this->prepareLegacyCapstone($item);
             });
 
+        $studentCapstones = StudentCapstoneSubmission::with([
+            'submitter',
+            'adviserUser',
+            'authors.masterlistRecord',
+        ])
+            ->where('status', 'approved')
+            ->get()
+            ->map(function (StudentCapstoneSubmission $item): StudentCapstoneSubmission {
+                $item->source_type = 'student';
+                $item->program = $item->submitter?->program;
+                $item->publication_date = $item->submitted_date;
+                $item->study_year = $this->publicationYear($item->submitted_date);
+
+                return $item;
+            });
+
         /*
         |--------------------------------------------------------------------------
         | COMBINE MODERN AND ARCHIVED RECORDS
@@ -72,6 +89,7 @@ class RepositoryController extends Controller
 
         $allCapstones = $modernCapstones
             ->concat($archivedCapstones)
+            ->concat($studentCapstones)
             ->values();
 
         /*
@@ -353,7 +371,7 @@ class RepositoryController extends Controller
     public function show(Request $request, int $capstoneId): View
     {
         $returnParameters = $request->validate([
-            'type' => ['nullable', 'in:old,modern'],
+            'type' => ['nullable', 'in:old,modern,student'],
             'return_to' => ['nullable', 'in:dashboard,repository,instructor_repository'],
             'search' => ['nullable', 'string', 'max:255'],
             'year' => ['nullable', 'digits:4', 'integer', 'min:1900', 'max:'.(now()->year + 1)],
@@ -381,7 +399,9 @@ class RepositoryController extends Controller
         ], fn ($value) => $value !== null && $value !== ''));
 
         $type = $returnParameters['type']
-            ?? (ArchivedCapstone::whereKey($capstoneId)->exists() ? 'old' : 'modern');
+            ?? (ArchivedCapstone::whereKey($capstoneId)->exists()
+                ? 'old'
+                : (StudentCapstoneSubmission::whereKey($capstoneId)->exists() ? 'student' : 'modern'));
 
         $user = $request->user();
 
@@ -401,6 +421,19 @@ class RepositoryController extends Controller
 
             $capstone->increment('views_count');
 
+        } elseif ($type === 'student') {
+            $capstone = StudentCapstoneSubmission::with([
+                'submitter',
+                'adviserUser',
+                'authors.masterlistRecord',
+            ])
+                ->where('status', 'approved')
+                ->findOrFail($capstoneId);
+
+            $capstone->source_type = 'student';
+            $capstone->program = $capstone->submitter?->program;
+            $capstone->publication_date = $capstone->submitted_date;
+            $capstone->increment('views_count');
         } else {
 
             $capstone = CapstoneProject::with([
@@ -572,6 +605,13 @@ class RepositoryController extends Controller
             return trim((string) ($capstone->adviser ?? ''));
         }
 
+        if (($capstone->source_type ?? null) === 'student') {
+            return trim(implode(' ', array_filter([
+                $capstone->adviserUser?->first_name,
+                $capstone->adviserUser?->last_name,
+            ])));
+        }
+
         $instructor = $capstone->groupRoom?->classroom?->instructor;
 
         return trim(implode(' ', array_filter([
@@ -596,6 +636,17 @@ class RepositoryController extends Controller
 
         if (is_string($authors)) {
             return $authors;
+        }
+
+        if (($capstone->source_type ?? null) === 'student') {
+            return $capstone->authors
+                ->map(fn ($author): string => $author->masterlistRecord?->name
+                    ?: trim(implode(' ', array_filter([
+                        $author->masterlistRecord?->first_name,
+                        $author->masterlistRecord?->last_name,
+                    ]))))
+                ->filter()
+                ->implode(' ');
         }
 
         return collect($capstone->groupRoom?->members ?? [])

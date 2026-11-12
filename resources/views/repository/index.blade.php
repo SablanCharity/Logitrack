@@ -650,7 +650,7 @@
 
                             $showRoute = route($repositoryShowRoute, array_filter([
                                 'capstoneId' => $capstone->id,
-                                'type' => $isOld ? 'old' : 'modern',
+                                'type' => $capstone->source_type,
                                 'return_to' => $isDashboard
                                     ? 'dashboard'
                                     : ($user?->role === 'instructor' ? 'instructor_repository' : 'repository'),
@@ -704,6 +704,8 @@
                                     <dd>
                                         @if($isOld)
                                             {{ $capstone->adviser ?? 'N/A' }}
+                                        @elseif($capstone->source_type === 'student')
+                                            {{ trim(($capstone->adviserUser?->first_name ?? '').' '.($capstone->adviserUser?->last_name ?? '')) ?: 'N/A' }}
                                         @else
                                             {{ $capstone->groupRoom?->classroom?->instructor?->first_name ?? '' }}
                                             {{ $capstone->groupRoom?->classroom?->instructor?->last_name ?? '' }}
@@ -712,7 +714,7 @@
                                 </div>
 
                                 <div>
-                                    <dt>Publication Date</dt>
+                                    <dt>{{ $capstone->source_type === 'student' ? 'Date Submitted' : 'Publication Date' }}</dt>
                                     <dd>
                                         @if($isOld)
                                             {{ $capstone->publication_date ?? 'N/A' }}
@@ -736,6 +738,15 @@
                                                     {{ strtoupper(substr($authorName, 0, 1)) }}
                                                 </span>
                                                 {{ $authorName }}
+                                            </li>
+                                        @endforeach
+                                    @elseif($capstone->source_type === 'student')
+                                        @foreach($capstone->authors as $author)
+                                            <li>
+                                                <span class="lt-avatar">
+                                                    {{ strtoupper(substr($author->masterlistRecord?->name ?? 'U', 0, 1)) }}
+                                                </span>
+                                                {{ $author->masterlistRecord?->name ?: trim(($author->masterlistRecord?->first_name ?? '').' '.($author->masterlistRecord?->last_name ?? '')) }}
                                             </li>
                                         @endforeach
                                     @else
@@ -762,7 +773,7 @@
 
                             <div class="lt-repo-card__foot">
 
-                                @if(auth()->user()?->role === 'admin')
+                                @if(auth()->user()?->role === 'admin' && $capstone->source_type !== 'student')
                                     <form
                                         method="POST"
                                         action="{{ route('admin.capstone.set-best', [
@@ -820,4 +831,3 @@
 
 </body>
 </html>
-

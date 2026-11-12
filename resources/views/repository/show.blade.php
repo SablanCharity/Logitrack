@@ -42,6 +42,17 @@
                 <section class="lt-card">
                     <h2 class="lt-card__title">Authors</h2>
                     <ul class="lt-authors lt-mt">
+                    @if($capstone->source_type === 'student')
+                        @foreach($capstone->authors as $author)
+                            <li>
+                                <span class="lt-avatar">{{ strtoupper(substr($author->masterlistRecord?->name ?? 'U', 0, 1)) }}</span>
+                                {{ $author->masterlistRecord?->name ?: trim(($author->masterlistRecord?->first_name ?? '').' '.($author->masterlistRecord?->last_name ?? '')) }}
+                                @if($author->is_leader)
+                                    <strong>(Submitted by)</strong>
+                                @endif
+                            </li>
+                        @endforeach
+                    @else
                         @foreach($capstone->groupRoom->members as $member)
                             <li>
                                 <span class="lt-avatar">{{ strtoupper(substr($member->user->first_name, 0, 1)) }}</span>
@@ -53,6 +64,7 @@
                                 @endif
                             </li>
                         @endforeach
+                    @endif
                     </ul>
                 </section>
 
@@ -70,7 +82,7 @@
                         </div>
 
                         <div class="lt-auto__item">
-                            <div class="lt-auto__key">Publication Date</div>
+                            <div class="lt-auto__key">{{ $capstone->source_type === 'student' ? 'Date Submitted' : 'Publication Date' }}</div>
                             <div class="lt-auto__val">
                                 @if(isset($capstone->source_type) && $capstone->source_type === 'old')
                                     {{ $capstone->publication_date ?? 'N/A' }}
@@ -83,13 +95,19 @@
                         <div class="lt-auto__item">
                             <div class="lt-auto__key">Instructor / Adviser</div>
                             <div class="lt-auto__val">
-                                {{ $capstone->source_type === 'student' ? 'Student submission' : trim(($capstone->groupRoom->classroom->instructor->first_name ?? '').' '.($capstone->groupRoom->classroom->instructor->last_name ?? '')) }}
+                                @if($capstone->source_type === 'student')
+                                    {{ trim(($capstone->adviserUser?->first_name ?? '').' '.($capstone->adviserUser?->last_name ?? '')) ?: 'N/A' }}
+                                @else
+                                    {{ trim(($capstone->groupRoom->classroom->instructor->first_name ?? '').' '.($capstone->groupRoom->classroom->instructor->last_name ?? '')) }}
+                                @endif
                             </div>
                         </div>
 
                         <div class="lt-auto__item">
                             <div class="lt-auto__key">Group</div>
-                            <div class="lt-auto__val">{{ $capstone->groupRoom->group_name }}</div>
+                            <div class="lt-auto__val">
+                                {{ $capstone->source_type === 'student' ? 'Individual submission' : $capstone->groupRoom->group_name }}
+                            </div>
                         </div>
                     </div>
                 </section>
