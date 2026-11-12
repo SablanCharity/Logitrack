@@ -116,7 +116,7 @@
 
                     {{-- Title --}}
                     <div class="lt-field">
-                        <label for="title" class="lt-label">Proposed Study Title</label>
+                        <label for="title" class="lt-label">Capstone Title</label>
 
                         <input
                             id="title"
@@ -143,7 +143,7 @@
                     {{-- Abstract --}}
                     <div class="lt-field">
                         <div class="lt-label-row">
-                            <label for="abstract" class="lt-label">Proposed Study Abstract</label>
+                            <label for="abstract" class="lt-label">Objectives</label>
                             <span class="lt-hint">Minimum {{ config('similarity.minimum_text_length', 20) }} characters</span>
                         </div>
 

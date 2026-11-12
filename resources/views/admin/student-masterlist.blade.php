@@ -16,6 +16,7 @@
         </div>
 
         @if(session('success')) <div class="lt-alert lt-alert--success" role="status">{{ session('success') }}</div> @endif
+        @if(session('warning')) <div class="lt-alert lt-alert--warning" role="status">{{ session('warning') }}</div> @endif
         @if($errors->any()) <div class="lt-alert lt-alert--error" role="alert">{{ $errors->first() }}</div> @endif
 
         <div class="lt-card lt-mt-lg">

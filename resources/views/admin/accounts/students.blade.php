@@ -29,7 +29,7 @@
             </div>
             <div class="lt-table-wrap">
                 <table class="lt-table" id="student-accounts-table">
-                    <thead><tr><th>Name</th><th>Email</th><th>Program</th><th>Year &amp; Section</th><th>Adviser</th><th>Status</th><th>Action</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Email</th><th>Program</th><th>Status</th><th>Action</th></tr></thead>
                     <tbody>
                         @forelse($students as $student)
                             @php($membership = $student->classroomMemberships->first())
@@ -37,9 +37,7 @@
                                 <td>{{ $student->first_name }} {{ $student->last_name }}</td>
                                 <td>{{ $student->email }}</td>
                                 <td>{{ $student->program ?: 'N/A' }}</td>
-                                <td>{{ $student->year_section ?: 'N/A' }}</td>
-                                <td>{{ $membership?->classroom?->instructor?->first_name }} {{ $membership?->classroom?->instructor?->last_name ?: 'Not assigned' }}</td>
-                                <td><span class="lt-badge {{ $student->is_active ? 'lt-badge--approved' : 'lt-badge--rejected' }}">{{ $student->is_active ? ($student->is_approved ? 'Active' : 'Pending approval') : 'Disabled' }}</span></td>
+                                <td><span class="lt-badge {{ $student->is_active ? 'lt-badge--approved' : 'lt-badge--rejected' }}">{{ $student->is_active ? 'Active' : 'Disabled' }}</span></td>
                                 <td>
                                     <div class="lt-actions">
                                         <form method="POST" action="{{ route('admin.accounts.toggle-active', $student) }}" data-confirm="{{ $student->is_active ? 'Disable this account? The account can be activated again later.' : 'Activate this account?' }}" data-confirm-title="{{ $student->is_active ? 'Disable account' : 'Activate account' }}" data-confirm-button="{{ $student->is_active ? 'Disable' : 'Activate' }}" @if($student->is_active) data-confirm-danger @endif>@csrf @method('PATCH')<button type="submit" class="lt-btn lt-btn--outline lt-btn--sm">{{ $student->is_active ? 'Disable' : 'Activate' }}</button></form>

@@ -86,16 +86,44 @@ class StudentMasterlistController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($handle, $headers, $validated): void {
-            while (($row = fgetcsv($handle)) !== false) {
-                $data = array_combine($headers, array_pad($row, count($headers), null));
+        $rows = [];
+        $studentNumbers = [];
+        $duplicateStudentNumbers = [];
+        $seenStudentNumbers = [];
 
-                if (! $data || trim((string) ($data['student_number'] ?? '')) === '') {
-                    continue;
-                }
+        while (($row = fgetcsv($handle)) !== false) {
+            $data = array_combine($headers, array_pad($row, count($headers), null));
 
+            if (! $data || trim((string) ($data['student_number'] ?? '')) === '') {
+                continue;
+            }
+
+            $studentNumber = trim((string) $data['student_number']);
+            $data['student_number'] = $studentNumber;
+            $rows[] = $data;
+
+            if (isset($seenStudentNumbers[$studentNumber])) {
+                $duplicateStudentNumbers[$studentNumber] = true;
+            }
+
+            $studentNumbers[] = $studentNumber;
+            $seenStudentNumbers[$studentNumber] = true;
+        }
+
+        fclose($handle);
+
+        $duplicateStudentNumbers += array_fill_keys(
+            StudentMasterlistRecord::query()
+                ->whereIn('student_number', array_unique($studentNumbers))
+                ->pluck('student_number')
+                ->all(),
+            true,
+        );
+
+        DB::transaction(function () use ($rows, $validated): void {
+            foreach ($rows as $data) {
                 StudentMasterlistRecord::updateOrCreate(
-                    ['student_number' => trim($data['student_number'])],
+                    ['student_number' => $data['student_number']],
                     [
                         'name' => trim((string) ($data['name'] ?? '')) ?: null,
                         'email' => trim((string) ($data['email'] ?? '')) ?: null,
@@ -105,10 +133,18 @@ class StudentMasterlistController extends Controller
                     ],
                 );
             }
-
-            fclose($handle);
         });
 
-        return back()->with('success', 'Masterlist uploaded successfully. All extracted students are enrolled and available for registration.');
+        $response = back()->with('success', 'Masterlist uploaded successfully. All extracted students are enrolled and available for registration.');
+
+        if ($duplicateStudentNumbers !== []) {
+            $response->with('warning', sprintf(
+                '%d duplicate student record%s detected. Existing records were updated.',
+                count($duplicateStudentNumbers),
+                count($duplicateStudentNumbers) === 1 ? '' : 's',
+            ));
+        }
+
+        return $response;
     }
 }

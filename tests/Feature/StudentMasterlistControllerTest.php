@@ -9,6 +9,7 @@ use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -125,5 +126,32 @@ class StudentMasterlistControllerTest extends TestCase
             ->assertSee('Returned Group Member')
             ->assertSee('Returned Capstone')
             ->assertDontSee('Submitted Capstone');
+    }
+
+    public function test_duplicate_masterlist_records_display_a_warning(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        StudentMasterlistRecord::create([
+            'student_number' => '202600904',
+            'name' => 'Existing Student',
+            'program' => 'BSCS',
+            'status' => 'listed',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.student-masterlist.upload'), [
+            'program' => 'BSCS',
+            'masterlist' => UploadedFile::fake()->createWithContent(
+                'students.csv',
+                "student_number,name\n202600904,Existing Student\n202600905,New Student\n202600905,New Student Duplicate\n",
+            ),
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('warning', '2 duplicate student records detected. Existing records were updated.');
+        $this->assertDatabaseCount('student_masterlist_records', 2);
+
+        $this->get(route('admin.student-masterlist.index'))
+            ->assertOk()
+            ->assertSee('2 duplicate student records detected. Existing records were updated.');
     }
 }
