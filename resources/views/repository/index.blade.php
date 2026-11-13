@@ -538,93 +538,189 @@
             </section>
 
             @if(auth()->user()->role === 'admin')
-                <div class="lt-dashboard-admin-action">
-                    <a href="{{ route('repository.index') }}" class="lt-btn lt-btn--outline">
-                        Manage repository studies
-                    </a>
+    <div class="lt-dashboard-admin-action">
+        <a href="{{ route('repository.index') }}" class="lt-btn lt-btn--outline">
+            Manage repository studies
+        </a>
+
+        <a href="{{ route('admin.announcements.index') }}" class="lt-btn lt-btn--primary">
+            Manage announcements
+        </a>
+    </div>
+@endif
+
+            <section class="lt-dashboard-featured" aria-label="Featured capstone studies and announcements" data-dashboard-featured>
+    <div class="lt-dashboard-featured__track" data-dashboard-featured-track>
+
+        {{-- NUMBER 01: ANNOUNCEMENTS --}}
+        <article
+            class="lt-card lt-dashboard-feature lt-dashboard-announcements"
+            id="dashboard-announcements"
+            data-dashboard-feature-panel
+            aria-labelledby="dashboard-announcements-title"
+            aria-hidden="false"
+        >
+            <div class="lt-dashboard-feature__heading">
+                <div>
+                    <span class="lt-eyebrow">Featured update 01 / 03</span>
+                    <h2 class="lt-dashboard-feature__label" id="dashboard-announcements-title">
+                        Announcements
+                    </h2>
+                    <p class="lt-dashboard-announcements__intro">
+                        Important updates from the LogiTrack Administrator.
+                    </p>
                 </div>
-            @endif
+                
 
-            <section class="lt-dashboard-featured" aria-label="Featured capstone studies" data-dashboard-featured>
-                <div class="lt-dashboard-featured__track" data-dashboard-featured-track>
+                <button
+                    type="button"
+                    class="lt-dashboard-next"
+                    data-dashboard-feature-next
+                    aria-label="Show Best Capstone Study"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M5 12h14m-6-6 6 6-6 6"/>
+                    </svg>
+                </button>
+            </div>
 
-                    @foreach([
-                        ['label' => 'Best Capstone Study', 'study' => $dashboardStudies['best'], 'key' => 'best'],
-                        ['label' => 'Most Viewed Capstone Study', 'study' => $dashboardStudies['most_viewed'], 'key' => 'most-viewed'],
-                    ] as $index => $feature)
-
-                        <article
-                            class="lt-card lt-dashboard-feature"
-                            id="dashboard-feature-{{ $feature['key'] }}"
-                            data-dashboard-feature-panel
-                            aria-labelledby="dashboard-feature-title-{{ $feature['key'] }}"
-                            aria-hidden="{{ $index === 0 ? 'false' : 'true' }}"
-                            @if($index > 0) inert @endif
-                        >
-                            <div class="lt-dashboard-feature__heading">
-                                <div>
-                                    <span class="lt-eyebrow">Featured study 0{{ $index + 1 }} / 02</span>
-
-                                    <h2 class="lt-dashboard-feature__label" id="dashboard-feature-title-{{ $feature['key'] }}">
-                                        {{ $feature['label'] }}
-                                    </h2>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    class="lt-dashboard-next"
-                                    data-dashboard-feature-next
-                                    aria-label="Show {{ $index === 0 ? 'most viewed capstone study' : 'best capstone study' }}"
-                                >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        @if($index === 0)
-                                            <path d="M5 12h14m-6-6 6 6-6 6"/>
-                                        @else
-                                            <path d="M19 12H5m6 6-6-6 6-6"/>
-                                        @endif
-                                    </svg>
-                                </button>
+            @if(isset($announcements) && $announcements->isNotEmpty())
+                <div class="lt-dashboard-announcements__list">
+                    @foreach($announcements as $announcement)
+                        <article class="lt-dashboard-announcement">
+                            <div class="lt-dashboard-announcement__icon">
+                                <span class="material-symbols-outlined" aria-hidden="true">
+                                    campaign
+                                </span>
                             </div>
 
-                            @if($feature['study'])
-                                <h3 class="lt-dashboard-feature__title">
-                                    {{ $feature['study']->title }}
-                                </h3>
+                            <div class="lt-dashboard-announcement__content">
+                                <div class="lt-dashboard-announcement__topline">
+                                    <h3 class="lt-dashboard-feature__title">
+                                        {{ $announcement->title }}
+                                    </h3>
 
-                                <p class="lt-repo-abstract">
-                                    {{ \Illuminate\Support\Str::limit($feature['study']->abstract, 320) }}
-                                </p>
-
-                                <div class="lt-dashboard-feature__meta">
-                                    <span>{{ $feature['study']->program ?? 'Program not specified' }}</span>
-
-                                    @if($feature['key'] === 'most-viewed')
-                                        <span>{{ number_format($feature['study']->views_count) }} views</span>
-                                    @endif
+                                    <span class="lt-dashboard-announcement__badge">
+                                        Announcement
+                                    </span>
                                 </div>
 
-                                <div class="lt-repo-card__foot">
-                                    <a
-                                        href="{{ route('repository.show', [
-                                            'capstoneId' => $feature['study']->id,
-                                            'type' => $feature['study']->source_type,
-                                            'return_to' => 'dashboard'
-                                        ]) }}"
-                                        class="lt-btn lt-btn--primary lt-btn--sm"
-                                    >
-                                        View Details
-                                    </a>
-                                </div>
-                            @else
-                                <p class="lt-dashboard-feature__empty">
-                                    {{ $feature['key'] === 'best'
-                                        ? 'An admin has not selected a best study yet.'
-                                        : 'There are no approved capstone studies yet.' }}
+                                <p class="lt-dashboard-announcement__message">
+    {{ $announcement->message }}
+</p>
+
+{{-- Announcement publication date --}}
+<div class="lt-dashboard-announcement__meta">
+    <time datetime="{{ $announcement->published_at?->toDateString() }}">
+        {{ $announcement->published_at?->format('F d, Y') ?? 'Date unavailable' }}
+    </time>
+</div>
                                 </p>
-                            @endif
+                            </div>
                         </article>
-
                     @endforeach
+                </div>
+            @else
+                <div class="lt-dashboard-feature__empty lt-dashboard-announcements__empty">
+                    <span class="material-symbols-outlined" aria-hidden="true">
+                        campaign
+                    </span>
+                    <p>There are no announcements at the moment.</p>
+                </div>
+            @endif
+        </article>
+
+        {{-- NUMBER 02: BEST AND MOST VIEWED STUDIES --}}
+        @foreach([
+            ['label' => 'Best Capstone Study', 'study' => $dashboardStudies['best'], 'key' => 'best'],
+            ['label' => 'Most Viewed Capstone Study', 'study' => $dashboardStudies['most_viewed'], 'key' => 'most-viewed'],
+        ] as $index => $feature)
+
+            <article
+                class="lt-card lt-dashboard-feature"
+                id="dashboard-feature-{{ $feature['key'] }}"
+                data-dashboard-feature-panel
+                aria-labelledby="dashboard-feature-title-{{ $feature['key'] }}"
+                aria-hidden="true"
+                inert
+            >
+                <div class="lt-dashboard-feature__heading">
+                    <div>
+                        <span class="lt-eyebrow">
+                            Featured study 0{{ $index + 2 }} / 03
+                        </span>
+
+                        <h2
+                            class="lt-dashboard-feature__label"
+                            id="dashboard-feature-title-{{ $feature['key'] }}"
+                        >
+                            {{ $feature['label'] }}
+                        </h2>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="lt-dashboard-next"
+                        data-dashboard-feature-next
+                        aria-label="{{ $index === 0 ? 'Show Most Viewed Capstone Study' : 'Return to Featured Update' }}"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true">
+                            <path d="M5 12h14m-6-6 6 6-6 6"/>
+                        </svg>
+                    </button>
+                </div>
+
+                @if($feature['study'])
+                    <h3 class="lt-dashboard-feature__title">
+                        {{ $feature['study']->title }}
+                    </h3>
+
+                    <p class="lt-repo-abstract">
+                        {{ \Illuminate\Support\Str::limit($feature['study']->abstract, 320) }}
+                    </p>
+
+                    <div class="lt-dashboard-feature__meta">
+                        <span>{{ $feature['study']->program ?? 'Program not specified' }}</span>
+
+                        @if($feature['key'] === 'most-viewed')
+                            <span>{{ number_format($feature['study']->views_count) }} views</span>
+                        @endif
+                    </div>
+
+                    <div class="lt-repo-card__foot">
+                        <a
+                            href="{{ route('repository.show', [
+                                'capstoneId' => $feature['study']->id,
+                                'type' => $feature['study']->source_type,
+                                'return_to' => 'dashboard'
+                            ]) }}"
+                            class="lt-btn lt-btn--primary lt-btn--sm"
+                        >
+                            View Details
+                        </a>
+                    </div>
+                @else
+                    <p class="lt-dashboard-feature__empty">
+                        {{ $feature['key'] === 'best'
+                            ? 'An admin has not selected a best study yet.'
+                            : 'There are no approved capstone studies yet.' }}
+                    </p>
+                @endif
+            </article>
+
+        @endforeach
+
+    </div>
+</section>
+
+                    
+
+
+</article>
 
                 </div>
             </section>

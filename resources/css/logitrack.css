@@ -2107,3 +2107,730 @@ html { scroll-behavior: smooth; }
 }
 @media (prefers-reduced-motion: reduce) { .lt-sim .lt-bar__fill { animation: none; } }
 .lt-sim-side > * { margin: 0 !important; }
+
+
+/* =========================================================
+   LOGITRACK DASHBOARD ANNOUNCEMENTS
+   ========================================================= */
+
+.lt-dashboard-announcements {
+    max-height: 560px;
+    overflow-y: auto;
+}
+
+.lt-dashboard-announcements__intro {
+    margin-top: 7px !important;
+    color: var(--text-muted);
+    font-size: .9rem;
+}
+
+.lt-dashboard-announcements__list {
+    display: grid;
+    gap: 12px;
+    max-height: 370px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.lt-dashboard-announcement {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(255,255,255,.82);
+}
+
+.lt-dashboard-announcement__icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    background: rgba(228,176,40,.16);
+    color: var(--navy);
+}
+
+.lt-dashboard-announcement__icon .material-symbols-outlined {
+    font-size: 23px;
+}
+
+.lt-dashboard-announcement__content {
+    flex: 1;
+    min-width: 0;
+}
+
+.lt-dashboard-announcement__topline {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.lt-dashboard-announcement__topline .lt-dashboard-feature__title {
+    font-size: 1.02rem;
+}
+
+.lt-dashboard-announcement__badge {
+    flex: none;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(18,77,28,.09);
+    color: var(--green);
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.lt-dashboard-announcement__message {
+    margin-top: 7px !important;
+    color: var(--text-muted);
+    font-size: .9rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.lt-dashboard-announcement__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 14px;
+    margin-top: 10px;
+    color: var(--text-muted);
+    font-size: .76rem;
+}
+
+.lt-dashboard-announcements__empty {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 22px 0;
+}
+
+.lt-dashboard-announcements__empty .material-symbols-outlined {
+    font-size: 28px;
+    color: var(--gold);
+}
+
+/* Announcement header navigation icon */
+
+.lt-announcement-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.lt-announcement-nav-link .material-symbols-outlined {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* Responsive announcement layout */
+
+@media (max-width: 560px) {
+    .lt-dashboard-announcement {
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .lt-dashboard-announcement__topline {
+        flex-direction: column;
+        gap: 6px;
+    }
+}
+
+/* Announcement navigation icon */
+.lt-announcement-icon {
+    display: inline-block;
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+
+.lt-announcement-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.lt-announcement-nav-link .lt-announcement-icon {
+    width: 19px;
+    height: 19px;
+}
+
+.lt-admin-nav-link .lt-announcement-icon {
+    width: 22px;
+    height: 22px;
+}
+
+@media (max-width: 760px) {
+    .lt-announcement-nav-link {
+        justify-content: flex-start;
+        width: 100%;
+    }
+}
+/* Dashboard announcements: keep the list scrollable within its panel */
+.lt-dashboard-announcements {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.lt-dashboard-announcements__list {
+    max-height: 230px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 8px;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #aab39b #edf0e8;
+}
+
+.lt-dashboard-announcements__list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lt-dashboard-announcements__list::-webkit-scrollbar-track {
+    background: #edf0e8;
+    border-radius: 10px;
+}
+
+.lt-dashboard-announcements__list::-webkit-scrollbar-thumb {
+    background: #aab39b;
+    border-radius: 10px;
+}
+
+.lt-dashboard-announcements__list::-webkit-scrollbar-thumb:hover {
+    background: #879477;
+}
+
+/* Keep announcement content from stretching the card */
+.lt-dashboard-announcement {
+    min-width: 0;
+}
+
+.lt-dashboard-announcement__content {
+    min-width: 0;
+}
+
+.lt-dashboard-announcement__message {
+    overflow-wrap: anywhere;
+}
+
+/* Keep carousel arrows consistently pointing to the next panel */
+.lt-dashboard-next {
+    flex: 0 0 auto;
+}
+
+.lt-dashboard-next svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+
+/* =========================================
+   LOGITRACK ANNOUNCEMENT STYLING
+========================================= */
+
+/* Dashboard admin action buttons */
+.lt-dashboard-admin-action {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Announcement date */
+.lt-dashboard-announcement__meta {
+    display: flex;
+    margin-top: 10px;
+    color: var(--text-muted);
+    font-size: .78rem;
+}
+
+/* Announcement management page */
+.lt-announcement-page {
+    padding-bottom: 44px;
+}
+
+.lt-announcement-page .lt-page-head__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+/* Announcement summary */
+.lt-announcement-management__summary {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 18px;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+}
+
+.lt-announcement-management__summary strong {
+    color: var(--navy);
+    font-size: 1.5rem;
+}
+
+/* Announcement cards */
+.lt-announcement-manage-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 16px;
+    padding: 22px;
+}
+
+.lt-announcement-manage-card__main {
+    flex: 1;
+    min-width: 0;
+}
+
+.lt-announcement-manage-card__heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+}
+
+.lt-announcement-manage-card__heading .lt-card__title {
+    margin: 9px 0 0;
+}
+
+/* Date display */
+.lt-announcement-date {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    color: var(--text-muted);
+    font-size: .82rem;
+    white-space: nowrap;
+}
+
+.lt-announcement-date .material-symbols-outlined {
+    font-size: 18px;
+}
+
+/* Announcement message */
+.lt-announcement-manage-card__message {
+    margin: 14px 0 !important;
+    color: var(--text-muted);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    line-height: 1.65;
+}
+
+/* Announcement information */
+.lt-announcement-manage-card__footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    color: var(--text-muted);
+    font-size: .8rem;
+}
+
+.lt-announcement-audience strong {
+    color: var(--navy);
+}
+
+/* Edit and delete buttons */
+.lt-announcement-manage-card__actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+}
+
+.lt-announcement-manage-card__actions form {
+    margin: 0;
+}
+
+.lt-btn--danger {
+    border: 1px solid #d9a4a4;
+    background: #fff5f5;
+    color: #a52e35;
+}
+
+.lt-btn--danger:hover {
+    background: #fde8e8;
+}
+
+/* Empty announcement state */
+.lt-announcement-empty {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 44px 24px;
+    text-align: center;
+}
+
+.lt-announcement-empty > .material-symbols-outlined {
+    color: var(--gold);
+    font-size: 38px;
+}
+
+.lt-announcement-empty .lt-card__title,
+.lt-announcement-empty .lt-card__desc {
+    margin: 0;
+}
+
+/* Announcement form */
+.lt-announcement-form {
+    max-width: 900px;
+    padding: 26px;
+}
+
+.lt-announcement-form__field {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+    margin-bottom: 20px;
+}
+
+.lt-announcement-form__field .lt-input {
+    width: 100%;
+    min-height: 46px;
+}
+
+.lt-announcement-textarea {
+    min-height: 160px;
+    resize: vertical;
+    padding: 12px 14px;
+}
+
+.lt-announcement-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.lt-announcement-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.lt-announcement-optional,
+.lt-form-hint {
+    color: var(--text-muted);
+    font-size: .8rem;
+    font-weight: 400;
+}
+
+.lt-field-error {
+    margin: 0;
+    color: #b4232c;
+    font-size: .82rem;
+}
+
+.lt-announcement-errors {
+    margin: 8px 0 0 18px;
+}
+
+/* Responsive announcement layout */
+@media (max-width: 700px) {
+    .lt-announcement-page .lt-page-head__row,
+    .lt-announcement-manage-card,
+    .lt-announcement-manage-card__heading {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .lt-announcement-manage-card__actions {
+        justify-content: flex-start;
+    }
+
+    .lt-announcement-form__grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .lt-announcement-date {
+        white-space: normal;
+    }
+}
+
+
+/* ==========================================
+   ANNOUNCEMENT BUTTON ALIGNMENT FIX
+========================================== */
+
+/* Announcement card layout */
+.lt-announcement-manage-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+/* Main announcement content */
+.lt-announcement-manage-card__main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Action buttons */
+.lt-announcement-manage-card__actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 10px;
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+/* Make both buttons the same height */
+.lt-announcement-manage-card__actions .lt-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 85px;
+    min-height: 40px;
+    padding: 9px 16px;
+    margin: 0;
+    line-height: 1;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* Prevent form from pushing the Delete button down */
+.lt-announcement-manage-card__actions form {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+/* Red Delete button */
+.lt-announcement-manage-card__actions .lt-btn--danger {
+    background: #dc2626 !important;
+    border: 1px solid #dc2626 !important;
+    color: #fff !important;
+}
+
+.lt-announcement-manage-card__actions .lt-btn--danger:hover {
+    background: #b91c1c !important;
+    border-color: #b91c1c !important;
+}
+
+/* Mobile alignment */
+@media (max-width: 700px) {
+    .lt-announcement-manage-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .lt-announcement-manage-card__actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 420px) {
+    .lt-announcement-manage-card__actions {
+        justify-content: stretch;
+    }
+
+    .lt-announcement-manage-card__actions .lt-btn,
+    .lt-announcement-manage-card__actions form {
+        flex: 1;
+    }
+
+    .lt-announcement-manage-card__actions form .lt-btn {
+        width: 100%;
+    }
+}
+
+/* Announcement Edit button - LogiTrack blue */
+.lt-announcement-manage-card__actions a.lt-btn:not(.lt-btn--danger) {
+    background: #18254c !important;
+    border: 1px solid #18254c !important;
+    color: #ffffff !important;
+}
+
+.lt-announcement-manage-card__actions a.lt-btn:not(.lt-btn--danger):hover {
+    background: #263968 !important;
+    border-color: #263968 !important;
+    color: #ffffff !important;
+}
+
+/* Announcement Delete button - LogiTrack yellow/gold */
+.lt-announcement-manage-card__actions .lt-btn--danger {
+    background: #d6a83f !important;
+    border: 1px solid #d6a83f !important;
+    color: #18254c !important;
+}
+
+.lt-announcement-manage-card__actions .lt-btn--danger:hover {
+    background: #bd902c !important;
+    border-color: #bd902c !important;
+    color: #ffffff !important;
+}
+
+/* ==========================================
+   COMPACT ANNOUNCEMENT INFORMATION SPACING
+========================================== */
+
+/* Reduce spacing inside announcement cards */
+.lt-announcement-manage-card {
+    padding: 18px 22px;
+    gap: 16px;
+}
+
+/* Title and announcement badge */
+.lt-announcement-manage-card__heading {
+    gap: 10px;
+    margin-bottom: 0;
+}
+
+.lt-announcement-manage-card__heading h2 {
+    margin-top: 5px !important;
+    margin-bottom: 0 !important;
+    line-height: 1.35;
+}
+
+/* Announcement message */
+.lt-announcement-manage-card__message {
+    margin-top: 8px !important;
+    margin-bottom: 10px !important;
+    line-height: 1.5;
+}
+
+/* Date and audience information */
+.lt-announcement-manage-card__footer {
+    gap: 6px 16px;
+    padding-top: 8px;
+    margin-top: 5px;
+}
+
+/* Keep action buttons centered */
+.lt-announcement-manage-card__actions {
+    align-self: center;
+}
+
+/* Compact mobile spacing */
+@media (max-width: 700px) {
+    .lt-announcement-manage-card {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .lt-announcement-manage-card__message {
+        margin-top: 7px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .lt-announcement-manage-card__footer {
+        padding-top: 7px;
+        gap: 6px 12px;
+    }
+}
+/* ADD / EDIT ANNOUNCEMENT FORM ONLY */
+.lt-announcement-form {
+    width: 100%;
+    max-width: 760px;
+    margin: 0;
+    padding: 30px 32px;
+    box-sizing: border-box;
+}
+
+.lt-announcement-form__field {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 20px;
+    gap: 8px;
+}
+
+.lt-announcement-form__field input,
+.lt-announcement-form__field select,
+.lt-announcement-form__field textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    border-radius: 9px;
+}
+
+.lt-announcement-form__field input,
+.lt-announcement-form__field select {
+    min-height: 46px;
+}
+
+.lt-announcement-form__field textarea {
+    min-height: 180px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.lt-announcement-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+.lt-announcement-form__grid > * {
+    min-width: 0;
+}
+
+.lt-announcement-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+    .lt-announcement-form {
+        max-width: 100%;
+        padding: 24px;
+    }
+
+    .lt-announcement-form__grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .lt-announcement-form {
+        padding: 18px;
+    }
+
+    .lt-announcement-form__actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .lt-announcement-form__actions .lt-btn {
+        width: 100%;
+    }
+}/* CENTER ADD / EDIT ANNOUNCEMENT FORMS ONLY */
+.lt-announcement-form {
+    width: 100%;
+    max-width: 760px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}

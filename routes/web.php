@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminAccountController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ArchivedCapstoneController;
 use App\Http\Controllers\CapstoneAuditController;
 use App\Http\Controllers\CapstoneProjectController;
@@ -122,6 +123,37 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/admin/capstone-audits', [CapstoneAuditController::class, 'index'])->name('admin.capstone-audits');
     });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Announcement Management
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/admin/announcements',
+            [AnnouncementController::class, 'index']
+        )->name('admin.announcements.index');
+
+        Route::get('/admin/announcements/create',
+            [AnnouncementController::class, 'create']
+        )->name('admin.announcements.create');
+
+        Route::post('/admin/announcements',
+            [AnnouncementController::class, 'store']
+        )->name('admin.announcements.store');
+
+        Route::get('/admin/announcements/{announcement}/edit',
+            [AnnouncementController::class, 'edit']
+        )->name('admin.announcements.edit');
+
+        Route::put('/admin/announcements/{announcement}',
+            [AnnouncementController::class, 'update']
+        )->name('admin.announcements.update');
+
+        Route::delete('/admin/announcements/{announcement}',
+            [AnnouncementController::class, 'destroy']
+        )->name('admin.announcements.destroy');
+
+
     Route::middleware('instructor')->group(function () {
         Route::get('/instructor/student-submissions', [StudentCapstoneSubmissionController::class, 'instructorIndex'])
             ->name('instructor.student-submissions.index');
@@ -141,6 +173,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->name('admin.student-submissions.return');
         Route::patch('/admin/student-submissions/{submission}/add-to-repository', [StudentCapstoneSubmissionController::class, 'addToRepository'])
             ->name('admin.student-submissions.add-to-repository');
+    
     });
 
     /* Repository */

@@ -8,6 +8,192 @@
 
         @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
         
+        <style>
+            /* Registration dialog layout: keep every field aligned and prevent
+               long values, validation messages, or autofill from breaking the modal. */
+            #register-dialog {
+                width: min(94vw, 720px);
+                max-width: 720px;
+                max-height: 92vh;
+                overflow: auto;
+                box-sizing: border-box;
+            }
+
+            #register-dialog .lt-dialog__body--register {
+                width: 100%;
+                box-sizing: border-box;
+                padding: clamp(1.25rem, 3vw, 2rem);
+            }
+
+            #register-dialog .lt-register-dialog__form {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem 1.1rem;
+                width: 100%;
+                min-width: 0;
+            }
+
+            #register-dialog .lt-field,
+            #register-dialog .lt-register-password-row,
+            #register-dialog .lt-register-dialog__actions {
+                min-width: 0;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            #register-dialog .lt-field {
+                display: flex;
+                flex-direction: column;
+                gap: .4rem;
+            }
+
+            #register-dialog .lt-label {
+                display: block;
+                margin: 0;
+                line-height: 1.35;
+            }
+
+            #register-dialog .lt-input {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                min-height: 46px;
+                box-sizing: border-box;
+                padding: .7rem .85rem;
+                line-height: 1.4;
+                font: inherit;
+                border-radius: 10px;
+                outline-offset: 2px;
+            }
+
+            #register-dialog .lt-input:focus {
+                outline: 2px solid currentColor;
+                outline-offset: 1px;
+            }
+
+            #register-dialog .lt-register-dialog__field--full,
+            #register-dialog .lt-register-password-row,
+            #register-dialog .lt-register-dialog__actions {
+                grid-column: 1 / -1;
+            }
+
+            .lt-register-password-row {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem 1.1rem;
+            }
+
+            .lt-live-status {
+                display: none;
+                min-height: 0;
+                margin-top: .1rem;
+                color: #dc2626;
+                font-size: .75rem;
+                line-height: 1.4;
+                overflow-wrap: anywhere;
+            }
+
+            .lt-live-status:empty {
+                display: none;
+            }
+
+            #register-dialog .lt-field-error {
+                margin: .15rem 0 0;
+                overflow-wrap: anywhere;
+            }
+
+            #register-dialog .lt-register-dialog__actions {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                flex-wrap: wrap;
+                padding-top: .25rem;
+            }
+
+            #register-dialog .lt-register-dialog__actions button {
+                min-width: 130px;
+            }
+
+            @media (max-width: 600px) {
+                #register-dialog .lt-register-dialog__form {
+                    grid-template-columns: minmax(0, 1fr);
+                }
+
+                #register-dialog .lt-register-dialog__field--full,
+                #register-dialog .lt-register-password-row,
+                #register-dialog .lt-register-dialog__actions {
+                    grid-column: 1;
+                }
+
+                .lt-register-password-row {
+                    grid-template-columns: minmax(0, 1fr);
+                }
+
+                #register-dialog .lt-register-dialog__actions {
+                    align-items: stretch;
+                    flex-direction: column-reverse;
+                }
+
+                #register-dialog .lt-register-dialog__actions button {
+                    width: 100%;
+                }
+            }
+
+
+            /* Registration form structure follows the grouped layout in the reference. */
+            #register-dialog .lt-register-dialog__form {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                align-items: start;
+            }
+
+            #register-dialog .lt-register-dialog__field--full,
+            #register-dialog .lt-register-dialog__name-fields,
+            #register-dialog .lt-register-dialog__actions {
+                grid-column: 1 / -1;
+            }
+
+            #register-dialog .lt-register-dialog__name-fields {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem 1.1rem;
+                min-width: 0;
+            }
+
+            #register-dialog .lt-input-wrap {
+                position: relative;
+                width: 100%;
+                min-width: 0;
+            }
+
+            #register-dialog .lt-input-wrap .lt-input {
+                padding-right: 3rem;
+            }
+
+            #register-dialog .lt-live-status {
+                display: none;
+            }
+
+            #register-dialog .lt-live-status:not(:empty) {
+                display: block;
+            }
+
+            @media (max-width: 600px) {
+                #register-dialog .lt-register-dialog__form,
+                #register-dialog .lt-register-dialog__name-fields {
+                    grid-template-columns: minmax(0, 1fr);
+                }
+
+                #register-dialog .lt-register-dialog__field--full,
+                #register-dialog .lt-register-dialog__name-fields,
+                #register-dialog .lt-register-dialog__actions {
+                    grid-column: 1;
+                }
+            }
+
+        </style>
+        
     </head>
     <body class="lt-body">
 
@@ -250,6 +436,7 @@
                     <button type="button" class="lt-search-filter__toggle lt-register-dialog__close" data-close-dialog aria-label="Close registration form">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
                     </button>
+
                     <div class="lt-register-dialog__head">
                         <div>
                             <h2 id="register-dialog-title" class="lt-dialog__title">Create your account</h2>
@@ -257,13 +444,14 @@
                         </div>
                     </div>
 
-                    <form id="landing-register-form" method="POST" action="{{ route('register') }}" class="lt-form lt-register-dialog__form" data-submit-guard>
+                    <form id="landing-register-form" method="POST" action="{{ route('register') }}" data-check-url="{{ route('registration.check') }}" class="lt-form lt-register-dialog__form">
                         @csrf
                         <input type="hidden" name="_form" value="register">
 
-                        <div class="lt-field">
+                        <div class="lt-field lt-register-dialog__field--full">
                             <label for="landing-student-number" class="lt-label">{{ __('Student Number') }}</label>
-                            <input id="landing-student-number" class="lt-input {{ old('_form') === 'register' && $errors->has('student_number') ? 'is-invalid' : '' }}" type="text" name="student_number" value="{{ old('_form') === 'register' ? old('student_number') : '' }}" required autocomplete="off">
+                            <input id="landing-student-number" class="lt-input {{ old('_form') === 'register' && $errors->has('student_number') ? 'is-invalid' : '' }}" type="text" name="student_number" value="{{ old('_form') === 'register' ? old('student_number') : '' }}" required inputmode="numeric" minlength="9" maxlength="9" pattern="[0-9]{9}" autocomplete="off" aria-describedby="student-number-status">
+                            <small id="student-number-status" class="lt-live-status" aria-live="polite"></small>
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('student_number') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
@@ -274,7 +462,8 @@
                         <div class="lt-register-dialog__name-fields">
                             <div class="lt-field">
                                 <label for="landing-first-name" class="lt-label">{{ __('First Name') }}</label>
-                                <input id="landing-first-name" class="lt-input {{ old('_form') === 'register' && $errors->has('first_name') ? 'is-invalid' : '' }}" type="text" name="first_name" value="{{ old('_form') === 'register' ? old('first_name') : '' }}" required autocomplete="given-name">
+                                <input id="landing-first-name" class="lt-input {{ old('_form') === 'register' && $errors->has('first_name') ? 'is-invalid' : '' }}" type="text" name="first_name" value="{{ old('_form') === 'register' ? old('first_name') : '' }}" required minlength="2" maxlength="60" autocomplete="given-name" aria-describedby="first-name-status">
+                                <small id="first-name-status" class="lt-live-status" aria-live="polite"></small>
                                 @if (old('_form') === 'register')
                                     @foreach($errors->get('first_name') as $message)
                                         <p class="lt-field-error">{{ $message }}</p>
@@ -284,7 +473,8 @@
 
                             <div class="lt-field">
                                 <label for="landing-last-name" class="lt-label">{{ __('Last Name') }}</label>
-                                <input id="landing-last-name" class="lt-input {{ old('_form') === 'register' && $errors->has('last_name') ? 'is-invalid' : '' }}" type="text" name="last_name" value="{{ old('_form') === 'register' ? old('last_name') : '' }}" required autocomplete="family-name">
+                                <input id="landing-last-name" class="lt-input {{ old('_form') === 'register' && $errors->has('last_name') ? 'is-invalid' : '' }}" type="text" name="last_name" value="{{ old('_form') === 'register' ? old('last_name') : '' }}" required minlength="2" maxlength="60" autocomplete="family-name" aria-describedby="last-name-status">
+                                <small id="last-name-status" class="lt-live-status" aria-live="polite"></small>
                                 @if (old('_form') === 'register')
                                     @foreach($errors->get('last_name') as $message)
                                         <p class="lt-field-error">{{ $message }}</p>
@@ -295,8 +485,9 @@
 
                         <div class="lt-field lt-register-dialog__field--full">
                             <label for="landing-email" class="lt-label">{{ __('School Email') }}</label>
-                            <input id="landing-email" class="lt-input {{ old('_form') === 'register' && $errors->has('email') ? 'is-invalid' : '' }}" type="email" name="email" value="{{ old('_form') === 'register' ? old('email') : '' }}" required autocomplete="username">
+                            <input id="landing-email" class="lt-input {{ old('_form') === 'register' && $errors->has('email') ? 'is-invalid' : '' }}" type="email" name="email" value="{{ old('_form') === 'register' ? old('email') : '' }}" required maxlength="254" autocomplete="email" aria-describedby="email-status">
                             <span class="lt-hint">We will send a verification code to this email before creating your account.</span>
+                            <small id="email-status" class="lt-live-status" aria-live="polite"></small>
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('email') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
@@ -305,14 +496,15 @@
                         </div>
 
                         <div class="lt-field">
-                            <label for="landing-password" class="lt-label">{{ __('Password') }}</label>
+                            <label for="landing-password" class="lt-label">{{ __('Create Password') }}</label>
                             <div class="lt-input-wrap">
-                                <input id="landing-password" class="lt-input {{ old('_form') === 'register' && $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required autocomplete="new-password">
+                                <input id="landing-password" class="lt-input {{ old('_form') === 'register' && $errors->has('password') ? 'is-invalid' : '' }}" type="password" name="password" required minlength="12" autocomplete="new-password" aria-describedby="password-status">
                                 <button type="button" class="lt-eye" data-toggle-password="#landing-password" aria-pressed="false" aria-label="Show password">
                                     <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
                                     <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
                                 </button>
                             </div>
+                            <small id="password-status" class="lt-live-status" aria-live="polite"></small>
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('password') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
@@ -323,13 +515,13 @@
                         <div class="lt-field">
                             <label for="landing-password-confirmation" class="lt-label">{{ __('Confirm Password') }}</label>
                             <div class="lt-input-wrap">
-                                <input id="landing-password-confirmation" class="lt-input {{ old('_form') === 'register' && $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required autocomplete="new-password" data-match="#landing-password" data-match-msg="#landing-password-match-msg">
+                                <input id="landing-password-confirmation" class="lt-input {{ old('_form') === 'register' && $errors->has('password_confirmation') ? 'is-invalid' : '' }}" type="password" name="password_confirmation" required minlength="12" autocomplete="new-password" aria-describedby="confirm-password-status">
                                 <button type="button" class="lt-eye" data-toggle-password="#landing-password-confirmation" aria-pressed="false" aria-label="Show password">
                                     <svg class="lt-eye__on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
                                     <svg class="lt-eye__off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.4-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
                                 </button>
                             </div>
-                            <p id="landing-password-match-msg" class="lt-match" aria-live="polite"></p>
+                            <small id="confirm-password-status" class="lt-live-status" aria-live="polite"></small>
                             @if (old('_form') === 'register')
                                 @foreach($errors->get('password_confirmation') as $message)
                                     <p class="lt-field-error">{{ $message }}</p>
@@ -423,5 +615,287 @@
             </div>
         </footer>
 
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('landing-register-form');
+            if (!form) return;
+
+            const fields = {
+                student: document.getElementById('landing-student-number'),
+                first: document.getElementById('landing-first-name'),
+                last: document.getElementById('landing-last-name'),
+                email: document.getElementById('landing-email'),
+                password: document.getElementById('landing-password'),
+                confirmation: document.getElementById('landing-password-confirmation')
+            };
+            if (Object.values(fields).some(field => !field)) return;
+
+            const checkUrl = form.dataset.checkUrl;
+            let studentTimer, emailTimer;
+            let studentRequest = 0, emailRequest = 0;
+            let studentState = 'unchecked', emailState = 'unchecked';
+            let submitting = false;
+
+            // Show red warnings only. Successful checks remain visually quiet.
+            function showStatus(id, message) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = message || '';
+                el.style.display = message ? 'block' : 'none';
+                el.style.color = '#dc2626';
+            }
+
+            function checkStudentFormat() {
+                const value = fields.student.value;
+                const exact = /^[0-9]{9}$/.test(value);
+                const repeated = /^([0-9])\1{8}$/.test(value);
+                const valid = exact && !repeated;
+                const message = !value ? '' : exact
+                    ? (repeated ? 'A student number cannot contain the same digit nine times.' : '')
+                    : 'Student number must contain exactly 9 digits.';
+                fields.student.setCustomValidity(message);
+                showStatus('student-number-status', message);
+                return valid;
+            }
+
+            async function checkStudentAvailability() {
+                const value = fields.student.value;
+                const requestId = ++studentRequest;
+                if (!checkStudentFormat()) {
+                    studentState = 'invalid';
+                    return false;
+                }
+                try {
+                    const query = new URLSearchParams({ student_number: value });
+                    const response = await fetch(`${checkUrl}?${query}`, {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin'
+                    });
+                    if (!response.ok) throw new Error('Student number availability check failed.');
+                    const data = await response.json();
+                    if (requestId !== studentRequest || fields.student.value !== value) return false;
+
+                    let message = '';
+                    if (data.student_number === 'taken') {
+                        studentState = 'taken';
+                        message = 'This student number already has a registered account.';
+                    } else if (data.student_number === 'not_in_masterlist') {
+                        studentState = 'not_in_masterlist';
+                        message = 'This student number does not exist in the student masterlist.';
+                    } else if (data.student_number === 'available') {
+                        studentState = 'available';
+                    } else {
+                        throw new Error('Unexpected student number check response.');
+                    }
+                    fields.student.setCustomValidity(message);
+                    showStatus('student-number-status', message);
+                    return !message;
+                } catch (error) {
+                    console.error(error);
+                    if (requestId === studentRequest) {
+                        studentState = 'error';
+                        const message = 'Unable to check this student number. Please try again.';
+                        fields.student.setCustomValidity(message);
+                        showStatus('student-number-status', message);
+                    }
+                    return false;
+                }
+            }
+
+            fields.student.addEventListener('input', function () {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);
+                studentState = 'unchecked';
+                fields.student.setCustomValidity('');
+                checkStudentFormat();
+                clearTimeout(studentTimer);
+                if (/^[0-9]{9}$/.test(this.value)) {
+                    studentTimer = setTimeout(checkStudentAvailability, 450);
+                }
+            });
+
+            // Name checks: permit letters, spaces, apostrophes and hyphens.
+            const namePattern = /^\p{L}+(?:[ '-]\p{L}+)*$/u;
+            const keyboardPattern = /qwerty|asdfgh|zxcvbn|qazwsx|wsxedc|abcdef|ghijkl|poiuyt|lkjhgfd|mnbvcx|plmokn|oiuytr|asdfjkl/i;
+            const vowels = /[aeiouyáéíóúàèìòùâêîôûäëïöü]/giu;
+
+            function cleanName(input) {
+                input.value = input.value
+                    .replace(/[^\p{L} '-]/gu, '')
+                    .replace(/[ '-]{2,}/g, match => match[0])
+                    .replace(/^[ '-]+/, '');
+            }
+
+            function randomLookingName(value) {
+                const compact = value.replace(/[ '-]/g, '').toLocaleLowerCase();
+                if (/(.)\1{2,}/u.test(compact) || keyboardPattern.test(compact)) return true;
+                const chars = Array.from(compact);
+                const unique = new Set(chars).size;
+                if (chars.length >= 7 && unique < 4) return true;
+                if (chars.length >= 5 && unique < 3) return true;
+                const words = value.toLocaleLowerCase().split(/[ '-]+/).filter(Boolean);
+                for (const word of words) {
+                    const length = Array.from(word).length;
+                    const vowelCount = (word.match(vowels) || []).length;
+                    if (length >= 4 && vowelCount === 0) return true;
+                    if (length >= 6 && (vowelCount / length < .16 || vowelCount / length > .72)) return true;
+                    if (/[bcdfghjklmnpqrstvwxz]{4,}/i.test(word)) return true;
+                    if (length >= 6 && /^(.)(.)\1\2(?:\1\2)+$/u.test(word)) return true;
+                    if (length >= 8 && new Set(Array.from(word)).size <= 3) return true;
+                }
+                return /qwe|wer|ert|rty|tyu|yui|uio|asd|sdf|dfg|fgh|ghj|hjk|jkl|zxc|xcv|cvb|vbn/i.test(compact);
+            }
+
+            function checkName(input, statusId, label) {
+                const value = input.value.trim();
+                const valid = value.length >= 2 && value.length <= 60 &&
+                    namePattern.test(value) && !randomLookingName(value);
+                const message = value && !valid
+                    ? `${label} looks like random or invalid text. Enter a valid name.` : '';
+                input.setCustomValidity(message);
+                showStatus(statusId, message);
+                return valid;
+            }
+
+            [[fields.first, 'first-name-status', 'First name'],
+             [fields.last, 'last-name-status', 'Last name']].forEach(([input, id, label]) => {
+                input.addEventListener('input', function () {
+                    cleanName(this);
+                    checkName(this, id, label);
+                });
+                input.addEventListener('blur', function () {
+                    this.value = this.value.trim().replace(/\s+/g, ' ');
+                    checkName(this, id, label);
+                });
+            });
+
+            function checkEmailFormat() {
+                const input = fields.email;
+                const value = input.value.trim().toLowerCase();
+                const pattern = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i;
+                const valid = value !== '' && value.length <= 254 && pattern.test(value);
+                const message = value && !valid ? 'Enter a valid email address. Check the spelling and domain.' : '';
+                input.setCustomValidity(message);
+                showStatus('email-status', message);
+                return valid;
+            }
+
+            async function checkEmailAvailability() {
+                const value = fields.email.value.trim().toLowerCase();
+                const requestId = ++emailRequest;
+                if (!checkEmailFormat()) {
+                    emailState = 'invalid';
+                    return false;
+                }
+                try {
+                    const query = new URLSearchParams({ email: value });
+                    const response = await fetch(`${checkUrl}?${query}`, {
+                        headers: { 'Accept': 'application/json' },
+                        credentials: 'same-origin'
+                    });
+                    if (!response.ok) throw new Error('Email availability check failed.');
+                    const data = await response.json();
+                    if (requestId !== emailRequest || fields.email.value.trim().toLowerCase() !== value) return false;
+                    if (data.email === 'taken') {
+                        emailState = 'taken';
+                        const message = 'This email address is already registered. Please use another email.';
+                        fields.email.setCustomValidity(message);
+                        showStatus('email-status', message);
+                        return false;
+                    }
+                    if (data.email !== 'available') throw new Error('Unexpected email check response.');
+                    emailState = 'available';
+                    fields.email.setCustomValidity('');
+                    showStatus('email-status', '');
+                    return true;
+                } catch (error) {
+                    console.error(error);
+                    if (requestId === emailRequest) {
+                        emailState = 'error';
+                        const message = 'Unable to check this email address. Please try again.';
+                        fields.email.setCustomValidity(message);
+                        showStatus('email-status', message);
+                    }
+                    return false;
+                }
+            }
+
+            fields.email.addEventListener('input', function () {
+                this.value = this.value.replace(/\s/g, '').toLowerCase();
+                emailState = 'unchecked';
+                this.setCustomValidity('');
+                checkEmailFormat();
+                clearTimeout(emailTimer);
+                if (checkEmailFormat()) emailTimer = setTimeout(checkEmailAvailability, 500);
+            });
+            fields.email.addEventListener('blur', function () {
+                this.value = this.value.trim().toLowerCase();
+                if (checkEmailFormat()) checkEmailAvailability();
+            });
+
+            function checkPassword() {
+                const value = fields.password.value;
+                const valid = value.length >= 12 && /[A-Z]/.test(value) &&
+                    /[a-z]/.test(value) && /[0-9]/.test(value) && /[^A-Za-z0-9]/.test(value);
+                const message = value && !valid
+                    ? 'Password must have at least 12 characters, uppercase, lowercase, a number and a symbol.' : '';
+                fields.password.setCustomValidity(message);
+                showStatus('password-status', message);
+                checkConfirmation();
+                return valid;
+            }
+
+            function checkConfirmation() {
+                const value = fields.confirmation.value;
+                const valid = value !== '' && value === fields.password.value;
+                const message = value && !valid ? 'Passwords do not match.' : '';
+                fields.confirmation.setCustomValidity(message);
+                showStatus('confirm-password-status', message);
+                return valid;
+            }
+            fields.password.addEventListener('input', checkPassword);
+            fields.confirmation.addEventListener('input', checkConfirmation);
+
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                if (submitting) return;
+
+                fields.email.value = fields.email.value.trim().toLowerCase();
+                fields.first.value = fields.first.value.trim().replace(/\s+/g, ' ');
+                fields.last.value = fields.last.value.trim().replace(/\s+/g, ' ');
+
+                const localValid = [
+                    checkStudentFormat(),
+                    checkName(fields.first, 'first-name-status', 'First name'),
+                    checkName(fields.last, 'last-name-status', 'Last name'),
+                    checkEmailFormat(),
+                    checkPassword(),
+                    checkConfirmation()
+                ].every(Boolean);
+
+                if (!localValid) {
+                    form.reportValidity();
+                    return;
+                }
+
+                // Recheck both values immediately before submitting.
+                const remoteValid = await Promise.all([
+                    checkStudentAvailability(),
+                    checkEmailAvailability()
+                ]);
+                if (!remoteValid.every(Boolean) || !form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                submitting = true;
+                const button = form.querySelector('button[type="submit"]');
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = 'Creating account...';
+                }
+                HTMLFormElement.prototype.submit.call(form);
+            });
+        });
+        </script>
     </body>
 </html>

@@ -18,6 +18,11 @@ Route::middleware('guest')->group(function () {
     Route::post('register', [RegisteredUserController::class, 'store'])
         ->middleware('throttle:5,1');
 
+    // Live registration availability checks; final registration validates again.
+    Route::get('registration/check', [RegisteredUserController::class, 'checkAvailability'])
+        ->middleware('throttle:30,1')
+        ->name('registration.check');
+
     Route::get('register/verify', [RegisteredUserController::class, 'showOtp'])
         ->name('register.otp');
 

@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\Announcement;
 use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
 use App\Models\StudentCapstoneSubmission;
@@ -30,7 +30,33 @@ class RepositoryController extends Controller
         }
 
         $isDashboard = $request->routeIs('dashboard');
+    /*
+|--------------------------------------------------------------------------
+| DASHBOARD ANNOUNCEMENTS
+|--------------------------------------------------------------------------
+*/
 
+$userRole = $request->user()->role;
+
+$audience = match ($userRole) {
+    'student' => ['all', 'students'],
+    'instructor' => ['all', 'instructors'],
+    'admin' => ['all', 'students', 'instructors'],
+    default => [],
+};
+
+$announcements = Announcement::query()
+    ->where('is_published', true)
+    ->whereIn('audience', $audience)
+    ->whereNotNull('published_at')
+    ->where('published_at', '<=', now())
+    ->where(function ($query) {
+        $query->whereNull('expires_at')
+            ->orWhere('expires_at', '>', now());
+    })
+    ->with('author')
+    ->latest('published_at')
+    ->get();
         /*
         |--------------------------------------------------------------------------
         | LOAD MODERN APPROVED CAPSTONES
@@ -72,7 +98,7 @@ class RepositoryController extends Controller
         ])
             ->where('status', 'approved')
             ->get()
-            ->map(function (StudentCapstoneSubmission $item): StudentCapstoneSubmission {
+            ->map(function ($item) {
                 $item->source_type = 'student';
                 $item->program = $item->submitter?->program;
                 $item->publication_date = $item->submitted_date;
@@ -338,6 +364,7 @@ class RepositoryController extends Controller
             'capstones' => $capstones,
 
             // Search and filters.
+            
             'search' => $search,
             'year' => $year,
             'years' => $years,
@@ -359,6 +386,7 @@ class RepositoryController extends Controller
             'totalCsTheses' => $totalCsTheses,
 
             'classroomId' => null,
+            'announcements' => $announcements,
         ]);
     }
 
