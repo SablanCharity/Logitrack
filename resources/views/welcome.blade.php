@@ -271,24 +271,26 @@
                             @endif
                         </div>
 
-                        <div class="lt-field">
-                            <label for="landing-first-name" class="lt-label">{{ __('First Name') }}</label>
-                            <input id="landing-first-name" class="lt-input {{ old('_form') === 'register' && $errors->has('first_name') ? 'is-invalid' : '' }}" type="text" name="first_name" value="{{ old('_form') === 'register' ? old('first_name') : '' }}" required autocomplete="given-name">
-                            @if (old('_form') === 'register')
-                                @foreach($errors->get('first_name') as $message)
-                                    <p class="lt-field-error">{{ $message }}</p>
-                                @endforeach
-                            @endif
-                        </div>
+                        <div class="lt-register-dialog__name-fields">
+                            <div class="lt-field">
+                                <label for="landing-first-name" class="lt-label">{{ __('First Name') }}</label>
+                                <input id="landing-first-name" class="lt-input {{ old('_form') === 'register' && $errors->has('first_name') ? 'is-invalid' : '' }}" type="text" name="first_name" value="{{ old('_form') === 'register' ? old('first_name') : '' }}" required autocomplete="given-name">
+                                @if (old('_form') === 'register')
+                                    @foreach($errors->get('first_name') as $message)
+                                        <p class="lt-field-error">{{ $message }}</p>
+                                    @endforeach
+                                @endif
+                            </div>
 
-                        <div class="lt-field">
-                            <label for="landing-last-name" class="lt-label">{{ __('Last Name') }}</label>
-                            <input id="landing-last-name" class="lt-input {{ old('_form') === 'register' && $errors->has('last_name') ? 'is-invalid' : '' }}" type="text" name="last_name" value="{{ old('_form') === 'register' ? old('last_name') : '' }}" required autocomplete="family-name">
-                            @if (old('_form') === 'register')
-                                @foreach($errors->get('last_name') as $message)
-                                    <p class="lt-field-error">{{ $message }}</p>
-                                @endforeach
-                            @endif
+                            <div class="lt-field">
+                                <label for="landing-last-name" class="lt-label">{{ __('Last Name') }}</label>
+                                <input id="landing-last-name" class="lt-input {{ old('_form') === 'register' && $errors->has('last_name') ? 'is-invalid' : '' }}" type="text" name="last_name" value="{{ old('_form') === 'register' ? old('last_name') : '' }}" required autocomplete="family-name">
+                                @if (old('_form') === 'register')
+                                    @foreach($errors->get('last_name') as $message)
+                                        <p class="lt-field-error">{{ $message }}</p>
+                                    @endforeach
+                                @endif
+                            </div>
                         </div>
 
                         <div class="lt-field lt-register-dialog__field--full">

@@ -1412,6 +1412,12 @@ html { scroll-behavior: smooth; }
 }
 .lt-register-dialog__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 18px; }
 .lt-register-dialog__form > .lt-field { align-content: start; }
+.lt-register-dialog__name-fields {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 18px;
+}
 .lt-register-dialog__form .lt-input,
 .lt-register-dialog__form .lt-select { border-radius: var(--radius-sm); }
 #landing-program:required:invalid { color: #98a0bd; }
@@ -1423,6 +1429,53 @@ html { scroll-behavior: smooth; }
 .lt-register-dialog__field--full,
 .lt-register-dialog__actions { grid-column: 1 / -1; }
 .lt-register-dialog__actions { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 22px; }
+
+.lt-otp-page {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background:
+        radial-gradient(560px 360px at 10% 10%, rgba(228, 176, 40, .18), transparent 65%),
+        radial-gradient(560px 360px at 90% 90%, rgba(18, 77, 28, .18), transparent 65%),
+        var(--bone);
+}
+
+.lt-otp-page__main { width: 100%; display: grid; place-items: center; }
+
+.lt-otp-modal {
+    position: relative;
+    width: min(480px, 100%);
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+}
+
+.lt-otp-modal__brand {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 30px;
+    color: var(--navy) !important;
+}
+
+.lt-otp-modal .lt-auth__card { max-width: none; }
+.lt-otp-modal .lt-auth__head { text-align: center; margin-bottom: 24px; }
+.lt-otp-modal__icon {
+    width: 54px;
+    height: 54px;
+    display: grid;
+    place-items: center;
+    margin: 0 auto 16px;
+    border-radius: 16px;
+    background: var(--navy);
+    color: var(--gold);
+    font-size: 1.5rem;
+}
+.lt-otp-modal .lt-field { gap: 8px; }
+.lt-otp-modal #otp { text-align: center; letter-spacing: .3em; font-size: 1.25rem; font-weight: 600; }
+.lt-otp-modal .lt-auth__row { margin-top: 22px; justify-content: center; }
 
 @media (max-width: 860px) {
     .lt-review { grid-template-columns: 1fr; }
@@ -1588,10 +1641,13 @@ html { scroll-behavior: smooth; }
 @media (max-width: 560px) {
     .lt-grid-2 { grid-template-columns: 1fr; gap: 22px; }
     .lt-register-dialog__form { grid-template-columns: 1fr; }
+    .lt-register-dialog__name-fields { grid-template-columns: 1fr; gap: 20px; }
     .lt-register-dialog__field--full,
     .lt-register-dialog__actions { grid-column: auto; }
     .lt-register-dialog__actions { align-items: stretch; flex-direction: column; }
     .lt-register-dialog__actions .lt-btn { width: 100%; }
+    .lt-otp-page { padding: 16px; }
+    .lt-otp-modal { padding: 22px 18px; }
 }
 
 /* ==========================================================================

@@ -7,24 +7,17 @@
     <title>Verify registration · LogiTrack</title>
     @vite(['resources/css/logitrack.css', 'resources/js/logitrack.js'])
 </head>
-<body class="lt-body">
-    <div class="lt-auth">
-        <aside class="lt-auth__aside">
-            <a href="{{ url('/') }}" class="lt-brand">
+<body class="lt-body lt-otp-page">
+    <main class="lt-otp-page__main">
+        <div class="lt-otp-modal lt-animate" role="dialog" aria-modal="true" aria-labelledby="otp-dialog-title">
+            <a href="{{ url('/') }}" class="lt-brand lt-otp-modal__brand">
                 <span class="lt-brand__mark">L</span>
                 LogiTrack
             </a>
-            <div class="lt-auth__pitch">
-                <h2>One more step, <span>then you are ready.</span></h2>
-                <p>Verify your email address to finish creating your student account.</p>
-            </div>
-            <div class="lt-auth__legal">&copy; {{ date('Y') }} LogiTrack</div>
-        </aside>
-
-        <main class="lt-auth__main">
-            <div class="lt-auth__card lt-animate">
+            <div class="lt-auth__card">
                 <div class="lt-auth__head">
-                    <h1>Enter your verification code</h1>
+                    <div class="lt-otp-modal__icon" aria-hidden="true">✉</div>
+                    <h1 id="otp-dialog-title">Verify your email</h1>
                     <p>We sent a six-digit code to <strong>{{ $email }}</strong>. It expires in 10 minutes.</p>
                 </div>
 
@@ -60,7 +53,6 @@
                     <a class="lt-link" href="{{ route('register') }}">Start over</a>
                 </div>
             </div>
-        </main>
-    </div>
+    </main>
 </body>
 </html>
