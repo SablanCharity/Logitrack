@@ -635,7 +635,6 @@
             if (Object.values(fields).some(field => !field)) return;
 
             const checkUrl = form.dataset.checkUrl;
-            let studentTimer, emailTimer;
             let studentRequest = 0, emailRequest = 0;
             let studentState = 'unchecked', emailState = 'unchecked';
             let submitting = false;
@@ -697,12 +696,12 @@
                 } catch (error) {
                     console.error(error);
                     if (requestId === studentRequest) {
-                        studentState = 'error';
-                        const message = 'Unable to check this student number. Please try again.';
-                        fields.student.setCustomValidity(message);
-                        showStatus('student-number-status', message);
+                        studentState = 'unchecked';
+                        fields.student.setCustomValidity('');
+                        showStatus('student-number-status', '');
                     }
-                    return false;
+                    // The registration endpoint performs the authoritative check.
+                    return true;
                 }
             }
 
@@ -711,10 +710,6 @@
                 studentState = 'unchecked';
                 fields.student.setCustomValidity('');
                 checkStudentFormat();
-                clearTimeout(studentTimer);
-                if (/^[0-9]{9}$/.test(this.value)) {
-                    studentTimer = setTimeout(checkStudentAvailability, 450);
-                }
             });
 
             // Name checks: permit letters, spaces, apostrophes and hyphens.
@@ -814,12 +809,12 @@
                 } catch (error) {
                     console.error(error);
                     if (requestId === emailRequest) {
-                        emailState = 'error';
-                        const message = 'Unable to check this email address. Please try again.';
-                        fields.email.setCustomValidity(message);
-                        showStatus('email-status', message);
+                        emailState = 'unchecked';
+                        fields.email.setCustomValidity('');
+                        showStatus('email-status', '');
                     }
-                    return false;
+                    // The registration endpoint performs the authoritative check.
+                    return true;
                 }
             }
 
@@ -828,12 +823,10 @@
                 emailState = 'unchecked';
                 this.setCustomValidity('');
                 checkEmailFormat();
-                clearTimeout(emailTimer);
-                if (checkEmailFormat()) emailTimer = setTimeout(checkEmailAvailability, 500);
             });
             fields.email.addEventListener('blur', function () {
                 this.value = this.value.trim().toLowerCase();
-                if (checkEmailFormat()) checkEmailAvailability();
+                checkEmailFormat();
             });
 
             function checkPassword() {
@@ -882,16 +875,17 @@
                 }
 
                 // Recheck both values immediately before submitting.
+                submitting = true;
                 const remoteValid = await Promise.all([
                     checkStudentAvailability(),
                     checkEmailAvailability()
                 ]);
                 if (!remoteValid.every(Boolean) || !form.checkValidity()) {
+                    submitting = false;
                     form.reportValidity();
                     return;
                 }
 
-                submitting = true;
                 const button = form.querySelector('button[type="submit"]');
                 if (button) {
                     button.disabled = true;

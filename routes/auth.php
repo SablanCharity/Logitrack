@@ -19,14 +19,12 @@ Route::middleware('guest')->group(function () {
 
     // Live registration availability checks; final registration validates again.
     Route::get('registration/check', [RegisteredUserController::class, 'checkAvailability'])
-        ->middleware('throttle:30,1')
         ->name('registration.check');
 
     Route::get('register/verify', [RegisteredUserController::class, 'showOtp'])
         ->name('register.otp');
 
     Route::post('register/verify', [RegisteredUserController::class, 'verifyOtp'])
-        ->middleware('throttle:6,1')
         ->name('register.otp.store');
 
     Route::post('register/resend-otp', [RegisteredUserController::class, 'resendOtp'])
