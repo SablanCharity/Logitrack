@@ -1977,6 +1977,8 @@ html { scroll-behavior: smooth; }
 .lt-note--warn svg { color: #7a5a00; }
 .lt-note--warn h2, .lt-note--warn h3 { color: #5a4300; }
 .lt-note--warn p { color: #5a4300; }
+.lt-note--danger { background: var(--danger-bg); border-color: #efc4c4; border-left-color: var(--danger); }
+.lt-note--danger svg, .lt-note--danger p { color: var(--danger); }
 .lt-note--flat { margin-top: 18px; padding: 14px 16px; align-items: flex-start; }
 .lt-note--flat svg { width: 18px; height: 18px; }
 
@@ -2081,7 +2083,6 @@ html { scroll-behavior: smooth; }
 .lt-rec__body p { font-size: .9rem; line-height: 1.65; color: #2a3366; overflow-wrap: anywhere; }
 .lt-rec__why { padding: 14px 16px; border-radius: var(--radius-sm); background: var(--success-bg); border: 1px solid #b9d6bd; }
 .lt-rec__why .lt-doc__label { color: var(--green); margin-bottom: 4px; }
-.lt-sim-fine { margin-top: 16px; font-size: .82rem; line-height: 1.55; color: var(--text-muted); max-width: 90ch; }
 .lt-sim-remind { margin-top: 32px; }
 
 @media (max-width: 1024px) {
