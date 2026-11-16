@@ -28,6 +28,13 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="lt-alert lt-alert--danger" role="alert">
+                <span class="lt-alert__icon">!</span>
+                <div>{{ session('error') }}</div>
+            </div>
+        @endif
+
         @if($errors->any())
             <div class="lt-alert lt-alert--danger" role="alert">{{ $errors->first() }}</div>
         @endif
