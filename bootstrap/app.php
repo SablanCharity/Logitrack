@@ -1,6 +1,7 @@
 
 <?php
 
+use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\CheckActiveAccount;
 use App\Http\Middleware\CheckAdmin;
 use App\Http\Middleware\CheckAdminOrOjt;
@@ -17,17 +18,23 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'student.approved' => CheckStudentApproval::class,
-            'admin' => CheckAdmin::class,
-            'admin.ocr' => CheckAdminOrOjt::class,
-            'admin.review' => CheckAdminOrOjt::class,
-            'active' => CheckActiveAccount::class,
-            'student.role' => CheckStudentRole::class,
-            'instructor' => CheckInstructorRole::class,
-        ]);
-    })
+   ->withMiddleware(function (Middleware $middleware): void {
+
+    // Prevent browsers from displaying cached pages after logout
+    $middleware->appendToGroup('web', [
+        PreventBackHistory::class,
+    ]);
+
+    $middleware->alias([
+        'student.approved' => CheckStudentApproval::class,
+        'admin' => CheckAdmin::class,
+        'admin.ocr' => CheckAdminOrOjt::class,
+        'admin.review' => CheckAdminOrOjt::class,
+        'active' => CheckActiveAccount::class,
+        'student.role' => CheckStudentRole::class,
+        'instructor' => CheckInstructorRole::class,
+    ]);
+})
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

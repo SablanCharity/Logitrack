@@ -129,29 +129,41 @@ Route::middleware(['auth', 'active'])->group(function () {
         |--------------------------------------------------------------------------
         */
 
-        Route::get('/admin/announcements',
-            [AnnouncementController::class, 'index']
-        )->name('admin.announcements.index');
+        
+/*
+|--------------------------------------------------------------------------
+| Announcement Management
+|--------------------------------------------------------------------------
+*/
 
-        Route::get('/admin/announcements/create',
-            [AnnouncementController::class, 'create']
-        )->name('admin.announcements.create');
+Route::middleware('admin')->group(function () {
 
-        Route::post('/admin/announcements',
-            [AnnouncementController::class, 'store']
-        )->name('admin.announcements.store');
+    Route::get('/admin/announcements',
+        [AnnouncementController::class, 'index']
+    )->name('admin.announcements.index');
 
-        Route::get('/admin/announcements/{announcement}/edit',
-            [AnnouncementController::class, 'edit']
-        )->name('admin.announcements.edit');
+    Route::get('/admin/announcements/create',
+        [AnnouncementController::class, 'create']
+    )->name('admin.announcements.create');
 
-        Route::put('/admin/announcements/{announcement}',
-            [AnnouncementController::class, 'update']
-        )->name('admin.announcements.update');
+    Route::post('/admin/announcements',
+        [AnnouncementController::class, 'store']
+    )->name('admin.announcements.store');
 
-        Route::delete('/admin/announcements/{announcement}',
-            [AnnouncementController::class, 'destroy']
-        )->name('admin.announcements.destroy');
+    Route::get('/admin/announcements/{announcement}/edit',
+        [AnnouncementController::class, 'edit']
+    )->name('admin.announcements.edit');
+
+    Route::put('/admin/announcements/{announcement}',
+        [AnnouncementController::class, 'update']
+    )->name('admin.announcements.update');
+
+    Route::delete('/admin/announcements/{announcement}',
+        [AnnouncementController::class, 'destroy']
+    )->name('admin.announcements.destroy');
+
+});
+
 
 
     Route::middleware('instructor')->group(function () {

@@ -7,6 +7,8 @@ use App\Models\CapstoneProject;
 use App\Services\Ocr\MetadataExtractionService;
 use App\Services\Ocr\TesseractService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ArchivedCapstoneController extends Controller
 {
@@ -32,8 +34,13 @@ class ArchivedCapstoneController extends Controller
         ]);
 
         // Store the uploaded image in storage/app/public/ocr_uploads
-        $imagePath = $request->file('image')->store('ocr_uploads', 'public');
-        $fullPath = storage_path('app/public/'.$imagePath);
+        
+// Store the uploaded file in private storage
+$imagePath = $request->file('image')->store('ocr_uploads', 'local');
+
+// Get the private file's absolute path for OCR processing
+$fullPath = Storage::disk('local')->path($imagePath);
+
 
         try {
             // Run Tesseract OCR
@@ -64,7 +71,7 @@ class ArchivedCapstoneController extends Controller
             return back()->withErrors(['image' => 'OCR processing failed: '.$e->getMessage()]);
         }
     }
-
+    
     // Display the human review and verification form
     public function review(ArchivedCapstone $archivedCapstone)
     {

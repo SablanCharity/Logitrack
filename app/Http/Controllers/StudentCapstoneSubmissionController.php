@@ -333,15 +333,20 @@ class StudentCapstoneSubmissionController extends Controller
             ->with('success', 'Your changes were resubmitted for review.');
     }
 
-    public function instructorIndex(): View
-    {
-        $this->ensureReviewer();
+    
+public function instructorIndex(): View
+{
+    $this->ensureReviewer();
 
-        return view('review.student-submissions', [
-            'submissions' => StudentCapstoneSubmission::with('submitter')->latest()->get(),
-            'audience' => 'Instructor',
-        ]);
-    }
+    return view('review.student-submissions', [
+        'submissions' => StudentCapstoneSubmission::with('submitter')
+            ->where('adviser', auth()->id())
+            ->latest()
+            ->get(),
+        'audience' => 'Instructor',
+    ]);
+}
+
 
     public function adminIndex(): View
     {
@@ -353,25 +358,36 @@ class StudentCapstoneSubmissionController extends Controller
         ]);
     }
 
-    public function show(StudentCapstoneSubmission $submission): View
-    {
-        $this->ensureReviewer();
-        $submission->loadMissing(['submitter', 'adviserUser', 'authors.masterlistRecord']);
+    
+public function show(StudentCapstoneSubmission $submission): View
+{
+    $this->ensureSubmissionAccess($submission);
 
-        return view('review.student-submission-show', compact('submission'));
-    }
+    $submission->loadMissing([
+        'submitter',
+        'adviserUser',
+        'authors.masterlistRecord'
+    ]);
 
-    public function preview(StudentCapstoneSubmission $submission, string $file)
-    {
-        abort_unless(in_array(auth()->user()->role, ['admin', 'instructor'], true), 403);
-        $path = $submission->filePath($file);
+    return view('review.student-submission-show', compact('submission'));
+}
 
-        abort_unless(Storage::disk('local')->exists($path), 404);
+    
+public function preview(StudentCapstoneSubmission $submission, string $file)
+{
+    $this->ensureSubmissionAccess($submission);
 
-        return response()->file(Storage::disk('local')->path($path), [
-            'Content-Disposition' => 'inline; filename="'.basename($path).'"',
-        ]);
-    }
+    $path = $submission->filePath($file);
+
+    abort_unless(Storage::disk('local')->exists($path), 404);
+
+    return response()->file(Storage::disk('local')->path($path), [
+        'Content-Disposition' => 'inline; filename="'.basename($path).'"',
+        'X-Content-Type-Options' => 'nosniff',
+        'Cache-Control' => 'private, no-store, no-cache, must-revalidate',
+    ]);
+}
+
 
     public function returnSubmission(Request $request, StudentCapstoneSubmission $submission): RedirectResponse
     {
@@ -418,6 +434,28 @@ class StudentCapstoneSubmissionController extends Controller
     {
         abort_unless(in_array(auth()->user()->role, ['admin', 'instructor'], true), 403);
     }
+
+private function ensureSubmissionAccess(
+    StudentCapstoneSubmission $submission
+): void {
+    $user = auth()->user();
+
+    abort_unless(
+        $user && in_array($user->role, ['admin', 'instructor'], true),
+        403
+    );
+
+    // Administrators can access all submissions.
+    if ($user->role === 'admin') {
+        return;
+    }
+
+    // Instructors can only access submissions assigned to them.
+    abort_unless(
+        (int) $submission->adviser === (int) $user->id,
+        403
+    );
+}
 
     private function emailStatusUpdate(StudentCapstoneSubmission $submission): void
     {
