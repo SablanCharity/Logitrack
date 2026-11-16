@@ -71,7 +71,7 @@
                     <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" data-submit-guard onsubmit="return confirm('Delete this announcement?')">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="lt-btn lt-btn--danger lt-btn--sm">Delete</button>
+                        <button type="submit" class="lt-btn lt-btn--danger-strong lt-btn--sm">Delete</button>
                     </form>
                 </div>
             </article>

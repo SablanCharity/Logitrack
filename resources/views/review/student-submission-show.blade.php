@@ -96,7 +96,7 @@
                         <label for="return_reason" class="lt-label">Return reason</label>
                         <textarea id="return_reason" name="return_reason" class="lt-textarea" rows="5" maxlength="1000" required>{{ old('return_reason') }}</textarea>
                     </div>
-                    <button type="submit" class="lt-btn lt-btn--danger">Return capstone</button>
+                    <button type="submit" class="lt-btn {{ auth()->user()->role === 'admin' ? 'lt-btn--danger-strong' : 'lt-btn--danger' }}">Return capstone</button>
                 </form>
             </section>
         @endif

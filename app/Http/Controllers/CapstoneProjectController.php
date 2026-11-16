@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CapstoneProjectReturned;
 use App\Models\ArchivedCapstone;
 use App\Models\CapstoneAudit;
 use App\Models\CapstoneProject;
@@ -10,7 +11,10 @@ use App\Models\GroupRoom;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
+use Throwable;
 
 class CapstoneProjectController extends Controller
 {
@@ -362,7 +366,7 @@ class CapstoneProjectController extends Controller
         Request $request,
         int $capstoneId
     ): RedirectResponse {
-        $capstone = CapstoneProject::with('groupRoom.classroom')
+        $capstone = CapstoneProject::with(['groupRoom.classroom', 'submitter'])
             ->findOrFail($capstoneId);
 
         if ($capstone->status !== 'instructor_verified') {
@@ -392,9 +396,29 @@ class CapstoneProjectController extends Controller
                 .$validated['return_reason']
         );
 
-        return redirect()
-            ->route('admin.capstones')
-            ->with('success', 'Capstone returned for correction.');
+        $redirect = redirect()->route('admin.capstones');
+
+        if (! $capstone->submitter) {
+            return $redirect
+                ->with('success', 'Capstone returned for correction.')
+                ->with('error', 'No submitting student account was linked to this capstone, so no email notification could be sent.');
+        }
+
+        try {
+            Mail::to($capstone->submitter->email)->send(new CapstoneProjectReturned($capstone));
+        } catch (Throwable $exception) {
+            Log::warning('Capstone return email could not be sent.', [
+                'capstone_id' => $capstone->id,
+                'recipient_id' => $capstone->submitter->id,
+                'exception' => $exception::class,
+            ]);
+
+            return $redirect
+                ->with('success', 'Capstone returned for correction.')
+                ->with('error', 'The capstone was returned, but its email notification could not be sent.');
+        }
+
+        return $redirect->with('success', 'Capstone returned for correction. The student was notified by email.');
     }
 
     public function edit(int $groupRoomId): View

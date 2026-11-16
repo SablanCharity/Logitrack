@@ -922,7 +922,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <input type="hidden" name="type" value="{{ $capstone->source_type }}">
-                                        <button type="submit" class="lt-btn lt-btn--danger-ghost lt-btn--sm">Delete study</button>
+                                        <button type="submit" class="lt-btn lt-btn--danger-strong lt-btn--sm">Delete study</button>
                                     </form>
                                 @endif
 

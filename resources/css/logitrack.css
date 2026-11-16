@@ -1323,6 +1323,17 @@ html { scroll-behavior: smooth; }
 .lt-btn--danger-ghost:hover { background: var(--danger-bg); border-color: var(--danger); }
 .lt-btn--danger { background: var(--danger); color: #fff !important; }
 .lt-btn--danger:hover { background: #7d1515; }
+.lt-btn--danger-strong {
+    border-color: #b4232d;
+    background: #c62832;
+    color: #fff !important;
+    box-shadow: 0 2px 7px rgba(148, 24, 34, .28);
+}
+.lt-btn--danger-strong:hover {
+    border-color: #8f1922;
+    background: #a91f29;
+    box-shadow: 0 4px 10px rgba(148, 24, 34, .34);
+}
 
 /* Review page */
 .lt-review { display: grid; grid-template-columns: 1.5fr 1fr; gap: 22px; align-items: start; }
