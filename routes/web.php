@@ -75,6 +75,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/admin/group-submissions', [GroupCapstoneSubmissionController::class, 'index'])
         ->middleware('admin')
         ->name('admin.group-submissions.index');
+    Route::patch('/admin/group-submissions/submission-window', [CapstoneProjectController::class, 'updateSubmissionWindow'])
+        ->middleware('admin')
+        ->name('admin.group-submissions.submission-window');
 
     /* Student Capstone Routes */
     Route::get('/student/group-rooms/{groupRoomId}/capstone/create', [CapstoneProjectController::class, 'create'])->name('student.capstone.create');

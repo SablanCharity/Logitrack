@@ -40,7 +40,7 @@
                     </a>
 
                     <a href="{{ route('admin.student-masterlist.index') }}" class="lt-nav__link lt-admin-nav-link {{ request()->routeIs('admin.student-masterlist.*') ? 'is-active' : '' }}" data-tooltip="Student Masterlist" aria-label="Student Masterlist">
-                        <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>
+                        <span class="material-symbols-outlined" aria-hidden="true">list_alt</span>
                         <span class="lt-admin-nav-label">Student Masterlist</span>
                     </a>
 

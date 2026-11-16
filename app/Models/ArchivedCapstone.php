@@ -19,6 +19,7 @@ class ArchivedCapstone extends Model
         'institution',
         'publication_date',
         'metadata_image_path',
+        'metadata_image_paths',
         'ocr_text',
         'status',
         'reviewed_by',
@@ -34,6 +35,7 @@ class ArchivedCapstone extends Model
     {
         return [
             'authors' => 'array',
+            'metadata_image_paths' => 'array',
             'reviewed_at' => 'datetime',
             'approved_at' => 'datetime',
             'is_best' => 'boolean',

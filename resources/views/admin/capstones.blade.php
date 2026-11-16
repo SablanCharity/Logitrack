@@ -20,13 +20,8 @@
             </span>
             <h1>Capstone Approval</h1>
             <p class="lt-page-head__sub">Capstones verified by instructors, waiting for final approval into the repository.</p>
-            <form method="POST" action="{{ route('admin.capstones.submission-window') }}" class="lt-mt" data-confirm="{{ $submissionWindow->is_open ? 'Close capstone submissions for students?' : 'Open capstone submissions for students?' }}" data-confirm-title="{{ $submissionWindow->is_open ? 'Close submissions' : 'Open submissions' }}" data-confirm-button="{{ $submissionWindow->is_open ? 'Close submissions' : 'Open submissions' }}" @if($submissionWindow->is_open) data-confirm-danger @endif>
-                @csrf
-                @method('PATCH')
-                <button type="submit" class="lt-btn {{ $submissionWindow->is_open ? 'lt-btn--danger-ghost' : 'lt-btn--green' }}">
-                    {{ $submissionWindow->is_open ? 'Close Capstone Submissions' : 'Open Capstone Submissions' }}
-                </button>
-            </form>
+            <p class="lt-mt">Student submissions are {{ $submissionWindow->isCurrentlyOpen() ? 'open' : 'closed' }}@if($submissionWindow->deadline_on) until {{ $submissionWindow->deadline_on->format('M d, Y') }}@endif.</p>
+            <a class="lt-btn lt-btn--ghost" href="{{ route('admin.group-submissions.index') }}">Manage submission period</a>
         </div>
 
         @if(session('success'))

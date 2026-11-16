@@ -19,6 +19,15 @@
         @if(session('success'))
             <div class="lt-alert lt-alert--success" role="status">{{ session('success') }}</div>
         @endif
+        @if(session('error'))
+            <div class="lt-alert lt-alert--error" role="alert">{{ session('error') }}</div>
+        @endif
+        <div class="lt-alert {{ $submissionWindow->isCurrentlyOpen() ? 'lt-alert--success' : 'lt-alert--error' }}" role="status">
+            Capstone submissions are {{ $submissionWindow->isCurrentlyOpen() ? 'open' : 'closed' }}.
+            @if($submissionWindow->deadline_on)
+                Due date: {{ $submissionWindow->deadline_on->format('M d, Y') }}.
+            @endif
+        </div>
         @if($errors->any())
             <div class="lt-alert lt-alert--error" role="alert">
                 <ul>
@@ -144,7 +153,7 @@
             </section>
             @endif
 
-            <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="{{ $submission ? 'Resubmitting...' : 'Uploading...' }}">{{ $submission ? 'Save changes and resubmit' : 'Submit complete requirements' }}</button>
+            <button type="submit" class="lt-btn lt-btn--primary" data-loading-text="{{ $submission ? 'Resubmitting...' : 'Uploading...' }}" @disabled(!$submissionWindow->isCurrentlyOpen())>{{ $submission ? 'Save changes and resubmit' : 'Submit complete requirements' }}</button>
         </form>
         @elseif($submission)
             @if($submission->status === 'returned')

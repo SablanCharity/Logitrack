@@ -351,30 +351,38 @@
                 <div class="lt-section__inner">
                     <div class="lt-section__head" data-reveal>
                         <span class="lt-eyebrow">How it works</span>
-                        <h2>From classroom to repository</h2>
-                        <p>Nothing enters the repository automatically. Every submission is reviewed first.</p>
+                        <h2>From registration to repository</h2>
+                        <p>LogiTrack provides a centralized process for submitting, reviewing, and archiving capstone studies. Each submission undergoes administrative review before becoming part of the repository.</p>
                     </div>
 
                     <div class="lt-flow">
                         <div class="lt-flow__step" data-reveal>
-                            <h3>Join your class</h3>
-                            <p>Register with your adviser's class code and wait for their approval.</p>
+                            <h3>Register your account</h3>
+                            <p>Students create an account using their student number, name, email, and password. The student number must match an existing record in the official student masterlist.</p>
                         </div>
                         <div class="lt-flow__step" data-reveal data-reveal-delay="80">
-                            <h3>Create your group</h3>
-                            <p>Work solo or add up to 2 more members to your group room.</p>
+                            <h3>Access your dashboard</h3>
+                            <p>Once registered, students and instructors can access their dashboard to explore repository statistics, discover the best capstone study, and view the most viewed study.</p>
                         </div>
                         <div class="lt-flow__step" data-reveal data-reveal-delay="160">
-                            <h3>Submit your capstone</h3>
-                            <p>Enter the title, abstract and publication date for review.</p>
+                            <h3>Explore the repository</h3>
+                            <p>Browse archived and newly approved capstone studies in one centralized repository. Search existing research and access relevant study information.</p>
                         </div>
                         <div class="lt-flow__step" data-reveal data-reveal-delay="240">
-                            <h3>Adviser verifies</h3>
-                            <p>Your adviser verifies the details or returns them with a reason.</p>
+                            <h3>Check study similarity</h3>
+                            <p>Use the Similarity Checker to compare a proposed capstone study with existing studies and identify related research that may help guide your topic development.</p>
                         </div>
                         <div class="lt-flow__step" data-reveal data-reveal-delay="320">
-                            <h3>Admin approves</h3>
-                            <p>Once approved, your study appears in the repository.</p>
+                            <h3>Submit your capstone</h3>
+                            <p>Students submit their capstone details, including the title, abstract, adviser, submission date, and up to three authors. They must also upload the required files: the full study PDF, system manual PDF, system files ZIP, and mentee form.</p>
+                        </div>
+                        <div class="lt-flow__step" data-reveal data-reveal-delay="400">
+                            <h3>Administrative review</h3>
+                            <p>The Admin monitors submissions, reviews uploaded capstone studies, and either returns submissions for necessary corrections or approves them for repository inclusion.</p>
+                        </div>
+                        <div class="lt-flow__step" data-reveal data-reveal-delay="480">
+                            <h3>Discover approved studies</h3>
+                            <p>Approved capstone studies become part of the centralized repository, making them available for future students and instructors to explore and reference.</p>
                         </div>
                     </div>
                 </div>
@@ -385,25 +393,21 @@
                 <div class="lt-section__inner">
                     <div class="lt-section__head" data-reveal>
                         <span class="lt-eyebrow">Who it's for</span>
-                        <h2>One system, four roles</h2>
+                        <h2>One system, three roles</h2>
                     </div>
 
                     <div class="lt-roles">
                         <div class="lt-role" data-reveal>
                             <h3>Students</h3>
-                            <p>Join a classroom, form a group, submit a capstone, and check proposals against existing studies.</p>
+                            <p>Register using a verified student number, explore the capstone repository, check proposed studies using the Similarity Checker, and submit completed capstone projects with the required documents.</p>
                         </div>
                         <div class="lt-role" data-reveal data-reveal-delay="80">
-                            <h3>Instructors / Advisers</h3>
-                            <p>Create classrooms, approve students, and verify or return group submissions.</p>
+                            <h3>Instructors</h3>
+                            <p>Access the centralized repository, explore existing capstone studies, view repository highlights, and use the Similarity Checker to evaluate proposed research topics.</p>
                         </div>
                         <div class="lt-role" data-reveal data-reveal-delay="160">
-                            <h3>OJT</h3>
-                            <p>Help review and correct metadata, without final repository approval authority.</p>
-                        </div>
-                        <div class="lt-role" data-reveal data-reveal-delay="240">
                             <h3>Admin</h3>
-                            <p>Manages accounts, reviews submissions, and gives the final approval for the repository.</p>
+                            <p>Manage student and instructor accounts, upload student masterlists, monitor capstone submissions, archive previous studies through OCR, review and manage repository records, and approve or return new capstone submissions.</p>
                         </div>
                     </div>
                 </div>

@@ -90,6 +90,18 @@
                     <h2 class="lt-card__title">Raw OCR Extraction</h2>
                     <p class="lt-card__desc">Reference text scanned directly from the document file.</p>
 
+                    @php
+                        $imagePaths = $archivedCapstone->metadata_image_paths
+                            ?? array_filter([$archivedCapstone->metadata_image_path]);
+                    @endphp
+                    @if($imagePaths !== [])
+                        <div style="display: grid; gap: 12px; margin-bottom: 20px;">
+                            @foreach($imagePaths as $imagePath)
+                                <img src="{{ asset('storage/'.$imagePath) }}" alt="Uploaded archived capstone page" style="max-width: 100%; border-radius: 6px;">
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div style="background: #f8fafc; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 12px; max-height: 250px; overflow-y: auto; margin-bottom: 20px; white-space: pre-wrap;">
                         {{ $archivedCapstone->ocr_text }}
                     </div>

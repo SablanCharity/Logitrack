@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GroupCapstoneMember;
 use App\Models\GroupCapstoneSubmission;
+use App\Models\CapstoneSubmissionWindow;
 use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
 use App\Models\User;
@@ -18,6 +19,7 @@ class GroupCapstoneSubmissionController extends Controller
     public function create(): View
     {
         return view('student.group-submission-create', [
+            'submissionWindow' => CapstoneSubmissionWindow::current(),
             'masterlistRecords' => StudentMasterlistRecord::query()
                 ->orderBy('program')
                 ->orderBy('name')
@@ -28,6 +30,10 @@ class GroupCapstoneSubmissionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if (! CapstoneSubmissionWindow::current()->isCurrentlyOpen()) {
+            return back()->with('error', 'Capstone submissions are currently closed. Please check the submission dates on the dashboard or contact the administrator.');
+        }
+
         $validated = $request->validate([
             'program' => ['required', 'in:BSCS,BSIT'],
             'title' => ['required', 'string', 'max:255'],
@@ -142,7 +148,12 @@ class GroupCapstoneSubmissionController extends Controller
             $counts['enrolled_cscs'] + $counts['enrolled_it'] - $counts['submitted']
         );
 
-        return view('admin.group-submissions', compact('studentSubmissions', 'counts', 'program'));
+        return view('admin.group-submissions', [
+            'studentSubmissions' => $studentSubmissions,
+            'counts' => $counts,
+            'program' => $program,
+            'submissionWindow' => CapstoneSubmissionWindow::current(),
+        ]);
     }
 
     private function ensureAdmin(): void

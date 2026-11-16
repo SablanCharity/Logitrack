@@ -39,9 +39,15 @@
                 @csrf
 
                 <div class="lt-field">
-                    <label for="image" class="lt-label">Document File (JPEG, PNG, JPG)</label>
-                    <input type="file" id="image" name="image" class="lt-input" accept=".jpeg,.png,.jpg,.pdf" required>
-                    <span class="lt-hint">Maximum file size: 10MB. Ensure the title page or abstract is clearly visible for accurate scanning.</span>
+                    <label for="image-first" class="lt-label">First Image (processed first)</label>
+                    <input type="file" id="image-first" name="images[0]" class="lt-input" accept=".jpeg,.png,.jpg" required>
+                    <span class="lt-hint">Choose the page you want OCR to read first, such as the title page.</span>
+                </div>
+
+                <div class="lt-field">
+                    <label for="image-second" class="lt-label">Second Image (processed below the first)</label>
+                    <input type="file" id="image-second" name="images[1]" class="lt-input" accept=".jpeg,.png,.jpg">
+                    <span class="lt-hint">Optional. Choose the next page, such as the continuation of the abstract. Each image can be up to 10MB.</span>
                 </div>
 
                 <div style="margin-top: 24px;">

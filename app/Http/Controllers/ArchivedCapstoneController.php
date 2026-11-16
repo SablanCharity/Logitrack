@@ -7,6 +7,7 @@ use App\Models\CapstoneProject;
 use App\Services\Ocr\MetadataExtractionService;
 use App\Services\Ocr\TesseractService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ArchivedCapstoneController extends Controller
 {
@@ -28,23 +29,44 @@ class ArchivedCapstoneController extends Controller
         }
 
         $request->validate([
-            'image' => ['required', 'image', 'mimes:jpeg,png,jpg,pdf', 'max:10240'],
+            'images' => ['required', 'array', 'min:1', 'max:2'],
+            'images.0' => ['required', 'image', 'mimes:jpeg,png,jpg', 'max:10240'],
+            'images.1' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:10240'],
         ]);
 
-        // Store the uploaded image in storage/app/public/ocr_uploads
-        $imagePath = $request->file('image')->store('ocr_uploads', 'public');
-        $fullPath = storage_path('app/public/'.$imagePath);
-
         try {
-            // Run Tesseract OCR
-            $rawText = $tesseract->extractText($fullPath);
+            $imagePaths = [];
+            $ocrTexts = [];
+
+            // Laravel preserves the file input order; OCR each image in that order.
+            foreach (array_values($request->file('images')) as $image) {
+                $imagePath = $image->store('ocr_uploads', 'public');
+                $imagePaths[] = $imagePath;
+                $ocrTexts[] = trim($tesseract->extractText(storage_path('app/public/'.$imagePath)));
+            }
+
+            $rawText = trim(implode("\n\n", $ocrTexts));
+            $displayOcrText = implode("\n\n", array_map(
+                static fn (string $text, int $index): string => 'Image '.($index + 1)." OCR:\n".$text,
+                $ocrTexts,
+                array_keys($ocrTexts),
+            ));
 
             // Extract structured metadata
             $metadata = $extractor->extract($rawText);
+            $title = $metadata['title'] ?? '';
+
+            if ($this->repositoryContainsTitle($title)) {
+                Storage::disk('public')->delete($imagePaths);
+
+                return back()->withErrors([
+                    'images' => 'Duplicate study detected. “'.$title.'” matches a study already in the repository and cannot be added again.',
+                ]);
+            }
 
             // Save as a pending old capstone record for human review
             $archivedCapstone = ArchivedCapstone::create([
-                'title' => $metadata['title'] ?? '',
+                'title' => $title,
                 'abstract' => $metadata['abstract'],
                 'authors' => $metadata['authors'],
                 'adviser' => $metadata['adviser'],
@@ -52,8 +74,9 @@ class ArchivedCapstoneController extends Controller
                 'department' => $metadata['department'],
                 'institution' => $metadata['institution'],
                 'publication_date' => $metadata['publication_date'],
-                'metadata_image_path' => $imagePath,
-                'ocr_text' => $rawText,
+                'metadata_image_path' => $imagePaths[0],
+                'metadata_image_paths' => $imagePaths,
+                'ocr_text' => $displayOcrText,
                 'status' => 'pending',
             ]);
 
@@ -61,7 +84,7 @@ class ArchivedCapstoneController extends Controller
                 ->with('success', 'OCR processing complete. Please review and verify the extracted metadata.');
 
         } catch (\Exception $e) {
-            return back()->withErrors(['image' => 'OCR processing failed: '.$e->getMessage()]);
+            return back()->withErrors(['images' => 'OCR processing failed: '.$e->getMessage()]);
         }
     }
 
@@ -122,7 +145,7 @@ class ArchivedCapstoneController extends Controller
         if ($this->hasRepositoryDuplicate($archivedCapstone)) {
             return redirect()
                 ->route('ocr.review', $archivedCapstone)
-                ->with('error', 'This capstone duplicates a study already published in the repository. It cannot be approved.');
+                ->with('error', 'Duplicate study detected. This title matches a study already in the repository, so it cannot be added again.');
         }
 
         $archivedCapstone->update([
@@ -137,6 +160,10 @@ class ArchivedCapstoneController extends Controller
 
     private function hasRepositoryDuplicate(ArchivedCapstone $archivedCapstone): bool
     {
+        if ($this->repositoryContainsTitle($archivedCapstone->title, $archivedCapstone->id)) {
+            return true;
+        }
+
         $archivedMetadata = [
             'title' => $this->normalizeMetadataValue($archivedCapstone->title),
             'abstract' => $this->normalizeMetadataValue($archivedCapstone->abstract),
@@ -171,6 +198,38 @@ class ArchivedCapstoneController extends Controller
                 'program' => $this->normalizeMetadataValue($approvedCapstone->program),
                 'publication_date' => $this->normalizePublicationDate($approvedCapstone->publication_date),
             ]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function repositoryContainsTitle(?string $title, ?int $excludeArchivedId = null): bool
+    {
+        $normalizedTitle = $this->normalizeMetadataValue($title);
+
+        if ($normalizedTitle === '') {
+            return false;
+        }
+
+        $archivedStudies = ArchivedCapstone::query()
+            ->where('status', 'approved')
+            ->when($excludeArchivedId !== null, fn ($query) => $query->where('id', '!=', $excludeArchivedId))
+            ->get(['title']);
+
+        foreach ($archivedStudies as $study) {
+            if ($this->normalizeMetadataValue($study->title) === $normalizedTitle) {
+                return true;
+            }
+        }
+
+        $modernStudies = CapstoneProject::query()
+            ->where('status', 'admin_approved')
+            ->get(['title']);
+
+        foreach ($modernStudies as $study) {
+            if ($this->normalizeMetadataValue($study->title) === $normalizedTitle) {
                 return true;
             }
         }
