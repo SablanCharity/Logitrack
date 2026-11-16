@@ -15,8 +15,7 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store'])
-        ->middleware('throttle:5,1');
+    Route::post('register', [RegisteredUserController::class, 'store']);
 
     // Live registration availability checks; final registration validates again.
     Route::get('registration/check', [RegisteredUserController::class, 'checkAvailability'])
@@ -31,7 +30,6 @@ Route::middleware('guest')->group(function () {
         ->name('register.otp.store');
 
     Route::post('register/resend-otp', [RegisteredUserController::class, 'resendOtp'])
-        ->middleware('throttle:1,1')
         ->name('register.otp.resend');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])

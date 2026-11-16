@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -24,6 +25,12 @@ class RegisteredUserController extends Controller
     private const OTP_LIFETIME_MINUTES = 10;
 
     private const OTP_MAX_ATTEMPTS = 5;
+
+    private const OTP_SENDS_PER_EMAIL = 5;
+
+    private const OTP_SENDS_PER_IP = 50;
+
+    private const OTP_SEND_LIMIT_WINDOW_SECONDS = 600;
 
     /**
      * Display the registration view.
@@ -214,6 +221,10 @@ class RegisteredUserController extends Controller
 
         $masterlistRecord = StudentMasterlistRecord::where('student_number', $validated['student_number'])->firstOrFail();
 
+        if ($message = $this->otpSendLimitMessage($request, $validated['email'])) {
+            throw ValidationException::withMessages(['email' => $message]);
+        }
+
         $pendingRegistration = [
             'student_number' => $validated['student_number'],
             'first_name' => $validated['first_name'],
@@ -223,10 +234,8 @@ class RegisteredUserController extends Controller
             'program' => $masterlistRecord->program,
         ];
 
-        $request->session()->put(
-            self::PENDING_REGISTRATION,
-            $this->sendOtp($pendingRegistration),
-        );
+        $request->session()->put(self::PENDING_REGISTRATION, $this->sendOtp($pendingRegistration));
+        $this->recordOtpSend($request, $validated['email']);
 
         return to_route('register.otp')->with('status', 'otp-sent');
     }
@@ -341,10 +350,12 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        $request->session()->put(
-            self::PENDING_REGISTRATION,
-            $this->sendOtp($pendingRegistration),
-        );
+        if ($message = $this->otpSendLimitMessage($request, $pendingRegistration['email'])) {
+            throw ValidationException::withMessages(['email' => $message]);
+        }
+
+        $request->session()->put(self::PENDING_REGISTRATION, $this->sendOtp($pendingRegistration));
+        $this->recordOtpSend($request, $pendingRegistration['email']);
 
         return to_route('register.otp')->with('status', 'otp-resent');
     }
@@ -365,6 +376,35 @@ class RegisteredUserController extends Controller
             'expires_at' => now()->addMinutes(self::OTP_LIFETIME_MINUTES)->getTimestamp(),
             'attempts' => 0,
         ];
+    }
+
+    private function otpSendLimitMessage(Request $request, string $email): ?string
+    {
+        if (RateLimiter::tooManyAttempts($this->otpEmailRateLimitKey($email), self::OTP_SENDS_PER_EMAIL)) {
+            return 'Too many verification emails have been sent to this address. Please wait 10 minutes before requesting another code.';
+        }
+
+        if (RateLimiter::tooManyAttempts($this->otpIpRateLimitKey($request), self::OTP_SENDS_PER_IP)) {
+            return 'Too many verification emails have been requested from this network. Please wait 10 minutes and try again.';
+        }
+
+        return null;
+    }
+
+    private function recordOtpSend(Request $request, string $email): void
+    {
+        RateLimiter::hit($this->otpEmailRateLimitKey($email), self::OTP_SEND_LIMIT_WINDOW_SECONDS);
+        RateLimiter::hit($this->otpIpRateLimitKey($request), self::OTP_SEND_LIMIT_WINDOW_SECONDS);
+    }
+
+    private function otpEmailRateLimitKey(string $email): string
+    {
+        return 'student-registration-otp:email:'.hash('sha256', mb_strtolower(trim($email)));
+    }
+
+    private function otpIpRateLimitKey(Request $request): string
+    {
+        return 'student-registration-otp:ip:'.hash('sha256', (string) $request->ip());
     }
 
     /**
