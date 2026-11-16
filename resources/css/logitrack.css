@@ -1373,8 +1373,23 @@ html { scroll-behavior: smooth; }
 .lt-dialog::backdrop { background: rgba(11, 24, 73, .55); }
 .lt-dialog__body { padding: 26px 26px 18px; }
 .lt-dialog__title { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
-.lt-dialog__text { color: var(--text-muted); }
+.lt-dialog__text { color: var(--text-muted); overflow-wrap: anywhere; }
 .lt-dialog__foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 26px 22px; flex-wrap: wrap; }
+.lt-dialog:not(.lt-dialog--register):not(.lt-dialog--login) {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 32px);
+    overflow: hidden;
+}
+.lt-dialog:not(.lt-dialog--register):not(.lt-dialog--login) .lt-dialog__body {
+    min-height: 0;
+    overflow-y: auto;
+}
+.lt-dialog:not(.lt-dialog--register):not(.lt-dialog--login) .lt-dialog__foot {
+    flex: none;
+    border-top: 1px solid var(--border);
+    background: #fff;
+}
 .lt-dialog--register {
     width: min(720px, calc(100vw - 32px));
     max-height: calc(100vh - 32px);
@@ -1788,7 +1803,8 @@ html { scroll-behavior: smooth; }
 .lt-repo-card__title { font-size: 1.25rem; line-height: 1.3; font-weight: 700; color: var(--navy); min-width: 0; overflow-wrap: anywhere; }
 .lt-repo-card__title a { color: inherit !important; text-decoration: none; }
 .lt-repo-card__title a:hover { color: var(--green) !important; }
-.lt-repo-card__foot { display: flex; justify-content: flex-end; padding-top: 4px; border-top: 1px solid var(--border); padding-top: 16px; }
+.lt-repo-card__foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--border); }
+.lt-repo-card__foot form { display: flex; margin: 0; }
 
 .lt-dashboard-stats {
     display: grid;
@@ -1905,7 +1921,10 @@ html { scroll-behavior: smooth; }
 
 @media (max-width: 640px) {
     .lt-repo-card__head { flex-direction: column-reverse; }
-    .lt-repo-card__foot .lt-btn { flex: 1 1 100%; }
+    .lt-repo-card__foot > form,
+    .lt-repo-card__foot > a.lt-btn { flex: 1 1 100%; }
+    .lt-repo-card__foot form .lt-btn,
+    .lt-repo-card__foot > a.lt-btn { width: 100%; }
     .lt-repo-search__row .lt-btn { flex: 1 1 100%; }
 }
 
