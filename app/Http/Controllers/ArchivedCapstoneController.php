@@ -34,8 +34,9 @@ class ArchivedCapstoneController extends Controller
             'images.1' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:10240'],
         ]);
 
+        $imagePaths = [];
+
         try {
-            $imagePaths = [];
             $ocrTexts = [];
 
             // Laravel preserves the file input order; OCR each image in that order.
@@ -84,6 +85,8 @@ class ArchivedCapstoneController extends Controller
                 ->with('success', 'OCR processing complete. Please review and verify the extracted metadata.');
 
         } catch (\Exception $e) {
+            Storage::disk('public')->delete($imagePaths);
+
             return back()->withErrors(['images' => 'OCR processing failed: '.$e->getMessage()]);
         }
     }

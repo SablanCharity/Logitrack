@@ -114,6 +114,7 @@ Route::middleware(['auth', 'active'])->group(function () {
             ->name('admin.capstone.set-best');
         Route::get('/admin/repository/{capstoneId}/edit', [RepositoryController::class, 'edit'])->name('admin.repository.edit');
         Route::put('/admin/repository/{capstoneId}', [RepositoryController::class, 'update'])->name('admin.repository.update');
+        Route::delete('/admin/repository/{capstoneId}', [RepositoryController::class, 'destroy'])->name('admin.repository.destroy');
         Route::get('/admin/accounts', [AdminAccountController::class, 'index'])->name('admin.accounts.index');
         Route::get('/admin/students', [AdminAccountController::class, 'students'])->name('admin.students.index');
         Route::get('/admin/student-masterlist', [StudentMasterlistController::class, 'index'])->name('admin.student-masterlist.index');

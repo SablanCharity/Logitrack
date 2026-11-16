@@ -339,7 +339,15 @@ class MetadataExtractionService
         // Remove the final period after the complete name, if present.
         $adviser = preg_replace('/\.$/', '', $adviser) ?? $adviser;
 
-        return trim($adviser) !== '' ? trim($adviser) : null;
+        $adviser = trim($adviser);
+
+        // If OCR missed the blank line before the abstract, the capture can
+        // include the abstract body. Leave it empty for manual review instead.
+        if ($adviser === '' || mb_strlen($adviser) > 255) {
+            return null;
+        }
+
+        return $adviser;
     }
 
     private function extractProgram(string $text): ?string

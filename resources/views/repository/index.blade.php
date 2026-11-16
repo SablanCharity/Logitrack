@@ -890,6 +890,22 @@
                                     </form>
                                 @endif
 
+                                @if(auth()->user()?->role === 'admin' && !$isDashboard)
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.repository.destroy', $capstone->id) }}"
+                                        data-confirm="Permanently delete ‘{{ $capstone->title }}’ from the repository? Its uploaded files will also be deleted. This action cannot be undone."
+                                        data-confirm-title="Delete study"
+                                        data-confirm-button="Delete study"
+                                        data-confirm-danger
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="type" value="{{ $capstone->source_type }}">
+                                        <button type="submit" class="lt-btn lt-btn--danger-ghost lt-btn--sm">Delete study</button>
+                                    </form>
+                                @endif
+
                                 <a href="{{ $showRoute }}" class="lt-btn lt-btn--primary lt-btn--sm">
                                     View Details
                                 </a>
