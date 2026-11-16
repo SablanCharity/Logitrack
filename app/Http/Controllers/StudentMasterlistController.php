@@ -147,4 +147,33 @@ class StudentMasterlistController extends Controller
 
         return $response;
     }
+
+    public function destroy(Request $request, StudentMasterlistRecord $record): RedirectResponse
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        $record->delete();
+
+        return back()->with('success', 'Student masterlist record deleted. Any existing student account remains active.');
+    }
+
+    public function destroySelected(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->role === 'admin', 403);
+
+        $validated = $request->validate([
+            'records' => ['required', 'array', 'min:1'],
+            'records.*' => ['required', 'integer', 'distinct', 'exists:student_masterlist_records,id'],
+        ]);
+
+        $deletedCount = DB::transaction(fn (): int => StudentMasterlistRecord::query()
+            ->whereKey($validated['records'])
+            ->delete());
+
+        return back()->with('success', sprintf(
+            '%d student masterlist record%s deleted. Existing student accounts remain active.',
+            $deletedCount,
+            $deletedCount === 1 ? '' : 's',
+        ));
+    }
 }

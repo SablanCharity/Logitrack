@@ -200,6 +200,235 @@ class CapstoneRecommendationService
             ];
         }
 
+        if (
+            str_contains($text, 'health')
+            || str_contains($text, 'clinic')
+            || str_contains($text, 'patient')
+            || str_contains($text, 'medical')
+            || str_contains($text, 'hospital')
+        ) {
+            return [
+                [
+                    'title' => 'Clinic Appointment and Patient Queue Management System',
+                    'abstract' => 'This project organizes clinic appointments, walk-in patients, and service queues. Staff can monitor waiting times, update visit status, and review daily service summaries. Patient information is limited to authorized users and recorded according to the clinic\'s workflow.',
+                    'reason' => 'Focuses on appointment coordination and queue visibility rather than electronic diagnosis or treatment.',
+                ],
+                [
+                    'title' => 'Medicine Stock and Expiration Monitoring System for Community Clinics',
+                    'abstract' => 'This project records medicine deliveries, dispensing, and remaining quantities for a community clinic. It highlights low-stock items and medicines nearing expiration, and provides movement reports to support replenishment and stock rotation.',
+                    'reason' => 'Targets medicine availability and expiration control as a focused clinic operations problem.',
+                ],
+                [
+                    'title' => 'Community Health Follow-Up and Reminder Platform',
+                    'abstract' => 'This project helps authorized health workers schedule and document follow-up visits for community health programs. It tracks pending follow-ups, records contact attempts, and summarizes completion rates without making automated clinical decisions.',
+                    'reason' => 'Emphasizes follow-up coordination and program monitoring while keeping clinical decisions with health professionals.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'farm')
+            || str_contains($text, 'agriculture')
+            || str_contains($text, 'crop')
+            || str_contains($text, 'livestock')
+            || str_contains($text, 'irrigation')
+        ) {
+            return [
+                [
+                    'title' => 'Crop Planting Calendar and Farm Activity Monitoring System',
+                    'abstract' => 'This project helps growers plan planting activities by recording crop cycles, field tasks, and target dates. It provides reminders and seasonal activity summaries so farm operators can monitor planned and completed work.',
+                    'reason' => 'Focuses on farm activity planning and record keeping rather than general farm administration.',
+                ],
+                [
+                    'title' => 'Farm Produce Traceability and Harvest Record Platform',
+                    'abstract' => 'This project records harvest batches, farm locations, handling dates, and distribution details. Users can trace produce movement and generate batch reports to support quality checks and more organized distribution.',
+                    'reason' => 'Adds batch traceability from harvest through distribution as a distinct project direction.',
+                ],
+                [
+                    'title' => 'Irrigation Schedule and Water Usage Logging System',
+                    'abstract' => 'This project allows farm personnel to schedule irrigation activities and log water usage by plot and crop cycle. Reports compare planned schedules with recorded usage to help identify missed activities and review consumption patterns.',
+                    'reason' => 'Narrows the scope to irrigation scheduling and water-use records.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'library')
+            || str_contains($text, 'book borrowing')
+            || str_contains($text, 'lending')
+        ) {
+            return [
+                [
+                    'title' => 'Library Seat Reservation and Occupancy Monitoring System',
+                    'abstract' => 'This project allows library users to reserve study spaces and helps staff monitor seat availability. It records reservation periods, check-ins, and no-shows, then provides occupancy summaries to support space planning.',
+                    'reason' => 'Addresses study-space usage and reservations rather than catalog management.',
+                ],
+                [
+                    'title' => 'Library Collection Acquisition and Processing Tracker',
+                    'abstract' => 'This project tracks requested, acquired, cataloged, and shelved library materials. Staff can monitor processing stages, record supplier details, and review turnaround summaries for new collection items.',
+                    'reason' => 'Focuses on the workflow for preparing new materials for circulation.',
+                ],
+                [
+                    'title' => 'Library Borrowing Pattern and Collection Usage Dashboard',
+                    'abstract' => 'This project summarizes borrowing activity by material type, period, and collection category. Library staff can use filtered reports to identify heavily used and underused resources when planning collection improvements.',
+                    'reason' => 'Shifts the focus to collection-use analysis and evidence-based planning.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'security')
+            || str_contains($text, 'cybersecurity')
+            || str_contains($text, 'incident response')
+            || str_contains($text, 'access control')
+        ) {
+            return [
+                [
+                    'title' => 'Security Incident Reporting and Response Tracking Portal',
+                    'abstract' => 'This project provides an internal portal for reporting security incidents, assigning response owners, and recording resolution steps. Authorized personnel can track incident status and review trend summaries while maintaining a clear activity history.',
+                    'reason' => 'Emphasizes incident handling and accountability rather than passive monitoring.',
+                ],
+                [
+                    'title' => 'Role-Based Access Review and Account Audit System',
+                    'abstract' => 'This project helps administrators review user accounts, assigned roles, and access change history. It flags accounts due for review and produces audit reports to support regular access cleanup.',
+                    'reason' => 'Focuses on access governance and account review as a manageable security scope.',
+                ],
+                [
+                    'title' => 'Phishing Awareness Training and Simulation Tracker',
+                    'abstract' => 'This project organizes security awareness lessons, tracks participation, and records results from approved phishing simulations. Administrators can review aggregate outcomes and schedule follow-up learning activities.',
+                    'reason' => 'Targets user awareness and training evaluation instead of network intrusion detection.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'e-commerce')
+            || str_contains($text, 'ecommerce')
+            || str_contains($text, 'online shop')
+            || str_contains($text, 'online store')
+            || str_contains($text, 'order fulfillment')
+        ) {
+            return [
+                [
+                    'title' => 'Online Order Fulfillment and Delivery Status Portal',
+                    'abstract' => 'This project tracks online orders from confirmation through packing and delivery handoff. Staff can update fulfillment stages, customers can review order progress, and managers can view delay and completion summaries.',
+                    'reason' => 'Concentrates on order fulfillment visibility after purchase.',
+                ],
+                [
+                    'title' => 'Small Business Product Catalog and Promotion Scheduling System',
+                    'abstract' => 'This project lets a small business maintain product listings, schedule promotions, and track changes to prices and availability. Reports summarize active promotions and catalog updates for staff review.',
+                    'reason' => 'Focuses on catalog operations and promotion planning rather than payment processing.',
+                ],
+                [
+                    'title' => 'Customer Return and Exchange Request Management Portal',
+                    'abstract' => 'This project organizes return and exchange requests, supporting documents, review decisions, and resolution status. Staff can identify overdue requests and summarize common reasons for returns.',
+                    'reason' => 'Addresses post-purchase support as a distinct e-commerce workflow.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'transport')
+            || str_contains($text, 'commute')
+            || str_contains($text, 'vehicle')
+            || str_contains($text, 'fleet')
+            || str_contains($text, 'parking')
+        ) {
+            return [
+                [
+                    'title' => 'Fleet Maintenance Scheduling and Service History System',
+                    'abstract' => 'This project stores vehicle profiles, maintenance schedules, repair records, and service costs. It alerts authorized staff about upcoming maintenance and provides fleet availability and expense summaries.',
+                    'reason' => 'Focuses on vehicle readiness and maintenance history rather than route optimization.',
+                ],
+                [
+                    'title' => 'Campus Shuttle Schedule and Passenger Feedback Platform',
+                    'abstract' => 'This project publishes shuttle schedules and service notices, and collects passenger feedback about routes and trips. Coordinators can review reported issues and summarize service demand by route and time.',
+                    'reason' => 'Targets shuttle information and service feedback for a defined campus setting.',
+                ],
+                [
+                    'title' => 'Parking Slot Reservation and Violation Recording System',
+                    'abstract' => 'This project manages reservable parking spaces, records vehicle entry and exit, and documents parking violations for authorized staff. Occupancy and usage reports help administrators review parking demand.',
+                    'reason' => 'Narrows the transportation problem to parking allocation and usage records.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'waste')
+            || str_contains($text, 'recycling')
+            || str_contains($text, 'environment')
+            || str_contains($text, 'pollution')
+        ) {
+            return [
+                [
+                    'title' => 'Community Waste Collection Schedule and Pickup Reporting System',
+                    'abstract' => 'This project publishes waste collection schedules and lets residents report missed pickups or overflowing collection points. Coordinators can assign follow-ups and review service completion by area.',
+                    'reason' => 'Focuses on collection coordination and issue follow-up rather than environmental sensing.',
+                ],
+                [
+                    'title' => 'Recycling Drop-Off Locator and Materials Tracking Platform',
+                    'abstract' => 'This project maintains recycling drop-off locations, accepted material types, and reported collection volumes. Users can find nearby facilities while coordinators review participation and collection summaries.',
+                    'reason' => 'Adds location discovery and recycling participation records as a practical community service.',
+                ],
+                [
+                    'title' => 'Campus Energy and Water Consumption Monitoring Dashboard',
+                    'abstract' => 'This project records periodic utility readings by building and presents consumption trends for authorized facilities staff. It highlights unusual changes for manual review and supports comparisons across reporting periods.',
+                    'reason' => 'Provides a measurable sustainability focus through utility tracking and trend review.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'finance')
+            || str_contains($text, 'budget')
+            || str_contains($text, 'expense')
+            || str_contains($text, 'accounting')
+            || str_contains($text, 'payroll')
+        ) {
+            return [
+                [
+                    'title' => 'Department Budget Request and Allocation Monitoring System',
+                    'abstract' => 'This project records budget requests, review decisions, allocations, and spending updates by department. It provides approval history and budget-versus-actual summaries for authorized finance staff.',
+                    'reason' => 'Focuses on internal budget planning and traceable approvals rather than general accounting.',
+                ],
+                [
+                    'title' => 'Small Business Expense Submission and Reimbursement Tracker',
+                    'abstract' => 'This project lets employees submit expense claims with supporting documents and track review and reimbursement status. Finance staff can categorize claims and generate summaries by period and expense type.',
+                    'reason' => 'Targets a specific finance workflow with submission, review, and status tracking.',
+                ],
+                [
+                    'title' => 'Payroll Attendance Reconciliation and Exception Review System',
+                    'abstract' => 'This project compares approved attendance records with payroll periods and lists discrepancies for authorized staff review. It keeps adjustments and approvals traceable and produces reconciliation summaries.',
+                    'reason' => 'Emphasizes reconciliation and exception handling rather than calculating payroll automatically.',
+                ],
+            ];
+        }
+
+        if (
+            str_contains($text, 'disaster')
+            || str_contains($text, 'emergency')
+            || str_contains($text, 'evacuation')
+            || str_contains($text, 'relief')
+        ) {
+            return [
+                [
+                    'title' => 'Community Emergency Resource and Evacuation Information Portal',
+                    'abstract' => 'This project centralizes verified evacuation sites, emergency contacts, and preparedness notices for a defined community. Administrators can update information and residents can access current guidance and location details.',
+                    'reason' => 'Focuses on access to preparedness information rather than predicting or managing emergencies autonomously.',
+                ],
+                [
+                    'title' => 'Relief Goods Inventory and Distribution Tracking System',
+                    'abstract' => 'This project records donated supplies, stock levels, distribution schedules, and recipient acknowledgments during relief operations. Coordinators can monitor remaining goods and review distribution records by location.',
+                    'reason' => 'Targets transparent relief inventory and distribution coordination.',
+                ],
+                [
+                    'title' => 'Incident Report and Volunteer Task Coordination Platform',
+                    'abstract' => 'This project logs community incident reports and coordinates volunteer tasks with assigned locations and status updates. Coordinators can prioritize reports and view unresolved work during response activities.',
+                    'reason' => 'Emphasizes coordination and status tracking for responders and volunteers.',
+                ],
+            ];
+        }
+
         return [
             [
                 'title' =>

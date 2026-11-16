@@ -119,6 +119,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/admin/students', [AdminAccountController::class, 'students'])->name('admin.students.index');
         Route::get('/admin/student-masterlist', [StudentMasterlistController::class, 'index'])->name('admin.student-masterlist.index');
         Route::post('/admin/student-masterlist', [StudentMasterlistController::class, 'upload'])->name('admin.student-masterlist.upload');
+        Route::delete('/admin/student-masterlist', [StudentMasterlistController::class, 'destroySelected'])->name('admin.student-masterlist.destroy-selected');
+        Route::delete('/admin/student-masterlist/{record}', [StudentMasterlistController::class, 'destroy'])->name('admin.student-masterlist.destroy');
         Route::post('/admin/accounts/import', [AdminAccountController::class, 'import'])->name('admin.accounts.import');
         Route::get('/admin/accounts/{user}/edit', [AdminAccountController::class, 'edit'])->name('admin.accounts.edit');
         Route::put('/admin/accounts/{user}', [AdminAccountController::class, 'update'])->name('admin.accounts.update');
