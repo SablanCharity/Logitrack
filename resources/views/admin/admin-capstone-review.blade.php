@@ -243,7 +243,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="lt-btn lt-btn--danger-ghost" data-loading-text="Returning...">
+                        <button type="submit" class="lt-btn lt-btn--danger-strong" data-loading-text="Returning...">
                             Return for Correction
                         </button>
 

@@ -219,7 +219,7 @@
                     '<p class="lt-dialog__text"></p></div>' +
                     '<div class="lt-dialog__foot">' +
                     '<button type="button" class="lt-btn lt-btn--ghost lt-btn--sm" data-act="cancel">Cancel</button>' +
-                    '<button type="button" class="lt-btn lt-btn--sm ' + (danger ? 'lt-btn--danger' : 'lt-btn--primary') + '" data-act="ok"></button>' +
+                    '<button type="button" class="lt-btn lt-btn--sm ' + (danger ? 'lt-btn--danger-strong' : 'lt-btn--primary') + '" data-act="ok"></button>' +
                     '</div>';
 
                 // textContent keeps any text safe from HTML injection

@@ -41,7 +41,7 @@
                                 <td>
                                     <div class="lt-actions">
                                         <form method="POST" action="{{ route('admin.accounts.toggle-active', $student) }}" data-confirm="{{ $student->is_active ? 'Disable this account? The account can be activated again later.' : 'Activate this account?' }}" data-confirm-title="{{ $student->is_active ? 'Disable account' : 'Activate account' }}" data-confirm-button="{{ $student->is_active ? 'Disable' : 'Activate' }}" @if($student->is_active) data-confirm-danger @endif>@csrf @method('PATCH')<button type="submit" class="lt-btn lt-btn--outline lt-btn--sm">{{ $student->is_active ? 'Disable' : 'Activate' }}</button></form>
-                                        <form method="POST" action="{{ route('admin.accounts.destroy', $student) }}" data-confirm="Delete this student account permanently? It will be deactivated forever and cannot be reactivated." data-confirm-title="Delete student account permanently" data-confirm-button="Delete permanently" data-confirm-danger>@csrf @method('DELETE')<button type="submit" class="lt-btn lt-btn--danger-ghost lt-btn--sm">Delete</button></form>
+                                        <form method="POST" action="{{ route('admin.accounts.destroy', $student) }}" data-confirm="Delete this student account permanently? It will be deactivated forever and cannot be reactivated." data-confirm-title="Delete student account permanently" data-confirm-button="Delete permanently" data-confirm-danger>@csrf @method('DELETE')<button type="submit" class="lt-btn lt-btn--danger-strong lt-btn--sm">Delete</button></form>
                                     </div>
                                 </td>
                             </tr>
