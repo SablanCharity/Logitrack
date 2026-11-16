@@ -69,13 +69,14 @@
 
         <div class="lt-table-wrap lt-mt-lg">
             <table class="lt-table">
-                <thead><tr><th>Student Number</th><th>Name</th><th>Program</th><th>Capstone Status</th></tr></thead>
+                <thead><tr><th>Student Number</th><th>Name</th><th>Program</th><th>Date Added</th><th>Capstone Status</th></tr></thead>
                 <tbody>
                     @forelse($records as $record)
                         <tr>
                             <td>{{ $record->student_number }}</td>
                             <td>{{ $record->name ?: trim($record->first_name.' '.$record->last_name) ?: '—' }}</td>
                             <td>{{ $record->program ?: '—' }}</td>
+                            <td>{{ $record->created_at?->format('M d, Y') ?? '—' }}</td>
                             <td>
                                 @if($capstoneStatuses->has($record->student_number))
                                     @php($status = $capstoneStatuses->get($record->student_number))
@@ -88,10 +89,13 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4">No masterlist records uploaded.</td></tr>
+                        <tr><td colspan="5">No masterlist records uploaded.</td></tr>
                     @endforelse
                 </tbody>
             </table>
+        </div>
+        <div class="lt-pager">
+            {{ $records->withQueryString()->links() }}
         </div>
     </main>
 </body>
