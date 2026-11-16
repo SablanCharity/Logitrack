@@ -3,150 +3,114 @@
 namespace Tests\Unit;
 
 use App\Services\CapstoneRecommendationService;
+use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Tests\TestCase;
 
 class CapstoneRecommendationServiceTest extends TestCase
 {
-    protected CapstoneRecommendationService $recommendationService;
-
-    protected function setUp(): void
+    public function test_it_generates_three_valid_recommendations_from_ollama(): void
     {
-        parent::setUp();
+        Http::fake([
+            'http://127.0.0.1:11434/api/chat' => Http::response([
+                'message' => ['content' => json_encode($this->validPayload())],
+            ]),
+        ]);
 
-        $this->recommendationService = new CapstoneRecommendationService();
-    }
-
-    public function test_it_returns_three_recommendations_for_attendance_studies(): void
-    {
-        $recommendations = $this->recommendationService->recommend(
-            'Student Attendance Monitoring System',
-            'A system for tracking classroom attendance, monitoring absences, '
-                . 'and generating student attendance reports.'
+        $recommendations = app(CapstoneRecommendationService::class)->recommend(
+            'Campus Clinic Appointment System',
+            'A study about organizing clinic appointments and patient queues.',
+            [[
+                'title' => 'Clinic Patient Record System',
+                'abstract' => 'A repository study about storing clinic visit records.',
+            ]],
         );
 
         $this->assertCount(3, $recommendations);
 
         foreach ($recommendations as $recommendation) {
-            $this->assertArrayHasKey('title', $recommendation);
-            $this->assertArrayHasKey('abstract', $recommendation);
-            $this->assertArrayHasKey('reason', $recommendation);
-            $this->assertArrayHasKey('design_note', $recommendation);
-
-            $this->assertNotEmpty($recommendation['title']);
-            $this->assertNotEmpty($recommendation['abstract']);
-        }
-
-        $this->assertStringContainsString(
-            'Absence Alert',
-            $recommendations[0]['title']
-        );
-    }
-
-    public function test_it_returns_inventory_related_recommendations(): void
-    {
-        $recommendations = $this->recommendationService->recommend(
-            'Inventory Management System',
-            'A system for tracking product stock and inventory levels.'
-        );
-
-        $this->assertCount(3, $recommendations);
-
-        $this->assertStringContainsString(
-            'Inventory',
-            $recommendations[0]['title']
-        );
-
-        $this->assertStringContainsString(
-            'Expiration',
-            $recommendations[1]['title']
-        );
-    }
-
-    public function test_it_returns_restaurant_related_recommendations(): void
-    {
-        $recommendations = $this->recommendationService->recommend(
-            'Restaurant Ordering System',
-            'A system for restaurant food ordering and reservations.'
-        );
-
-        $this->assertCount(3, $recommendations);
-
-        $this->assertStringContainsString(
-            'Restaurant',
-            $recommendations[0]['title']
-        );
-    }
-
-    public function test_it_returns_general_recommendations_for_other_topics(): void
-    {
-        $recommendations = $this->recommendationService->recommend(
-            'Community Library Management System',
-            'A platform for managing library records and book borrowing.'
-        );
-
-        $this->assertCount(3, $recommendations);
-
-        $this->assertStringContainsString(
-            'Research Workflow',
-            $recommendations[0]['title']
-        );
-    }
-
-    public function test_it_includes_design_guidance_when_review_areas_are_provided(): void
-    {
-        $recommendations = $this->recommendationService->recommend(
-            'Student Attendance Monitoring System',
-            'A system for tracking classroom attendance.',
-            [],
-            [
-                'Research objectives',
-                'Target users',
-                'System scope',
-            ]
-        );
-
-        $this->assertCount(3, $recommendations);
-
-        foreach ($recommendations as $recommendation) {
-            $this->assertStringContainsString(
-                'Research objectives',
-                $recommendation['design_note']
+            $this->assertSame(
+                ['title', 'idea'],
+                array_keys($recommendation)
             );
 
-            $this->assertStringContainsString(
-                'Target users',
-                $recommendation['design_note']
-            );
+            foreach ($recommendation as $value) {
+                $this->assertNotEmpty($value);
+            }
         }
+
+        Http::assertSent(function ($request): bool {
+            $prompt = $request['messages'][1]['content'];
+
+            return $request->url() === 'http://127.0.0.1:11434/api/chat'
+                && $request['model'] === 'qwen2.5:1.5b'
+                && $request['format'] === 'json'
+                && str_contains($prompt, 'Campus Clinic Appointment System')
+                && str_contains($prompt, 'Clinic Patient Record System')
+                && str_contains($request['messages'][0]['content'], 'undergraduate');
+        });
     }
 
-    public function test_it_provides_default_design_guidance_without_review_areas(): void
+    public function test_it_rejects_invalid_json_from_ollama(): void
     {
-        $recommendations = $this->recommendationService->recommend(
-            'Student Attendance Monitoring System',
-            'A system for tracking classroom attendance.'
-        );
+        Http::fake([
+            '*' => Http::response(['message' => ['content' => 'not json']], 200),
+        ]);
 
-        $this->assertCount(3, $recommendations);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('invalid recommendation data');
 
-        $this->assertStringContainsString(
-            'verify its objectives',
-            $recommendations[0]['design_note']
-        );
+        app(CapstoneRecommendationService::class)->recommend('Study title', 'Study abstract');
     }
 
-    public function test_each_recommendation_has_non_empty_design_guidance(): void
+    public function test_it_rejects_recommendations_with_missing_fields(): void
     {
-        $recommendations = $this->recommendationService->recommend(
-            'Student Attendance Monitoring System',
-            'A system for tracking student attendance and identifying frequent absences.'
-        );
+        $payload = $this->validPayload();
+        unset($payload['recommendations'][1]['idea']);
 
-        $this->assertCount(3, $recommendations);
+        Http::fake([
+            '*' => Http::response([
+                'message' => ['content' => json_encode($payload)],
+            ]),
+        ]);
 
-        foreach ($recommendations as $recommendation) {
-            $this->assertArrayHasKey('design_note', $recommendation);
-            $this->assertNotEmpty($recommendation['design_note']);
-        }
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('omitted a required recommendation detail');
+
+        app(CapstoneRecommendationService::class)->recommend('Study title', 'Study abstract');
+    }
+
+    public function test_it_reports_ollama_api_failures(): void
+    {
+        Http::fake([
+            '*' => Http::response(['error' => 'model unavailable'], 503),
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('HTTP 503');
+
+        app(CapstoneRecommendationService::class)->recommend('Study title', 'Study abstract');
+    }
+
+    public function test_it_explains_when_the_configured_ollama_model_is_missing(): void
+    {
+        Http::fake([
+            '*' => Http::response(['error' => 'model "qwen2.5" not found'], 404),
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('configured recommendation model [qwen2.5:1.5b]');
+
+        app(CapstoneRecommendationService::class)->recommend('Study title', 'Study abstract');
+    }
+
+    private function validPayload(): array
+    {
+        return [
+            'recommendations' => array_map(fn (int $number): array => [
+                'title' => 'Alternative project '.$number,
+                'idea' => 'A concise concept seed for an undergraduate project '.$number.'.',
+            ], [1, 2, 3]),
+        ];
     }
 }

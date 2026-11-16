@@ -9,6 +9,7 @@ use App\Services\SimilarityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use RuntimeException;
 
 class SimilarityController extends Controller
 {
@@ -124,21 +125,20 @@ class SimilarityController extends Controller
         $displayResults = $results;
 
         /*
-         * Extract DSS review areas from the highest-ranked result.
-         */
-        $topResult = $results[0]['similarity'] ?? [];
-
-        $reviewAreas = $topResult['dss']['areas_to_review'] ?? [];
-
-        /*
          * Generate three alternative capstone recommendations.
          */
-        $recommendations = $this->recommendationService->recommend(
-            $validated['title'],
-            $validated['abstract'],
-            $existingStudies,
-            $reviewAreas
-        );
+        $recommendationError = null;
+
+        try {
+            $recommendations = $this->recommendationService->recommend(
+                $validated['title'],
+                $validated['abstract'],
+                array_slice($results, 0, 5)
+            );
+        } catch (RuntimeException $exception) {
+            $recommendations = [];
+            $recommendationError = $exception->getMessage();
+        }
 
         /*
          * Display only the most similar capstone project.
@@ -162,6 +162,7 @@ class SimilarityController extends Controller
                 'studyCount' => count($existingStudies),
 
                 'recommendations' => $recommendations,
+                'recommendationError' => $recommendationError,
                 'classroomId' => $classroomId,
             ]
         );

@@ -89,6 +89,21 @@ return [
         20
     ),
 
+    'recommendation_base_url' => env(
+        'SIMILARITY_RECOMMENDATION_BASE_URL',
+        env('SIMILARITY_EMBEDDING_BASE_URL', 'http://127.0.0.1:11434')
+    ),
+
+    'recommendation_model' => env(
+        'SIMILARITY_RECOMMENDATION_MODEL',
+        'qwen2.5:1.5b'
+    ),
+
+    'recommendation_timeout' => (int) env(
+        'SIMILARITY_RECOMMENDATION_TIMEOUT',
+        120
+    ),
+
     /*
     |--------------------------------------------------------------------------
     | Hybrid Similarity

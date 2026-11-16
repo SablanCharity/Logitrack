@@ -442,11 +442,7 @@
 
                     <h2>Recommended Capstone Projects</h2>
 
-                    <p>
-                        Explore three alternative project directions based on your submitted
-                        study. Review their scope and features against existing repository
-                        studies before deciding whether to pursue an idea.
-                    </p>
+                    <p>Three AI-generated project alternatives based on your submitted study and relevant approved repository studies. Review each idea with your adviser before choosing a topic.</p>
                 </div>
             </div>
 
@@ -457,7 +453,7 @@
                             <div class="lt-rec__head">
                                 <div class="lt-rec__top">
                                     <span class="lt-rec__num">{{ $index + 1 }}</span>
-                                    <span class="lt-rec__kicker">Alternative Project Idea</span>
+                                    <span class="lt-rec__kicker">Title Suggestion</span>
                                 </div>
 
                                 <h3 class="lt-rec__title">
@@ -467,42 +463,27 @@
 
                             <div class="lt-rec__body">
                                 <div>
-                                    <div class="lt-doc__label">Suggested Abstract</div>
+                                    <div class="lt-doc__label">Project Idea</div>
 
                                     <p class="lt-prewrap">
-                                        {{ $recommendation['abstract'] ?? 'No abstract available.' }}
+                                        {{ $recommendation['idea'] ?? 'No idea available.' }}
                                     </p>
                                 </div>
 
-                                @if(!empty($recommendation['reason']))
-                                    <div class="lt-rec__why">
-                                        <div class="lt-doc__label">Why consider this idea?</div>
-                                        <p>{{ $recommendation['reason'] }}</p>
-                                    </div>
-                                @endif
-
-                                @if(!empty($recommendation['design_note']))
-                                    <div>
-                                        <div class="lt-doc__label">Design Note</div>
-                                        <p>{{ $recommendation['design_note'] }}</p>
-                                    </div>
-                                @endif
                             </div>
                         </article>
                     @endforeach
                 </div>
             @else
                 <div class="lt-card">
-                    <p class="lt-muted">No project recommendations are available for this analysis.</p>
+                    <p class="lt-muted">{{ $recommendationError ?? 'AI recommendations are unavailable for this analysis.' }}</p>
                 </div>
             @endif
 
             <div class="lt-note lt-note--danger lt-note--flat" role="note">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.3 3.86 1.82 18a2 2 0 0 0 1.7 3h16.96a2 2 0 0 0 1.7-3L13.7 3.86a2 2 0 0 0-3.4 0z"/></svg>
                 <p>
-                    These are rule-based suggestions, not verified claims of originality.
-                    Confirm novelty, feasibility, scope, target users, and repository
-                    similarity with your adviser before finalizing a capstone proposal.
+                    Use these suggestions as starting points and develop your own proposal with your adviser.
                 </p>
             </div>
         </section>
