@@ -1839,6 +1839,9 @@ html { scroll-behavior: smooth; }
 .lt-dashboard-stat:nth-child(2) .lt-dashboard-stat__value { font-size: clamp(2rem, 3.2vw, 2.7rem); line-height: 1.1; }
 .lt-dashboard-stat__content { display: grid; align-content: center; gap: 10px; min-width: 0; }
 .lt-dashboard-stat__views { color: var(--text-muted); font-size: .88rem; font-weight: 600; }
+.lt-dashboard-stat__link { color: var(--navy) !important; text-decoration: none; }
+.lt-dashboard-stat__link:hover { color: var(--green) !important; text-decoration: underline; }
+.lt-dashboard-stat__link:focus-visible { outline: 3px solid rgba(228, 176, 40, .65); outline-offset: 3px; border-radius: 3px; }
 .lt-dashboard-admin-action { display: flex; justify-content: flex-end; margin: -8px 0 20px; }
 .lt-page-head--dashboard h1 { font-size: clamp(1.5rem, 2.5vw, 2rem); }
 .lt-dashboard-featured { margin-bottom: 30px; overflow: hidden; }
