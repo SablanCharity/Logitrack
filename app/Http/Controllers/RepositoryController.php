@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Announcement;
 use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
@@ -31,33 +32,33 @@ class RepositoryController extends Controller
         }
 
         $isDashboard = $request->routeIs('dashboard');
-    /*
+        /*
 |--------------------------------------------------------------------------
 | DASHBOARD ANNOUNCEMENTS
 |--------------------------------------------------------------------------
 */
 
-$userRole = $request->user()->role;
+        $userRole = $request->user()->role;
 
-$audience = match ($userRole) {
-    'student' => ['all', 'students'],
-    'instructor' => ['all', 'instructors'],
-    'admin' => ['all', 'students', 'instructors'],
-    default => [],
-};
+        $audience = match ($userRole) {
+            'student' => ['all', 'students'],
+            'instructor' => ['all', 'instructors'],
+            'admin' => ['all', 'students', 'instructors'],
+            default => [],
+        };
 
-$announcements = Announcement::query()
-    ->where('is_published', true)
-    ->whereIn('audience', $audience)
-    ->whereNotNull('published_at')
-    ->where('published_at', '<=', now())
-    ->where(function ($query) {
-        $query->whereNull('expires_at')
-            ->orWhere('expires_at', '>', now());
-    })
-    ->with('author')
-    ->latest('published_at')
-    ->get();
+        $announcements = Announcement::query()
+            ->where('is_published', true)
+            ->whereIn('audience', $audience)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now())
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', now());
+            })
+            ->with('author')
+            ->latest('published_at')
+            ->get();
         /*
         |--------------------------------------------------------------------------
         | LOAD MODERN APPROVED CAPSTONES
@@ -319,6 +320,11 @@ $announcements = Announcement::query()
                 ->first(),
         ];
 
+        $recentUploads = $allCapstones
+            ->sortByDesc('created_at')
+            ->take(4)
+            ->values();
+
         /*
         |--------------------------------------------------------------------------
         | DASHBOARD OVERVIEW VISIBILITY
@@ -365,7 +371,7 @@ $announcements = Announcement::query()
             'capstones' => $capstones,
 
             // Search and filters.
-            
+
             'search' => $search,
             'year' => $year,
             'years' => $years,
@@ -380,6 +386,7 @@ $announcements = Announcement::query()
             'isDashboard' => $isDashboard,
             'showDashboardOverview' => $showDashboardOverview,
             'dashboardStudies' => $dashboardStudies,
+            'recentUploads' => $recentUploads,
 
             // Dashboard Number 02 metrics.
             'totalCapstoneStudies' => $totalCapstoneStudies,

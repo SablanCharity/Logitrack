@@ -51,6 +51,70 @@ class RepositoryDashboardTest extends TestCase
         ])).'"', $dashboardStats);
     }
 
+    public function test_dashboard_shows_the_four_most_recent_approved_uploads_between_metrics_and_featured_content(): void
+    {
+        $user = User::factory()->create(['role' => 'student']);
+        $oldestStudy = $this->createStudy('Oldest Recent Study');
+        $olderStudy = $this->createStudy('Older Recent Study');
+        $middleStudy = $this->createStudy('Middle Recent Study');
+        $newerStudy = $this->createStudy('Newer Recent Study');
+        $newestStudy = $this->createStudy('Newest Recent Study');
+        $unapprovedStudy = $this->createStudy('Unapproved Recent Study', status: 'submitted');
+
+        foreach ([
+            [$oldestStudy, 5],
+            [$olderStudy, 4],
+            [$middleStudy, 3],
+            [$newerStudy, 2],
+            [$newestStudy, 1],
+            [$unapprovedStudy, 0],
+        ] as [$study, $daysAgo]) {
+            $study->forceFill(['created_at' => now()->subDays($daysAgo)])->save();
+        }
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertOk()
+            ->assertSee('Recently Uploaded Capstones & Theses')
+            ->assertSee('Newest Recent Study')
+            ->assertSee('Newer Recent Study')
+            ->assertSee('Middle Recent Study')
+            ->assertSee('Older Recent Study');
+
+        $this->assertSame(
+            [
+                'Newest Recent Study',
+                'Newer Recent Study',
+                'Middle Recent Study',
+                'Older Recent Study',
+            ],
+            $response->viewData('recentUploads')->pluck('title')->all(),
+        );
+
+        $pageContent = $response->getContent();
+        $recentSectionStart = strpos($pageContent, '<section class="lt-card lt-dashboard-recent"');
+        $featuredSectionStart = strpos($pageContent, '<section class="lt-dashboard-featured"');
+
+        $this->assertLessThan($featuredSectionStart, $recentSectionStart);
+        $recentSection = substr(
+            $pageContent,
+            $recentSectionStart,
+            $featuredSectionStart - $recentSectionStart,
+        );
+        $this->assertStringContainsString('Newest Recent Study', $recentSection);
+        $this->assertStringContainsString('Older Recent Study', $recentSection);
+        $this->assertStringNotContainsString('Oldest Recent Study', $recentSection);
+        $this->assertStringNotContainsString('Unapproved Recent Study', $recentSection);
+        $this->assertStringContainsString(
+            'href="'.e(route('repository.show', [
+                'capstoneId' => $newestStudy->id,
+                'type' => 'modern',
+                'return_to' => 'dashboard',
+            ])).'"',
+            $recentSection,
+        );
+    }
+
     public function test_ojt_can_access_dashboard_repository_and_capstone_reviewer_pages(): void
     {
         $ojt = User::factory()->create(['role' => 'ojt']);

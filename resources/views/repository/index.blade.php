@@ -557,6 +557,44 @@
 
             </section>
 
+            <section class="lt-card lt-dashboard-recent" aria-labelledby="dashboard-recent-title">
+                <div class="lt-dashboard-recent__heading">
+                    <div>
+                        <span class="lt-eyebrow">Latest additions</span>
+                        <h2 class="lt-dashboard-feature__label" id="dashboard-recent-title">
+                            Recently Uploaded Capstones &amp; Theses
+                        </h2>
+                    </div>
+                </div>
+
+                @if($recentUploads->isNotEmpty())
+                    <div class="lt-dashboard-recent__grid">
+                        @foreach($recentUploads as $recentUpload)
+                            <article class="lt-dashboard-recent__item">
+                                <h3 class="lt-dashboard-recent__title">
+                                    <a href="{{ route('repository.show', [
+                                        'capstoneId' => $recentUpload->id,
+                                        'type' => $recentUpload->source_type,
+                                        'return_to' => 'dashboard',
+                                    ]) }}">
+                                        {{ $recentUpload->title }}
+                                    </a>
+                                </h3>
+
+                                <div class="lt-dashboard-recent__meta">
+                                    <span>{{ $recentUpload->program ?? 'Program not specified' }}</span>
+                                    <time datetime="{{ $recentUpload->created_at?->toDateString() }}">
+                                        Uploaded {{ $recentUpload->created_at?->format('M d, Y') ?? 'date unavailable' }}
+                                    </time>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="lt-dashboard-recent__empty">No approved studies have been uploaded yet.</p>
+                @endif
+            </section>
+
             @if(auth()->user()->role === 'admin')
     <div class="lt-dashboard-admin-action">
         <a href="{{ route('repository.index') }}" class="lt-btn lt-btn--outline">
@@ -922,7 +960,7 @@
                                         @csrf
                                         @method('DELETE')
                                         <input type="hidden" name="type" value="{{ $capstone->source_type }}">
-                                        <button type="submit" class="lt-btn lt-btn--danger-ghost lt-btn--sm">Delete study</button>
+                                        <button type="submit" class="lt-btn lt-btn--danger-strong lt-btn--sm">Delete study</button>
                                     </form>
                                 @endif
 
