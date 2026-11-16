@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\StudentCapstoneSubmissionStatusUpdated;
+use App\Models\CapstoneSubmissionWindow;
 use App\Models\StudentCapstoneAuthor;
 use App\Models\StudentCapstoneSubmission;
 use App\Models\StudentMasterlistRecord;
@@ -44,6 +45,7 @@ class StudentCapstoneSubmissionController extends Controller
             ->get();
 
         return view('student.submission-create', [
+            'submissionWindow' => CapstoneSubmissionWindow::current(),
             'submission' => $submission,
             'canEditReturnedSubmission' => $submission?->status === 'returned'
                 && $submission->submitted_by === auth()->id(),
@@ -64,6 +66,10 @@ class StudentCapstoneSubmissionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if (! CapstoneSubmissionWindow::current()->isCurrentlyOpen()) {
+            return back()->with('error', 'Capstone submissions are currently closed. Please check the submission dates or contact the administrator.');
+        }
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'abstract' => ['required', 'string'],
@@ -220,6 +226,10 @@ class StudentCapstoneSubmissionController extends Controller
     {
         abort_unless($submission->submitted_by === auth()->id(), 403);
         abort_unless($submission->status === 'returned', 403);
+
+        if (! CapstoneSubmissionWindow::current()->isCurrentlyOpen()) {
+            return back()->with('error', 'Capstone submissions are currently closed. Please check the submission dates or contact the administrator.');
+        }
 
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],

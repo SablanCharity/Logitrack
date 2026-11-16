@@ -52,6 +52,41 @@ class StudentMasterlistControllerTest extends TestCase
             ->assertSee('Masterlist Student');
     }
 
+    public function test_masterlist_paginates_twenty_records_and_preserves_search(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        for ($index = 1; $index <= 22; $index++) {
+            $dateAdded = sprintf('2026-01-%02d 00:00:00', $index);
+
+            $record = StudentMasterlistRecord::create([
+                'student_number' => sprintf('202601%03d', $index),
+                'name' => sprintf('Pagination Student %02d', $index),
+                'program' => 'BSCS',
+                'status' => 'listed',
+            ]);
+            $record->forceFill(['created_at' => $dateAdded, 'updated_at' => $dateAdded])->save();
+        }
+
+        $this->actingAs($admin)
+            ->get(route('admin.student-masterlist.index', ['search' => 'Pagination']))
+            ->assertOk()
+            ->assertSee('Date Added')
+            ->assertSee('Jan 22, 2026')
+            ->assertSee('Pagination Student 22')
+            ->assertSee('Pagination Student 03')
+            ->assertDontSee('Pagination Student 02')
+            ->assertSee('page=2')
+            ->assertSee('search=Pagination');
+
+        $this->get(route('admin.student-masterlist.index', ['search' => 'Pagination', 'page' => 2]))
+            ->assertOk()
+            ->assertSee('Pagination Student 02')
+            ->assertSee('Pagination Student 01')
+            ->assertSee('Jan 01, 2026')
+            ->assertDontSee('Pagination Student 03');
+    }
+
     public function test_masterlist_shows_returned_status_for_individual_and_group_authors(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

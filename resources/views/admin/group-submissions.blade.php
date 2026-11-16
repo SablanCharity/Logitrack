@@ -16,6 +16,18 @@
             <p class="lt-page-head__sub">Track individual student capstone submissions and student coverage across CS and IT.</p>
         </div>
 
+        @if(session('success'))
+            <div class="lt-alert lt-alert--success" role="status">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="lt-alert lt-alert--error" role="alert">{{ session('error') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="lt-alert lt-alert--error" role="alert">
+                <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+            </div>
+        @endif
+
         <div class="lt-stats">
             <div class="lt-stat">
                 <div class="lt-stat__num">{{ $counts['enrolled_cscs'] }}</div>
@@ -42,6 +54,40 @@
                 <div class="lt-stat__label">Approved</div>
             </div>
         </div>
+
+        <section class="lt-card lt-mb-lg">
+            <div class="lt-card__head">
+                <div>
+                    <h2 class="lt-card__title">Submission period</h2>
+                    <p class="lt-card__desc">
+                        Status:
+                        <strong>{{ $submissionWindow->isCurrentlyOpen() ? 'Open' : 'Closed' }}</strong>
+                        @if($submissionWindow->deadline_on)
+                            &middot; Due {{ $submissionWindow->deadline_on->format('M d, Y') }}
+                        @endif
+                    </p>
+                    <p class="lt-card__desc">Submissions stay closed until you open them. They close automatically after the full due date. You can edit the due date at any time.</p>
+                </div>
+            </div>
+            <div style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+                <form method="POST" action="{{ route('admin.group-submissions.submission-window') }}" style="display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 0;">
+                    @csrf
+                    @method('PATCH')
+                    <div class="lt-field">
+                        <label for="deadline_on" class="lt-label">Submission due date</label>
+                        <input id="deadline_on" name="deadline_on" type="date" class="lt-input" value="{{ old('deadline_on', $submissionWindow->deadline_on?->format('Y-m-d')) }}" required>
+                    </div>
+                    <button type="submit" class="lt-btn lt-btn--primary" style="flex: 0 0 auto; white-space: nowrap;">Save due date</button>
+                </form>
+                <form method="POST" action="{{ route('admin.capstones.submission-window') }}" style="margin: 0;">
+                    @csrf
+                    @method('PATCH')
+                    <button type="submit" class="lt-btn {{ $submissionWindow->isCurrentlyOpen() ? 'lt-btn--danger-ghost' : 'lt-btn--green' }}" style="flex: 0 0 auto; white-space: nowrap;" @if($submissionWindow->deadline_on === null || $submissionWindow->deadline_on->toDateString() < now()->toDateString()) @disabled(!$submissionWindow->isCurrentlyOpen()) @endif>
+                        {{ $submissionWindow->isCurrentlyOpen() ? 'Close submissions' : 'Open submissions' }}
+                    </button>
+                </form>
+            </div>
+        </section>
 
         <div class="lt-card lt-mb-lg">
             <div class="lt-card__head">

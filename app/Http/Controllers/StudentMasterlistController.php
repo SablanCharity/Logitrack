@@ -60,7 +60,7 @@ class StudentMasterlistController extends Controller
                 })
                 ->when($programFilter, fn ($query) => $query->where('program', $programFilter))
                 ->latest()
-                ->get(),
+                ->paginate(20),
             'capstoneStatuses' => $capstoneStatuses,
             'search' => $search,
             'programFilter' => $programFilter,

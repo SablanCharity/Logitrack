@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Storage;
 
 class RepositoryController extends Controller
 {
@@ -555,6 +556,48 @@ $announcements = Announcement::query()
                 'type' => $validated['type'],
             ])
             ->with('success', 'Capstone metadata updated successfully.');
+    }
+
+    public function destroy(Request $request, int $capstoneId): RedirectResponse
+    {
+        abort_unless(auth()->user()?->role === 'admin', 403);
+
+        $type = $request->validate([
+            'type' => ['required', 'in:old,modern,student'],
+        ])['type'];
+
+        if ($type === 'old') {
+            $capstone = ArchivedCapstone::query()
+                ->where('status', 'approved')
+                ->findOrFail($capstoneId);
+            $imagePaths = array_filter([
+                $capstone->metadata_image_path,
+                ...($capstone->metadata_image_paths ?? []),
+            ]);
+
+            $capstone->delete();
+            Storage::disk('public')->delete($imagePaths);
+        } elseif ($type === 'modern') {
+            CapstoneProject::query()
+                ->where('status', 'admin_approved')
+                ->findOrFail($capstoneId)
+                ->delete();
+        } else {
+            $submission = StudentCapstoneSubmission::query()
+                ->where('status', 'approved')
+                ->findOrFail($capstoneId);
+            $filePaths = array_filter([
+                $submission->study_path,
+                $submission->manual_path,
+                $submission->system_path,
+                $submission->mentee_form_path,
+            ]);
+
+            $submission->delete();
+            Storage::disk('local')->delete($filePaths);
+        }
+
+        return back()->with('success', 'The study was deleted from the repository.');
     }
 
     /*

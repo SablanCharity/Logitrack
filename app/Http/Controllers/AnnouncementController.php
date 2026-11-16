@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Mail\AnnouncementPublished;
+use App\Models\User;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Throwable;
 
 class AnnouncementController extends Controller
 {
@@ -42,7 +47,7 @@ class AnnouncementController extends Controller
             ],
         ]);
 
-        Announcement::create([
+        $announcement = Announcement::create([
             'user_id' => $request->user()->id,
             'title' => $validated['title'],
             'message' => $validated['message'],
@@ -52,9 +57,24 @@ class AnnouncementController extends Controller
             'expires_at' => $validated['expires_at'] ?? null,
         ]);
 
-        return redirect()
+        [$sentCount, $failedCount, $recipientCount] = $this->emailAnnouncement($announcement);
+
+        if ($recipientCount === 0) {
+            return redirect()
+                ->route('admin.announcements.index')
+                ->with('success', 'Announcement published successfully.')
+                ->with('error', 'No active recipients were found for the selected audience.');
+        }
+
+        $redirect = redirect()
             ->route('admin.announcements.index')
-            ->with('success', 'Announcement published successfully!');
+            ->with('success', "Announcement published and emailed to {$sentCount} recipient(s).");
+
+        if ($failedCount > 0) {
+            $redirect->with('error', "{$failedCount} recipient email(s) could not be sent. Check the mail configuration and application logs.");
+        }
+
+        return $redirect;
     }
 
     // Display the edit form.
@@ -98,5 +118,60 @@ class AnnouncementController extends Controller
         return redirect()
             ->route('admin.announcements.index')
             ->with('success', 'Announcement deleted successfully!');
+    }
+
+    /**
+     * Email the newly published announcement to active members of its audience.
+     *
+     * @return array{0:int, 1:int, 2:int} sent, failed, recipients
+     */
+    private function emailAnnouncement(Announcement $announcement): array
+    {
+        $recipients = User::query()
+            ->where('is_active', true)
+            ->whereNotNull('email');
+
+        if ($announcement->audience === 'students') {
+            $recipients->where('role', 'student');
+        } elseif ($announcement->audience === 'instructors') {
+            $recipients->where('role', 'instructor')->where('is_approved', true);
+        } else {
+            $recipients->where(function ($query): void {
+                $query->where('role', 'student')
+                    ->orWhere(function ($instructorQuery): void {
+                        $instructorQuery->where('role', 'instructor')
+                            ->where('is_approved', true);
+                    });
+            });
+        }
+
+        $sentCount = 0;
+        $failedCount = 0;
+        $recipientCount = 0;
+
+        $recipients->select(['id', 'email'])->chunkById(100, function ($users) use (
+            $announcement,
+            &$sentCount,
+            &$failedCount,
+            &$recipientCount,
+        ): void {
+            foreach ($users as $user) {
+                $recipientCount++;
+
+                try {
+                    Mail::to($user->email)->send(new AnnouncementPublished($announcement));
+                    $sentCount++;
+                } catch (Throwable $exception) {
+                    $failedCount++;
+                    Log::warning('Announcement email could not be sent.', [
+                        'announcement_id' => $announcement->id,
+                        'recipient_id' => $user->id,
+                        'exception' => $exception::class,
+                    ]);
+                }
+            }
+        });
+
+        return [$sentCount, $failedCount, $recipientCount];
     }
 }

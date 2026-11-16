@@ -463,9 +463,20 @@
                         <span class="lt-dashboard-stat__index" aria-hidden="true">01</span>
                     </div>
 
-                    <strong class="lt-dashboard-stat__value">
-                        {{ $dashboardStudies['best']?->title ?? 'Not selected' }}
-                    </strong>
+                    @if($dashboardStudies['best'])
+                        <a
+                            href="{{ route('repository.show', [
+                                'capstoneId' => $dashboardStudies['best']->id,
+                                'type' => $dashboardStudies['best']->source_type,
+                                'return_to' => 'dashboard',
+                            ]) }}"
+                            class="lt-dashboard-stat__value lt-dashboard-stat__link"
+                        >
+                            {{ $dashboardStudies['best']->title }}
+                        </a>
+                    @else
+                        <strong class="lt-dashboard-stat__value">Not selected</strong>
+                    @endif
                 </article>
 
                 {{-- NUMBER 02: TOTAL APPROVED STUDIES --}}
@@ -523,14 +534,23 @@
                     </div>
 
                     <div class="lt-dashboard-stat__content">
-                        <strong class="lt-dashboard-stat__value">
-                            {{ $dashboardStudies['most_viewed']?->title ?? 'No studies yet' }}
-                        </strong>
-
                         @if($dashboardStudies['most_viewed'])
+                            <a
+                                href="{{ route('repository.show', [
+                                    'capstoneId' => $dashboardStudies['most_viewed']->id,
+                                    'type' => $dashboardStudies['most_viewed']->source_type,
+                                    'return_to' => 'dashboard',
+                                ]) }}"
+                                class="lt-dashboard-stat__value lt-dashboard-stat__link"
+                            >
+                                {{ $dashboardStudies['most_viewed']->title }}
+                            </a>
+
                             <span class="lt-dashboard-stat__views">
                                 {{ number_format($dashboardStudies['most_viewed']->views_count) }} views
                             </span>
+                        @else
+                            <strong class="lt-dashboard-stat__value">No studies yet</strong>
                         @endif
                     </div>
                 </article>
@@ -887,6 +907,22 @@
                                         >
                                             {{ $capstone->is_best ? 'Selected as Best' : 'Set as Best' }}
                                         </button>
+                                    </form>
+                                @endif
+
+                                @if(auth()->user()?->role === 'admin' && !$isDashboard)
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.repository.destroy', $capstone->id) }}"
+                                        data-confirm="Permanently delete ‘{{ $capstone->title }}’ from the repository? Its uploaded files will also be deleted. This action cannot be undone."
+                                        data-confirm-title="Delete study"
+                                        data-confirm-button="Delete study"
+                                        data-confirm-danger
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="type" value="{{ $capstone->source_type }}">
+                                        <button type="submit" class="lt-btn lt-btn--danger-ghost lt-btn--sm">Delete study</button>
                                     </form>
                                 @endif
 

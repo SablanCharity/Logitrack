@@ -16,7 +16,7 @@ class CapstoneProjectController extends Controller
 {
     public function create(int $groupRoomId): View|RedirectResponse
     {
-        if (! CapstoneSubmissionWindow::current()->is_open) {
+        if (! CapstoneSubmissionWindow::current()->isCurrentlyOpen()) {
             return redirect()
                 ->route('student.group-room.show', $groupRoomId)
                 ->with('error', 'Capstone submissions are currently closed. Please wait for the department admin to open submissions.');
@@ -44,7 +44,7 @@ class CapstoneProjectController extends Controller
         Request $request,
         int $groupRoomId
     ): RedirectResponse {
-        if (! CapstoneSubmissionWindow::current()->is_open) {
+        if (! CapstoneSubmissionWindow::current()->isCurrentlyOpen()) {
             return back()->with('error', 'Capstone submissions are currently closed. Please wait for the department admin to open submissions.');
         }
 
@@ -276,14 +276,39 @@ class CapstoneProjectController extends Controller
         ]);
     }
 
+    public function updateSubmissionWindow(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'deadline_on' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        $window = CapstoneSubmissionWindow::current();
+        $window->update([
+            'deadline_on' => $validated['deadline_on'],
+            // Editing a past/expired window never opens it by itself.
+            'is_open' => $window->isCurrentlyOpen(),
+        ]);
+
+        return back()->with('success', 'Submission deadline saved as '.$validated['deadline_on'].'. Open submissions when you are ready to accept student work.');
+    }
+
     public function toggleSubmissionWindow(): RedirectResponse
     {
         $window = CapstoneSubmissionWindow::current();
-        $window->update(['is_open' => ! $window->is_open]);
 
-        return back()->with('success', $window->is_open
-            ? 'Capstone submissions are now open.'
-            : 'Capstone submissions are now closed.');
+        if ($window->isCurrentlyOpen()) {
+            $window->update(['is_open' => false]);
+
+            return back()->with('success', 'Capstone submissions are now closed.');
+        }
+
+        if ($window->deadline_on === null || $window->deadline_on->toDateString() < now()->toDateString()) {
+            return back()->with('error', 'Set a due date of today or later before opening capstone submissions.');
+        }
+
+        $window->update(['is_open' => true]);
+
+        return back()->with('success', 'Capstone submissions are now open until '.$window->deadline_on->format('M d, Y').'.');
     }
 
     public function adminReview(int $capstoneId): View
@@ -404,6 +429,10 @@ class CapstoneProjectController extends Controller
         Request $request,
         int $groupRoomId
     ): RedirectResponse {
+        if (! CapstoneSubmissionWindow::current()->isCurrentlyOpen()) {
+            return back()->with('error', 'Capstone submissions are currently closed. Please wait for the department admin to reopen submissions.');
+        }
+
         $groupRoom = GroupRoom::with([
             'classroom',
             'members',

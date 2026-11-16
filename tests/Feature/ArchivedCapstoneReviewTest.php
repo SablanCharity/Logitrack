@@ -4,12 +4,74 @@ namespace Tests\Feature;
 
 use App\Models\ArchivedCapstone;
 use App\Models\User;
+use App\Services\Ocr\MetadataExtractionService;
+use App\Services\Ocr\TesseractService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ArchivedCapstoneReviewTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_admin_can_upload_two_archived_capstone_images_for_ocr(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->mock(TesseractService::class)
+            ->shouldReceive('extractText')
+            ->twice()
+            ->andReturn('Title page text', 'Abstract page text');
+        $this->mock(MetadataExtractionService::class)
+            ->shouldReceive('extract')
+            ->once()
+            ->with("Title page text\n\nAbstract page text")
+            ->andReturn([
+                'title' => 'Archived Study',
+                'abstract' => 'A long abstract.',
+                'authors' => ['Author One'],
+                'adviser' => null,
+                'program' => null,
+                'department' => null,
+                'institution' => null,
+                'publication_date' => null,
+            ]);
+
+        $response = $this->actingAs($admin)->post(route('ocr.store'), [
+            'images' => [
+                UploadedFile::fake()->image('title-page.jpg'),
+                UploadedFile::fake()->image('abstract-page.jpg'),
+            ],
+        ]);
+
+        $archivedCapstone = ArchivedCapstone::query()->latest('id')->firstOrFail();
+
+        $response->assertRedirect(route('ocr.review', $archivedCapstone));
+        $this->assertCount(2, $archivedCapstone->metadata_image_paths);
+        $this->assertSame(
+            "Title page text\n\nAbstract page text",
+            $archivedCapstone->ocr_text
+        );
+    }
+
+    public function test_admin_cannot_upload_more_than_two_archived_capstone_images(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $response = $this->actingAs($admin)->post(route('ocr.store'), [
+            'images' => [
+                UploadedFile::fake()->image('page-one.jpg'),
+                UploadedFile::fake()->image('page-two.jpg'),
+                UploadedFile::fake()->image('page-three.jpg'),
+            ],
+        ]);
+
+        $response->assertSessionHasErrors('images');
+        $this->assertDatabaseCount('archived_capstones', 0);
+    }
 
     public function test_admin_can_open_archived_capstone_review(): void
     {

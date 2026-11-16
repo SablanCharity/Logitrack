@@ -2,12 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\ArchivedCapstone;
 use App\Models\CapstoneProject;
 use App\Models\Classroom;
 use App\Models\GroupRoom;
-use App\Models\ArchivedCapstone;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class RepositoryDashboardTest extends TestCase
@@ -17,8 +18,8 @@ class RepositoryDashboardTest extends TestCase
     public function test_dashboard_shows_metrics_and_featured_studies(): void
     {
         $user = User::factory()->create(['role' => 'student']);
-        $this->createStudy('Best Study', isBest: true);
-        $this->createStudy('Most Viewed Study', viewsCount: 12);
+        $bestStudy = $this->createStudy('Best Study', isBest: true);
+        $mostViewedStudy = $this->createStudy('Most Viewed Study', viewsCount: 12);
         $this->createStudy('Unapproved Study', viewsCount: 50, status: 'submitted');
 
         $response = $this->actingAs($user)->get(route('dashboard'));
@@ -31,6 +32,23 @@ class RepositoryDashboardTest extends TestCase
             ->assertSee('Most Viewed Study')
             ->assertSee('12 views')
             ->assertDontSee('Unapproved Study');
+
+        $dashboardStats = Str::between(
+            $response->getContent(),
+            '<section class="lt-dashboard-stats" aria-label="Repository metrics">',
+            '</section>',
+        );
+
+        $this->assertStringContainsString('href="'.e(route('repository.show', [
+            'capstoneId' => $bestStudy->id,
+            'type' => 'modern',
+            'return_to' => 'dashboard',
+        ])).'"', $dashboardStats);
+        $this->assertStringContainsString('href="'.e(route('repository.show', [
+            'capstoneId' => $mostViewedStudy->id,
+            'type' => 'modern',
+            'return_to' => 'dashboard',
+        ])).'"', $dashboardStats);
     }
 
     public function test_ojt_can_access_dashboard_repository_and_capstone_reviewer_pages(): void

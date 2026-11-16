@@ -15,6 +15,13 @@
             <p class="lt-page-head__sub">Select every enrolled author from the masterlist. Selected students will be marked as having submitted a capstone.</p>
         </div>
         @if(session('success')) <div class="lt-alert lt-alert--success" role="status">{{ session('success') }}</div> @endif
+        @if(session('error')) <div class="lt-alert lt-alert--error" role="alert">{{ session('error') }}</div> @endif
+        <div class="lt-alert {{ $submissionWindow->isCurrentlyOpen() ? 'lt-alert--success' : 'lt-alert--error' }}" role="status">
+            Capstone submissions are {{ $submissionWindow->isCurrentlyOpen() ? 'open' : 'closed' }}.
+            @if($submissionWindow->deadline_on)
+                Due date: {{ $submissionWindow->deadline_on->format('M d, Y') }}.
+            @endif
+        </div>
         @if($errors->any()) <div class="lt-alert lt-alert--error" role="alert">{{ $errors->first() }}</div> @endif
         <form method="POST" action="{{ route('student.group-submissions.store') }}" enctype="multipart/form-data" class="lt-form">
             @csrf
@@ -60,7 +67,7 @@
                 <div class="lt-field"><label class="lt-label" for="document">Word Document (.docx)</label><input class="lt-input" id="document" name="document" type="file" accept=".docx" required></div>
                 <div class="lt-field"><label class="lt-label" for="mentee_form">Mentee Form</label><input class="lt-input" id="mentee_form" name="mentee_form" type="file" accept=".pdf,.doc,.docx" required></div>
             </div>
-            <button type="submit" class="lt-btn lt-btn--primary">Submit Group Capstone</button>
+            <button type="submit" class="lt-btn lt-btn--primary" @disabled(!$submissionWindow->isCurrentlyOpen())>Submit Group Capstone</button>
         </form>
     </main>
     <script>
